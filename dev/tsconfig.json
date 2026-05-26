@@ -16,20 +16,12 @@
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "@payload-config": [
-        "./payload.config.ts"
-      ],
-      "advanced-forms-plugin": [
-        "../src/index.ts"
-      ],
-      "advanced-forms-plugin/client": [
-        "../src/exports/client.ts"
-      ],
-      "advanced-forms-plugin/rsc": [
-        "../src/exports/rsc.ts"
-      ]
+      "@payload-config": ["./payload.config.ts"],
+      "@foundrykit/form-plugin": ["../src/index.ts"],
+      "@foundrykit/form-plugin/client": ["../src/exports/client.ts"],
+      "@foundrykit/form-plugin/rsc": ["../src/exports/rsc.ts"]
     },
     "noEmit": true,
-    "emitDeclarationOnly": false,
+    "emitDeclarationOnly": false
   }
 }

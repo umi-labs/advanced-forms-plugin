@@ -1,7 +1,7 @@
 {
-  "name": "advanced-forms-plugin",
+  "name": "@foundrykit/form-plugin",
   "version": "1.0.0",
-  "description": "A blank template to get started with Payload 3.0",
+  "description": "Multi-step enquiry form plugin for Payload CMS 3",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -40,9 +40,10 @@
     "generate:types": "pnpm dev:generate-types",
     "lint": "eslint",
     "lint:fix": "eslint ./src --fix",
-    "test": "pnpm test:int && pnpm test:e2e",
+    "test": "pnpm test:unit && pnpm test:int && pnpm test:e2e",
+    "test:unit": "vitest run dev/unit.spec.ts",
     "test:e2e": "playwright test",
-    "test:int": "vitest"
+    "test:int": "vitest run dev/int.spec.ts"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -54,6 +55,7 @@
     "@payloadcms/richtext-lexical": "3.84.1",
     "@payloadcms/ui": "3.84.1",
     "@playwright/test": "1.58.2",
+    "@radix-ui/react-popover": "^1.1.14",
     "@swc-node/register": "1.10.9",
     "@swc/cli": "0.6.0",
     "@types/node": "22.19.9",
@@ -72,6 +74,7 @@
     "qs-esm": "8.0.1",
     "react": "19.2.6",
     "react-dom": "19.2.6",
+    "react-hook-form": "^7.54.2",
     "rimraf": "3.0.2",
     "sharp": "0.34.2",
     "sort-package-json": "^2.10.0",
@@ -80,7 +83,10 @@
     "vitest": "4.0.18"
   },
   "peerDependencies": {
-    "payload": "^3.84.1"
+    "@radix-ui/react-popover": "^1.1.0",
+    "payload": "^3.84.1",
+    "react": "^19",
+    "react-hook-form": "^7"
   },
   "engines": {
     "node": "^18.20.2 || >=20.9.0",
