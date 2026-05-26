@@ -174,3 +174,53 @@ describe('SelectInputBlock', () => {
     expect(subNames).toContain('value')
   })
 })
+
+import { SendEmailBlock } from '../src/blocks/submissionActions/SendEmail.js'
+import { ConfirmationMessageBlock } from '../src/blocks/submissionActions/ConfirmationMessage.js'
+import { RedirectBlock } from '../src/blocks/submissionActions/Redirect.js'
+
+describe('SendEmailBlock', () => {
+  test('has slug sendEmail', () => expect(SendEmailBlock.slug).toBe('sendEmail'))
+  test('has to, from, replyTo, subject, includeSubmissionData fields', () => {
+    const names = SendEmailBlock.fields.map((f) => ('name' in f ? f.name : null))
+    expect(names).toContain('to')
+    expect(names).toContain('from')
+    expect(names).toContain('replyTo')
+    expect(names).toContain('subject')
+    expect(names).toContain('includeSubmissionData')
+  })
+  test('to, from, and subject are required', () => {
+    const toField = SendEmailBlock.fields.find((f) => 'name' in f && f.name === 'to') as any
+    const fromField = SendEmailBlock.fields.find((f) => 'name' in f && f.name === 'from') as any
+    const subjectField = SendEmailBlock.fields.find((f) => 'name' in f && f.name === 'subject') as any
+    expect(toField?.required).toBe(true)
+    expect(fromField?.required).toBe(true)
+    expect(subjectField?.required).toBe(true)
+  })
+})
+
+describe('ConfirmationMessageBlock', () => {
+  test('has slug confirmationMessage', () => expect(ConfirmationMessageBlock.slug).toBe('confirmationMessage'))
+  test('has message richText field', () => {
+    const msg = ConfirmationMessageBlock.fields.find((f) => 'name' in f && f.name === 'message') as any
+    expect(msg?.type).toBe('richText')
+    expect(msg?.required).toBe(true)
+  })
+})
+
+describe('RedirectBlock', () => {
+  test('has slug redirect', () => expect(RedirectBlock.slug).toBe('redirect'))
+  test('has url and delay fields', () => {
+    const names = RedirectBlock.fields.map((f) => ('name' in f ? f.name : null))
+    expect(names).toContain('url')
+    expect(names).toContain('delay')
+  })
+  test('url is required', () => {
+    const url = RedirectBlock.fields.find((f) => 'name' in f && f.name === 'url') as any
+    expect(url?.required).toBe(true)
+  })
+  test('delay defaults to 0', () => {
+    const delay = RedirectBlock.fields.find((f) => 'name' in f && f.name === 'delay') as any
+    expect(delay?.defaultValue).toBe(0)
+  })
+})
