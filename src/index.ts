@@ -1,113 +1,30 @@
-import type { CollectionSlug, Config } from 'payload'
+import type { Config } from 'payload'
+import { createEnquiryFormsCollection } from './collections/EnquiryForms.js'
+import { createEnquirySubmissionsCollection } from './collections/EnquirySubmissions.js'
+import type { FormPluginConfig } from './types.js'
 
-import { customEndpointHandler } from './endpoints/customEndpointHandler.js'
+// Re-export config types so consumers can import them from '@foundrykit/form-plugin'
+export type { FormPluginConfig, SendEmailOptions } from './types.js'
 
-export type AdvancedFormsPluginConfig = {
-  /**
-   * List of collections to add a custom field
-   */
-  collections?: Partial<Record<CollectionSlug, true>>
-  disabled?: boolean
-}
-
-export const advancedFormsPlugin =
-  (pluginOptions: AdvancedFormsPluginConfig) =>
+export const formPlugin =
+  (pluginOptions: FormPluginConfig) =>
   (config: Config): Config => {
-    if (!config.collections) {
-      config.collections = []
-    }
+    const formsSlug = pluginOptions.collections?.forms ?? 'enquiry-forms'
+    const submissionsSlug = pluginOptions.collections?.submissions ?? 'enquiry-submissions'
+    const mediaCollection = pluginOptions.mediaCollection ?? 'media'
 
-    config.collections.push({
-      slug: 'plugin-collection',
-      fields: [
-        {
-          name: 'id',
-          type: 'text',
-        },
-      ],
-    })
+    // Always add collections so DB schema stays consistent even when disabled.
+    config.collections = [
+      ...(config.collections ?? []),
+      createEnquiryFormsCollection({ formsSlug, mediaCollection }),
+      createEnquirySubmissionsCollection({ formsSlug, submissionsSlug }),
+    ]
 
-    if (pluginOptions.collections) {
-      for (const collectionSlug in pluginOptions.collections) {
-        const collection = config.collections.find(
-          (collection) => collection.slug === collectionSlug,
-        )
-
-        if (collection) {
-          collection.fields.push({
-            name: 'addedByPlugin',
-            type: 'text',
-            admin: {
-              position: 'sidebar',
-            },
-          })
-        }
-      }
-    }
-
-    /**
-     * If the plugin is disabled, we still want to keep added collections/fields so the database schema is consistent which is important for migrations.
-     * If your plugin heavily modifies the database schema, you may want to remove this property.
-     */
     if (pluginOptions.disabled) {
       return config
     }
 
-    if (!config.endpoints) {
-      config.endpoints = []
-    }
-
-    if (!config.admin) {
-      config.admin = {}
-    }
-
-    if (!config.admin.components) {
-      config.admin.components = {}
-    }
-
-    if (!config.admin.components.beforeDashboard) {
-      config.admin.components.beforeDashboard = []
-    }
-
-    config.admin.components.beforeDashboard.push(
-      `advanced-forms-plugin/client#BeforeDashboardClient`,
-    )
-    config.admin.components.beforeDashboard.push(
-      `advanced-forms-plugin/rsc#BeforeDashboardServer`,
-    )
-
-    config.endpoints.push({
-      handler: customEndpointHandler,
-      method: 'get',
-      path: '/my-plugin-endpoint',
-    })
-
-    const incomingOnInit = config.onInit
-
-    config.onInit = async (payload) => {
-      // Ensure we are executing any existing onInit functions before running our own.
-      if (incomingOnInit) {
-        await incomingOnInit(payload)
-      }
-
-      const { totalDocs } = await payload.count({
-        collection: 'plugin-collection',
-        where: {
-          id: {
-            equals: 'seeded-by-plugin',
-          },
-        },
-      })
-
-      if (totalDocs === 0) {
-        await payload.create({
-          collection: 'plugin-collection',
-          data: {
-            id: 'seeded-by-plugin',
-          },
-        })
-      }
-    }
+    // Endpoints are registered in Plan 3 after handlers are implemented.
 
     return config
   }
