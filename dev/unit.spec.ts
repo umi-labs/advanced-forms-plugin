@@ -92,3 +92,85 @@ describe('CheckboxInputBlock', () => {
     expect(extraNames).toHaveLength(0)
   })
 })
+
+import { OptionCardsBlock } from '../src/blocks/fields/OptionCards.js'
+import { BudgetRangeBlock } from '../src/blocks/fields/BudgetRange.js'
+import { NumberStepperBlock } from '../src/blocks/fields/NumberStepper.js'
+import { MultiCounterBlock } from '../src/blocks/fields/MultiCounter.js'
+import { SelectInputBlock } from '../src/blocks/fields/SelectInput.js'
+
+describe('OptionCardsBlock', () => {
+  test('has slug optionCards', () => expect(OptionCardsBlock.slug).toBe('optionCards'))
+  test('has options array field', () => {
+    const options = OptionCardsBlock.fields.find((f) => 'name' in f && f.name === 'options') as any
+    expect(options?.type).toBe('array')
+    const subNames = options?.fields?.map((f: any) => f.name)
+    expect(subNames).toContain('label')
+    expect(subNames).toContain('value')
+  })
+  test('has layout select with row and grid', () => {
+    const layout = OptionCardsBlock.fields.find((f) => 'name' in f && f.name === 'layout') as any
+    expect(layout?.type).toBe('select')
+    const values = layout?.options?.map((o: any) => o.value)
+    expect(values).toContain('row')
+    expect(values).toContain('grid')
+  })
+})
+
+describe('BudgetRangeBlock', () => {
+  test('has slug budgetRange', () => expect(BudgetRangeBlock.slug).toBe('budgetRange'))
+  test('has options array field', () => {
+    const options = BudgetRangeBlock.fields.find((f) => 'name' in f && f.name === 'options') as any
+    expect(options?.type).toBe('array')
+  })
+})
+
+describe('NumberStepperBlock', () => {
+  test('has slug numberStepper', () => expect(NumberStepperBlock.slug).toBe('numberStepper'))
+  test('has defaultValue, min, max, step, placeholder fields', () => {
+    const names = NumberStepperBlock.fields.map((f) => ('name' in f ? f.name : null))
+    expect(names).toContain('defaultValue')
+    expect(names).toContain('min')
+    expect(names).toContain('max')
+    expect(names).toContain('step')
+    expect(names).toContain('placeholder')
+  })
+  test('defaultValue defaults to 0', () => {
+    const field = NumberStepperBlock.fields.find((f) => 'name' in f && f.name === 'defaultValue') as any
+    expect(field?.defaultValue).toBe(0)
+  })
+  test('step defaults to 1', () => {
+    const field = NumberStepperBlock.fields.find((f) => 'name' in f && f.name === 'step') as any
+    expect(field?.defaultValue).toBe(1)
+  })
+})
+
+describe('MultiCounterBlock', () => {
+  test('has slug multiCounter', () => expect(MultiCounterBlock.slug).toBe('multiCounter'))
+  test('has counters array with required label and name sub-fields', () => {
+    const counters = MultiCounterBlock.fields.find((f) => 'name' in f && f.name === 'counters') as any
+    expect(counters?.type).toBe('array')
+    expect(counters?.minRows).toBe(1)
+    const subNames = counters?.fields?.map((f: any) => f.name)
+    expect(subNames).toContain('label')
+    expect(subNames).toContain('name')
+    expect(subNames).toContain('defaultValue')
+    expect(subNames).toContain('min')
+    expect(subNames).toContain('max')
+  })
+})
+
+describe('SelectInputBlock', () => {
+  test('has slug selectInput', () => expect(SelectInputBlock.slug).toBe('selectInput'))
+  test('has placeholder and options fields', () => {
+    const names = SelectInputBlock.fields.map((f) => ('name' in f ? f.name : null))
+    expect(names).toContain('placeholder')
+    expect(names).toContain('options')
+  })
+  test('options array has label and value sub-fields', () => {
+    const options = SelectInputBlock.fields.find((f) => 'name' in f && f.name === 'options') as any
+    const subNames = options?.fields?.map((f: any) => f.name)
+    expect(subNames).toContain('label')
+    expect(subNames).toContain('value')
+  })
+})
