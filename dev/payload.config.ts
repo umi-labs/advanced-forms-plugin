@@ -3,7 +3,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
 import { buildConfig } from 'payload'
-import { advancedFormsPlugin } from 'advanced-forms-plugin'
+import { formPlugin } from '@foundrykit/form-plugin'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
@@ -20,12 +20,8 @@ if (!process.env.ROOT_DIR) {
 const buildConfigWithMemoryDB = async () => {
   if (process.env.NODE_ENV === 'test') {
     const memoryDB = await MongoMemoryReplSet.create({
-      replSet: {
-        count: 3,
-        dbName: 'payloadmemory',
-      },
+      replSet: { count: 3, dbName: 'payloadmemory' },
     })
-
     process.env.DATABASE_URL = `${memoryDB.getUri()}&retryWrites=true`
   }
 
@@ -36,10 +32,6 @@ const buildConfigWithMemoryDB = async () => {
       },
     },
     collections: [
-      {
-        slug: 'posts',
-        fields: [],
-      },
       {
         slug: 'media',
         fields: [],
@@ -58,9 +50,10 @@ const buildConfigWithMemoryDB = async () => {
       await seed(payload)
     },
     plugins: [
-      advancedFormsPlugin({
-        collections: {
-          posts: true,
+      formPlugin({
+        sendEmail: async (opts) => {
+          // Dev: log emails to console instead of sending
+          console.log('[dev email]', { to: opts.to, subject: opts.subject })
         },
       }),
     ],
