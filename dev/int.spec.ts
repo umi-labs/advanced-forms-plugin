@@ -3,6 +3,7 @@ import config from '@payload-config'
 import { createPayloadRequest, getPayload } from 'payload'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { createFetchFormHandler } from '../src/endpoints/fetchFormHandler.js'
+import { createSubmitFormHandler } from '../src/endpoints/submitFormHandler.js'
 
 let payload: Payload
 
@@ -218,5 +219,160 @@ describe('fetchFormHandler', () => {
     })
     const response = await handler(payloadRequest)
     expect(response.status).toBe(400)
+  })
+})
+
+describe('submitFormHandler', () => {
+  let formSlug: string
+  const capturedEmails: any[] = []
+
+  beforeAll(async () => {
+    capturedEmails.length = 0
+    formSlug = 'submit-test-' + Date.now()
+    await payload.create({
+      collection: 'enquiry-forms',
+      data: {
+        title: 'Submit Test Form',
+        slug: formSlug,
+        steps: [
+          {
+            title: 'Step 1',
+            fields: [
+              { blockType: 'textInput', name: 'full_name', label: 'Full Name', required: true, inputType: 'text' },
+              { blockType: 'emailInput', name: 'email', label: 'Email', required: true },
+              { blockType: 'yesNo', name: 'newsletter', label: 'Subscribe?', required: false },
+            ],
+          },
+        ],
+        submissionActions: [
+          {
+            blockType: 'sendEmail',
+            to: 'admin@example.com',
+            from: 'noreply@example.com',
+            subject: 'New enquiry from {{full_name}}',
+            includeSubmissionData: true,
+          },
+          {
+            blockType: 'confirmationMessage',
+            message: {
+              root: {
+                type: 'root',
+                children: [
+                  {
+                    type: 'paragraph',
+                    children: [{ type: 'text', text: 'Thank you!', version: 1 }],
+                    version: 1,
+                  },
+                ],
+                direction: 'ltr',
+                format: '',
+                indent: 0,
+                version: 1,
+              },
+            },
+          },
+        ],
+      },
+    })
+  })
+
+  const makeRequest = async (slug: string, body: object) => {
+    const handler = createSubmitFormHandler({
+      collections: { forms: 'enquiry-forms', submissions: 'enquiry-submissions' },
+      sendEmail: async (opts) => { capturedEmails.push(opts) },
+    })
+    const request = new Request(`http://localhost:3000/api/enquiry-submit/${slug}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const payloadRequest = await createPayloadRequest({
+      config: await config,
+      request,
+      params: { formSlug: slug },
+    })
+    return handler(payloadRequest)
+  }
+
+  test('returns 200 and stores submission for valid data', async () => {
+    const response = await makeRequest(formSlug, {
+      data: { full_name: 'Alice', email: 'alice@example.com', newsletter: 'yes' },
+    })
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.success).toBe(true)
+
+    // Verify stored in DB
+    const { docs } = await payload.find({
+      collection: 'enquiry-submissions',
+      where: { form: { exists: true } },
+    })
+    const entry = docs.find((d: any) =>
+      d.data?.some((item: any) => item.fieldName === 'full_name' && item.value === 'Alice'),
+    )
+    expect(entry).toBeDefined()
+  })
+
+  test('sendEmail action interpolates subject and fires callback', async () => {
+    capturedEmails.length = 0
+    await makeRequest(formSlug, {
+      data: { full_name: 'Bob', email: 'bob@example.com' },
+    })
+    expect(capturedEmails).toHaveLength(1)
+    expect(capturedEmails[0].subject).toBe('New enquiry from Bob')
+    expect(capturedEmails[0].to).toBe('admin@example.com')
+  })
+
+  test('sendEmail uses email field as replyTo when replyTo is blank', async () => {
+    capturedEmails.length = 0
+    await makeRequest(formSlug, {
+      data: { full_name: 'Carol', email: 'carol@example.com' },
+    })
+    expect(capturedEmails[0].replyTo).toBe('carol@example.com')
+  })
+
+  test('confirmationMessage is returned in response actions', async () => {
+    const response = await makeRequest(formSlug, {
+      data: { full_name: 'Dave', email: 'dave@example.com' },
+    })
+    const body = await response.json()
+    expect(body.actions.confirmationMessage).toBeDefined()
+  })
+
+  test('returns 422 when required field is missing', async () => {
+    const response = await makeRequest(formSlug, {
+      data: { newsletter: 'yes' }, // missing full_name and email
+    })
+    expect(response.status).toBe(422)
+    const body = await response.json()
+    expect(body.success).toBe(false)
+    expect(body.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: 'full_name' }),
+        expect.objectContaining({ field: 'email' }),
+      ]),
+    )
+  })
+
+  test('returns 404 for unknown form slug', async () => {
+    const response = await makeRequest('no-such-form', { data: {} })
+    expect(response.status).toBe(404)
+  })
+
+  test('redirect action url is returned in response actions', async () => {
+    const redirectSlug = 'redirect-test-' + Date.now()
+    await payload.create({
+      collection: 'enquiry-forms',
+      data: {
+        title: 'Redirect Form',
+        slug: redirectSlug,
+        steps: [{ title: 'S1', fields: [] }],
+        submissionActions: [{ blockType: 'redirect', url: '/thank-you', delay: 0 }],
+      },
+    })
+    const response = await makeRequest(redirectSlug, { data: {} })
+    const body = await response.json()
+    expect(body.success).toBe(true)
+    expect(body.actions.redirectUrl).toBe('/thank-you')
   })
 })
