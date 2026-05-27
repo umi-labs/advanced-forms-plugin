@@ -230,12 +230,12 @@ import { sanitizeSubmission } from '../src/utilities/sanitizeSubmission.js'
 
 describe('buildFormURL', () => {
   test('returns relative path when no baseUrl given', () => {
-    expect(buildFormURL({ slug: 'my-form' })).toBe('/api/enquiry-forms/my-form')
+    expect(buildFormURL({ slug: 'my-form' })).toBe('/api/enquiry-form-data/my-form')
   })
 
   test('returns absolute URL when baseUrl given', () => {
     expect(buildFormURL({ slug: 'my-form', baseUrl: 'https://example.com' }))
-      .toBe('https://example.com/api/enquiry-forms/my-form')
+      .toBe('https://example.com/api/enquiry-form-data/my-form')
   })
 
   test('respects custom formsSlug', () => {
