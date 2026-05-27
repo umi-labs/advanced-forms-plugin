@@ -1,9 +1,10 @@
 import type { Config } from 'payload'
 import { createEnquiryFormsCollection } from './collections/EnquiryForms.js'
 import { createEnquirySubmissionsCollection } from './collections/EnquirySubmissions.js'
+import { createFetchFormHandler } from './endpoints/fetchFormHandler.js'
+import { createSubmitFormHandler } from './endpoints/submitFormHandler.js'
 import type { FormPluginConfig } from './types.js'
 
-// Re-export config types so consumers can import them from '@foundrykit/form-plugin'
 export type { FormPluginConfig, SendEmailOptions } from './types.js'
 
 export const formPlugin =
@@ -24,7 +25,19 @@ export const formPlugin =
       return config
     }
 
-    // Endpoints are registered in Plan 3 after handlers are implemented.
+    config.endpoints = [
+      ...(config.endpoints ?? []),
+      {
+        handler: createFetchFormHandler(pluginOptions),
+        method: 'get',
+        path: `/api/${formsSlug}/:slug`,
+      },
+      {
+        handler: createSubmitFormHandler(pluginOptions),
+        method: 'post',
+        path: '/api/enquiry-submit/:formSlug',
+      },
+    ]
 
     return config
   }
