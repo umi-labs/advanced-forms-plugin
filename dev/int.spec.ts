@@ -1,7 +1,8 @@
 import type { Payload } from 'payload'
 import config from '@payload-config'
-import { getPayload } from 'payload'
+import { createPayloadRequest, getPayload } from 'payload'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import { createFetchFormHandler } from '../src/endpoints/fetchFormHandler.js'
 
 let payload: Payload
 
@@ -140,5 +141,82 @@ describe('Collections registered by formPlugin', () => {
     // Access function returns false for unauthenticated create (admin UI would be blocked).
     const accessResult = (collection.config.access?.create as any)?.({ req: { user: null } })
     expect(accessResult).toBe(false)
+  })
+})
+
+describe('fetchFormHandler', () => {
+  let seededSlug: string
+
+  beforeAll(async () => {
+    // Create a form to fetch
+    seededSlug = 'fetch-test-' + Date.now()
+    await payload.create({
+      collection: 'enquiry-forms',
+      data: {
+        title: 'Fetch Test Form',
+        slug: seededSlug,
+        steps: [{ title: 'Step 1', fields: [{ blockType: 'yesNo', name: 'q', label: 'Q?' }] }],
+        submissionActions: [
+          {
+            blockType: 'confirmationMessage',
+            message: {
+              root: {
+                type: 'root',
+                children: [
+                  {
+                    type: 'paragraph',
+                    children: [{ type: 'text', text: 'Thank you!', version: 1 }],
+                    version: 1,
+                  },
+                ],
+                direction: 'ltr',
+                format: '',
+                indent: 0,
+                version: 1,
+              },
+            },
+          },
+        ],
+      },
+    })
+  })
+
+  test('returns 200 with form data for a known slug', async () => {
+    const handler = createFetchFormHandler({ collections: { forms: 'enquiry-forms' }, sendEmail: async () => {} })
+    const request = new Request(`http://localhost:3000/api/enquiry-forms/${seededSlug}`)
+    const payloadRequest = await createPayloadRequest({
+      config: await config,
+      request,
+      params: { slug: seededSlug },
+    })
+    const response = await handler(payloadRequest)
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.slug).toBe(seededSlug)
+    expect(body.steps).toHaveLength(1)
+  })
+
+  test('returns 404 for an unknown slug', async () => {
+    const handler = createFetchFormHandler({ collections: { forms: 'enquiry-forms' }, sendEmail: async () => {} })
+    const request = new Request('http://localhost:3000/api/enquiry-forms/does-not-exist')
+    const payloadRequest = await createPayloadRequest({
+      config: await config,
+      request,
+      params: { slug: 'does-not-exist' },
+    })
+    const response = await handler(payloadRequest)
+    expect(response.status).toBe(404)
+  })
+
+  test('returns 400 when slug param is missing', async () => {
+    const handler = createFetchFormHandler({ collections: { forms: 'enquiry-forms' }, sendEmail: async () => {} })
+    const request = new Request('http://localhost:3000/api/enquiry-forms/')
+    const payloadRequest = await createPayloadRequest({
+      config: await config,
+      request,
+      params: {},
+    })
+    const response = await handler(payloadRequest)
+    expect(response.status).toBe(400)
   })
 })
