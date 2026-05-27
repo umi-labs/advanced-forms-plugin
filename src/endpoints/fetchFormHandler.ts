@@ -10,7 +10,7 @@ export const createFetchFormHandler = (pluginOptions: FormPluginConfig): Payload
       return Response.json({ error: 'Form slug is required' }, { status: 400 })
     }
 
-    const formsSlug = (pluginOptions.collections?.forms ?? 'enquiry-forms') as Parameters<
+    const formsSlug = (pluginOptions.collections?.forms ?? 'forms') as Parameters<
       typeof payload.find
     >[0]['collection']
 

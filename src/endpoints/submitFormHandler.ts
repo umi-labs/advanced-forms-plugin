@@ -42,11 +42,11 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
     const submissionData = body.data ?? {}
     const metadata = body.metadata ?? {}
 
-    const formsSlug = (pluginOptions.collections?.forms ?? 'enquiry-forms') as Parameters<
+    const formsSlug = (pluginOptions.collections?.forms ?? 'forms') as Parameters<
       typeof payload.find
     >[0]['collection']
     const submissionsSlug = (pluginOptions.collections?.submissions ??
-      'enquiry-submissions') as Parameters<typeof payload.create>[0]['collection']
+      'form-submissions') as Parameters<typeof payload.create>[0]['collection']
 
     // Load form by slug
     const result = await payload.find({
