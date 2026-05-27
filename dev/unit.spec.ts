@@ -33,145 +33,166 @@ describe('baseFieldBlockFields', () => {
   })
 })
 
-import { YesNoBlock } from '../src/blocks/fields/YesNo.js'
-import { TextInputBlock } from '../src/blocks/fields/TextInput.js'
-import { EmailInputBlock } from '../src/blocks/fields/EmailInput.js'
-import { TextareaInputBlock } from '../src/blocks/fields/TextareaInput.js'
-import { CheckboxInputBlock } from '../src/blocks/fields/CheckboxInput.js'
+import { TextBlock } from '../src/blocks/fields/Text.js'
+import { EmailBlock } from '../src/blocks/fields/Email.js'
+import { PhoneBlock } from '../src/blocks/fields/Phone.js'
+import { TextareaBlock } from '../src/blocks/fields/Textarea.js'
+import { CheckboxBlock } from '../src/blocks/fields/Checkbox.js'
+import { RadioGroupBlock } from '../src/blocks/fields/RadioGroup.js'
+import { CheckboxGroupBlock } from '../src/blocks/fields/CheckboxGroup.js'
+import { SelectBlock } from '../src/blocks/fields/Select.js'
+import { NumberBlock } from '../src/blocks/fields/Number.js'
+import { DateBlock } from '../src/blocks/fields/Date.js'
+import { FileBlock } from '../src/blocks/fields/File.js'
 
-describe('YesNoBlock', () => {
-  test('has slug yesNo', () => expect(YesNoBlock.slug).toBe('yesNo'))
+describe('TextBlock', () => {
+  test('has slug text', () => expect(TextBlock.slug).toBe('text'))
   test('has all base fields', () => {
-    const names = YesNoBlock.fields.map((f) => ('name' in f ? f.name : null))
+    const names = TextBlock.fields.map((f) => ('name' in f ? f.name : null))
     expect(names).toContain('name')
     expect(names).toContain('label')
     expect(names).toContain('required')
     expect(names).toContain('tooltip')
   })
-})
-
-describe('TextInputBlock', () => {
-  test('has slug textInput', () => expect(TextInputBlock.slug).toBe('textInput'))
-  test('has placeholder and inputType fields', () => {
-    const names = TextInputBlock.fields.map((f) => ('name' in f ? f.name : null))
+  test('has placeholder and width fields', () => {
+    const names = TextBlock.fields.map((f) => ('name' in f ? f.name : null))
     expect(names).toContain('placeholder')
-    expect(names).toContain('inputType')
+    expect(names).toContain('width')
   })
-  test('inputType select has text and tel options', () => {
-    const inputType = TextInputBlock.fields.find((f) => 'name' in f && f.name === 'inputType') as any
-    expect(inputType?.type).toBe('select')
-    const values = inputType?.options?.map((o: any) => o.value)
-    expect(values).toContain('text')
-    expect(values).toContain('tel')
+  test('width defaults to full', () => {
+    const field = TextBlock.fields.find((f) => 'name' in f && f.name === 'width') as any
+    expect(field?.defaultValue).toBe('full')
   })
 })
 
-describe('EmailInputBlock', () => {
-  test('has slug emailInput', () => expect(EmailInputBlock.slug).toBe('emailInput'))
+describe('EmailBlock', () => {
+  test('has slug email', () => expect(EmailBlock.slug).toBe('email'))
   test('has placeholder field', () => {
-    const names = EmailInputBlock.fields.map((f) => ('name' in f ? f.name : null))
+    const names = EmailBlock.fields.map((f) => ('name' in f ? f.name : null))
     expect(names).toContain('placeholder')
   })
 })
 
-describe('TextareaInputBlock', () => {
-  test('has slug textareaInput', () => expect(TextareaInputBlock.slug).toBe('textareaInput'))
+describe('PhoneBlock', () => {
+  test('has slug phone', () => expect(PhoneBlock.slug).toBe('phone'))
+  test('has placeholder field', () => {
+    const names = PhoneBlock.fields.map((f) => ('name' in f ? f.name : null))
+    expect(names).toContain('placeholder')
+  })
+})
+
+describe('TextareaBlock', () => {
+  test('has slug textarea', () => expect(TextareaBlock.slug).toBe('textarea'))
   test('has placeholder and rows fields', () => {
-    const names = TextareaInputBlock.fields.map((f) => ('name' in f ? f.name : null))
+    const names = TextareaBlock.fields.map((f) => ('name' in f ? f.name : null))
     expect(names).toContain('placeholder')
     expect(names).toContain('rows')
   })
+  test('rows defaults to 4', () => {
+    const field = TextareaBlock.fields.find((f) => 'name' in f && f.name === 'rows') as any
+    expect(field?.defaultValue).toBe(4)
+  })
 })
 
-describe('CheckboxInputBlock', () => {
-  test('has slug checkboxInput', () => expect(CheckboxInputBlock.slug).toBe('checkboxInput'))
-  test('has only base fields (no extras)', () => {
-    const extraNames = CheckboxInputBlock.fields
+describe('CheckboxBlock', () => {
+  test('has slug checkbox', () => expect(CheckboxBlock.slug).toBe('checkbox'))
+  test('has only base fields', () => {
+    const extraNames = CheckboxBlock.fields
       .map((f) => ('name' in f ? f.name : null))
       .filter((n) => !['name', 'label', 'required', 'tooltip'].includes(n as string))
     expect(extraNames).toHaveLength(0)
   })
 })
 
-import { OptionCardsBlock } from '../src/blocks/fields/OptionCards.js'
-import { BudgetRangeBlock } from '../src/blocks/fields/BudgetRange.js'
-import { NumberStepperBlock } from '../src/blocks/fields/NumberStepper.js'
-import { MultiCounterBlock } from '../src/blocks/fields/MultiCounter.js'
-import { SelectInputBlock } from '../src/blocks/fields/SelectInput.js'
-
-describe('OptionCardsBlock', () => {
-  test('has slug optionCards', () => expect(OptionCardsBlock.slug).toBe('optionCards'))
-  test('has options array field', () => {
-    const options = OptionCardsBlock.fields.find((f) => 'name' in f && f.name === 'options') as any
+describe('RadioGroupBlock', () => {
+  test('has slug radioGroup', () => expect(RadioGroupBlock.slug).toBe('radioGroup'))
+  test('has options array with label and value sub-fields', () => {
+    const options = RadioGroupBlock.fields.find((f) => 'name' in f && f.name === 'options') as any
     expect(options?.type).toBe('array')
     const subNames = options?.fields?.map((f: any) => f.name)
     expect(subNames).toContain('label')
     expect(subNames).toContain('value')
   })
-  test('has layout select with row and grid', () => {
-    const layout = OptionCardsBlock.fields.find((f) => 'name' in f && f.name === 'layout') as any
+  test('options array requires at least 1 row', () => {
+    const options = RadioGroupBlock.fields.find((f) => 'name' in f && f.name === 'options') as any
+    expect(options?.minRows).toBe(1)
+  })
+  test('has layout select with row and grid options', () => {
+    const layout = RadioGroupBlock.fields.find((f) => 'name' in f && f.name === 'layout') as any
     expect(layout?.type).toBe('select')
     const values = layout?.options?.map((o: any) => o.value)
     expect(values).toContain('row')
     expect(values).toContain('grid')
   })
+  test('layout defaults to row', () => {
+    const layout = RadioGroupBlock.fields.find((f) => 'name' in f && f.name === 'layout') as any
+    expect(layout?.defaultValue).toBe('row')
+  })
 })
 
-describe('BudgetRangeBlock', () => {
-  test('has slug budgetRange', () => expect(BudgetRangeBlock.slug).toBe('budgetRange'))
-  test('has options array field', () => {
-    const options = BudgetRangeBlock.fields.find((f) => 'name' in f && f.name === 'options') as any
+describe('CheckboxGroupBlock', () => {
+  test('has slug checkboxGroup', () => expect(CheckboxGroupBlock.slug).toBe('checkboxGroup'))
+  test('has options array with label and value sub-fields', () => {
+    const options = CheckboxGroupBlock.fields.find((f) => 'name' in f && f.name === 'options') as any
     expect(options?.type).toBe('array')
-  })
-})
-
-describe('NumberStepperBlock', () => {
-  test('has slug numberStepper', () => expect(NumberStepperBlock.slug).toBe('numberStepper'))
-  test('has defaultValue, min, max, step, placeholder fields', () => {
-    const names = NumberStepperBlock.fields.map((f) => ('name' in f ? f.name : null))
-    expect(names).toContain('defaultValue')
-    expect(names).toContain('min')
-    expect(names).toContain('max')
-    expect(names).toContain('step')
-    expect(names).toContain('placeholder')
-  })
-  test('defaultValue defaults to 0', () => {
-    const field = NumberStepperBlock.fields.find((f) => 'name' in f && f.name === 'defaultValue') as any
-    expect(field?.defaultValue).toBe(0)
-  })
-  test('step defaults to 1', () => {
-    const field = NumberStepperBlock.fields.find((f) => 'name' in f && f.name === 'step') as any
-    expect(field?.defaultValue).toBe(1)
-  })
-})
-
-describe('MultiCounterBlock', () => {
-  test('has slug multiCounter', () => expect(MultiCounterBlock.slug).toBe('multiCounter'))
-  test('has counters array with required label and name sub-fields', () => {
-    const counters = MultiCounterBlock.fields.find((f) => 'name' in f && f.name === 'counters') as any
-    expect(counters?.type).toBe('array')
-    expect(counters?.minRows).toBe(1)
-    const subNames = counters?.fields?.map((f: any) => f.name)
+    const subNames = options?.fields?.map((f: any) => f.name)
     expect(subNames).toContain('label')
-    expect(subNames).toContain('name')
-    expect(subNames).toContain('defaultValue')
-    expect(subNames).toContain('min')
-    expect(subNames).toContain('max')
+    expect(subNames).toContain('value')
+  })
+  test('has layout select', () => {
+    const layout = CheckboxGroupBlock.fields.find((f) => 'name' in f && f.name === 'layout') as any
+    expect(layout?.type).toBe('select')
   })
 })
 
-describe('SelectInputBlock', () => {
-  test('has slug selectInput', () => expect(SelectInputBlock.slug).toBe('selectInput'))
+describe('SelectBlock', () => {
+  test('has slug select', () => expect(SelectBlock.slug).toBe('select'))
   test('has placeholder and options fields', () => {
-    const names = SelectInputBlock.fields.map((f) => ('name' in f ? f.name : null))
+    const names = SelectBlock.fields.map((f) => ('name' in f ? f.name : null))
     expect(names).toContain('placeholder')
     expect(names).toContain('options')
   })
   test('options array has label and value sub-fields', () => {
-    const options = SelectInputBlock.fields.find((f) => 'name' in f && f.name === 'options') as any
+    const options = SelectBlock.fields.find((f) => 'name' in f && f.name === 'options') as any
     const subNames = options?.fields?.map((f: any) => f.name)
     expect(subNames).toContain('label')
     expect(subNames).toContain('value')
+  })
+})
+
+describe('NumberBlock', () => {
+  test('has slug number', () => expect(NumberBlock.slug).toBe('number'))
+  test('has placeholder, defaultValue, min, max, step fields', () => {
+    const names = NumberBlock.fields.map((f) => ('name' in f ? f.name : null))
+    expect(names).toContain('placeholder')
+    expect(names).toContain('defaultValue')
+    expect(names).toContain('min')
+    expect(names).toContain('max')
+    expect(names).toContain('step')
+  })
+  test('step defaults to 1', () => {
+    const field = NumberBlock.fields.find((f) => 'name' in f && f.name === 'step') as any
+    expect(field?.defaultValue).toBe(1)
+  })
+})
+
+describe('DateBlock', () => {
+  test('has slug date', () => expect(DateBlock.slug).toBe('date'))
+  test('has placeholder, min, max fields', () => {
+    const names = DateBlock.fields.map((f) => ('name' in f ? f.name : null))
+    expect(names).toContain('placeholder')
+    expect(names).toContain('min')
+    expect(names).toContain('max')
+  })
+})
+
+describe('FileBlock', () => {
+  test('has slug file', () => expect(FileBlock.slug).toBe('file'))
+  test('has accept, maxSizeMB, collection fields', () => {
+    const names = FileBlock.fields.map((f) => ('name' in f ? f.name : null))
+    expect(names).toContain('accept')
+    expect(names).toContain('maxSizeMB')
+    expect(names).toContain('collection')
   })
 })
 
@@ -230,17 +251,17 @@ import { sanitizeSubmission } from '../src/utilities/sanitizeSubmission.js'
 
 describe('buildFormURL', () => {
   test('returns relative path when no baseUrl given', () => {
-    expect(buildFormURL({ slug: 'my-form' })).toBe('/api/enquiry-form-data/my-form')
+    expect(buildFormURL({ slug: 'my-form' })).toBe('/api/form-data/my-form')
   })
 
   test('returns absolute URL when baseUrl given', () => {
     expect(buildFormURL({ slug: 'my-form', baseUrl: 'https://example.com' }))
-      .toBe('https://example.com/api/enquiry-form-data/my-form')
+      .toBe('https://example.com/api/form-data/my-form')
   })
 
   test('respects custom formsSlug', () => {
-    expect(buildFormURL({ slug: 'my-form', formsSlug: 'forms' }))
-      .toBe('/api/forms/my-form')
+    expect(buildFormURL({ slug: 'my-form', formsSlug: 'my-forms' }))
+      .toBe('/api/my-forms/my-form')
   })
 })
 
@@ -253,11 +274,9 @@ describe('sanitizeSubmission', () => {
     ])
   })
 
-  test('JSON-stringifies object values (e.g. multiCounter)', () => {
-    const result = sanitizeSubmission({ guests: { adults: 2, children: 0 } })
-    expect(result).toEqual([
-      { fieldName: 'guests', value: '{"adults":2,"children":0}' },
-    ])
+  test('JSON-stringifies object values', () => {
+    const result = sanitizeSubmission({ data: { a: 1 } })
+    expect(result).toEqual([{ fieldName: 'data', value: '{"a":1}' }])
   })
 
   test('converts numbers to strings', () => {
