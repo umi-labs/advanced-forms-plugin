@@ -1,10 +1,9 @@
 import type { Block } from 'payload'
 import { baseFieldBlockFields } from './shared.js'
 
-export const OptionCardsBlock: Block = {
-  slug: 'optionCards',
-  interfaceName: 'OptionCardsBlock',
-  labels: { singular: 'Option Cards', plural: 'Option Cards' },
+export const CheckboxGroupBlock: Block = {
+  slug: 'checkboxGroup',
+  labels: { singular: 'Checkbox Group', plural: 'Checkbox Groups' },
   fields: [
     ...baseFieldBlockFields,
     {
@@ -22,7 +21,7 @@ export const OptionCardsBlock: Block = {
       type: 'select',
       defaultValue: 'row',
       options: [
-        { label: 'Row (horizontal scroll)', value: 'row' },
+        { label: 'Row', value: 'row' },
         { label: 'Grid', value: 'grid' },
       ],
     },

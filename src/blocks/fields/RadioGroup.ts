@@ -1,10 +1,9 @@
 import type { Block } from 'payload'
 import { baseFieldBlockFields } from './shared.js'
 
-export const BudgetRangeBlock: Block = {
-  slug: 'budgetRange',
-  interfaceName: 'BudgetRangeBlock',
-  labels: { singular: 'Budget Range', plural: 'Budget Ranges' },
+export const RadioGroupBlock: Block = {
+  slug: 'radioGroup',
+  labels: { singular: 'Radio Group', plural: 'Radio Groups' },
   fields: [
     ...baseFieldBlockFields,
     {
@@ -15,6 +14,15 @@ export const BudgetRangeBlock: Block = {
       fields: [
         { name: 'label', type: 'text', required: true },
         { name: 'value', type: 'text', required: true },
+      ],
+    },
+    {
+      name: 'layout',
+      type: 'select',
+      defaultValue: 'row',
+      options: [
+        { label: 'Row', value: 'row' },
+        { label: 'Grid', value: 'grid' },
       ],
     },
   ],

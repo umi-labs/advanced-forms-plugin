@@ -1,9 +1,8 @@
 import type { Block } from 'payload'
 import { baseFieldBlockFields } from './shared.js'
 
-export const CheckboxInputBlock: Block = {
-  slug: 'checkboxInput',
-  interfaceName: 'CheckboxInputBlock',
+export const CheckboxBlock: Block = {
+  slug: 'checkbox',
   labels: { singular: 'Checkbox', plural: 'Checkboxes' },
   fields: [...baseFieldBlockFields],
 }

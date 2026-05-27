@@ -1,16 +1,12 @@
 import type { Block } from 'payload'
 import { baseFieldBlockFields } from './shared.js'
 
-export const SelectInputBlock: Block = {
-  slug: 'selectInput',
-  interfaceName: 'SelectInputBlock',
-  labels: { singular: 'Select / Dropdown', plural: 'Select / Dropdowns' },
+export const SelectBlock: Block = {
+  slug: 'select',
+  labels: { singular: 'Select', plural: 'Selects' },
   fields: [
     ...baseFieldBlockFields,
-    {
-      name: 'placeholder',
-      type: 'text',
-    },
+    { name: 'placeholder', type: 'text' },
     {
       name: 'options',
       type: 'array',

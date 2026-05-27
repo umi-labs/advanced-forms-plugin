@@ -1,15 +1,11 @@
 import type { Block } from 'payload'
 import { baseFieldBlockFields } from './shared.js'
 
-export const EmailInputBlock: Block = {
-  slug: 'emailInput',
-  interfaceName: 'EmailInputBlock',
+export const EmailBlock: Block = {
+  slug: 'email',
   labels: { singular: 'Email Input', plural: 'Email Inputs' },
   fields: [
     ...baseFieldBlockFields,
-    {
-      name: 'placeholder',
-      type: 'text',
-    },
+    { name: 'placeholder', type: 'text' },
   ],
 }
