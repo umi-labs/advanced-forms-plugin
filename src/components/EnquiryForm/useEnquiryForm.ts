@@ -9,6 +9,24 @@ type Options = {
   apiBase?: string
 }
 
+function buildDefaultValues(form: EnquiryForm): Record<string, unknown> {
+  const defaults: Record<string, unknown> = {}
+  for (const step of form.steps) {
+    for (const field of step.fields) {
+      if (field.blockType === 'numberStepper' && field.defaultValue !== undefined) {
+        defaults[field.name] = field.defaultValue
+      } else if (field.blockType === 'multiCounter' && field.counters) {
+        const counterDefaults: Record<string, number> = {}
+        for (const counter of field.counters) {
+          counterDefaults[counter.name] = counter.defaultValue ?? 0
+        }
+        defaults[field.name] = counterDefaults
+      }
+    }
+  }
+  return defaults
+}
+
 export function useEnquiryForm({ form, apiBase = '' }: Options): UseEnquiryFormReturn {
   const [currentStep, setCurrentStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -16,7 +34,10 @@ export function useEnquiryForm({ form, apiBase = '' }: Options): UseEnquiryFormR
   const [result, setResult] = useState<SubmitResult | null>(null)
   const [error, setError] = useState<SubmitError | null>(null)
 
-  const rhfForm = useForm<Record<string, unknown>>({ mode: 'onSubmit' })
+  const rhfForm = useForm<Record<string, unknown>>({
+    mode: 'onSubmit',
+    defaultValues: buildDefaultValues(form),
+  })
   const totalSteps = form.steps.length
   const stepData = form.steps[currentStep]!
 

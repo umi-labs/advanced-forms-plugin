@@ -41,6 +41,7 @@ export default defineConfig({
   webServer: {
     command: 'pnpm dev',
     reuseExistingServer: true,
-    url: 'http://localhost:3000/admin',
+    url: 'http://localhost:3000/api/enquiry-form-data/travel-enquiry',
+    timeout: 120000,
   },
 })

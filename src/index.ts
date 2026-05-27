@@ -30,12 +30,12 @@ export const formPlugin =
       {
         handler: createFetchFormHandler(pluginOptions),
         method: 'get',
-        path: `/api/${formsSlug}/:slug`,
+        path: `/enquiry-form-data/:slug`,
       },
       {
         handler: createSubmitFormHandler(pluginOptions),
         method: 'post',
-        path: '/api/enquiry-submit/:formSlug',
+        path: '/enquiry-submit/:formSlug',
       },
     ]
 
