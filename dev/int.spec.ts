@@ -308,9 +308,17 @@ describe('submitFormHandler', () => {
     const body = await response.json()
     expect(body.success).toBe(true)
 
+    const formResult = await payload.find({
+      collection: 'forms',
+      where: { slug: { equals: formSlug } },
+      limit: 1,
+    })
+    const formId = formResult.docs[0]?.id
+
     const { docs } = await payload.find({
       collection: 'form-submissions',
-      where: { form: { exists: true } },
+      where: { form: { equals: formId } },
+      limit: 10,
     })
     const entry = docs.find((d: any) =>
       d.data?.some((item: any) => item.fieldName === 'full_name' && item.value === 'Alice'),
@@ -333,6 +341,7 @@ describe('submitFormHandler', () => {
     await makeRequest(formSlug, {
       data: { full_name: 'Carol', email: 'carol@example.com' },
     })
+    expect(capturedEmails).toHaveLength(1)
     expect(capturedEmails[0].replyTo).toBe('carol@example.com')
   })
 
