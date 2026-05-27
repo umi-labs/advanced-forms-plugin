@@ -16,17 +16,17 @@ beforeAll(async () => {
 })
 
 describe('Collections registered by formPlugin', () => {
-  test('enquiry-forms collection exists', () => {
-    expect(payload.collections['enquiry-forms']).toBeDefined()
+  test('forms collection exists', () => {
+    expect(payload.collections['forms']).toBeDefined()
   })
 
-  test('enquiry-submissions collection exists', () => {
-    expect(payload.collections['enquiry-submissions']).toBeDefined()
+  test('form-submissions collection exists', () => {
+    expect(payload.collections['form-submissions']).toBeDefined()
   })
 
-  test('can create an enquiry-forms document with a step and a yesNo field', async () => {
+  test('can create a forms document with a step and a radioGroup field', async () => {
     const form = await payload.create({
-      collection: 'enquiry-forms',
+      collection: 'forms',
       data: {
         title: 'Test Form',
         slug: 'test-form-' + Date.now(),
@@ -35,10 +35,14 @@ describe('Collections registered by formPlugin', () => {
             title: 'Step 1',
             fields: [
               {
-                blockType: 'yesNo',
-                name: 'flexible_dates',
-                label: 'Are your dates flexible?',
+                blockType: 'radioGroup',
+                name: 'preference',
+                label: 'What is your preference?',
                 required: true,
+                options: [
+                  { label: 'Yes', value: 'yes' },
+                  { label: 'No', value: 'no' },
+                ],
               },
             ],
           },
@@ -73,9 +77,9 @@ describe('Collections registered by formPlugin', () => {
     expect(form.steps[0].fields).toHaveLength(1)
   })
 
-  test('can create an enquiry-forms document with all field block types', async () => {
+  test('can create a forms document with all 11 generic field block types', async () => {
     const form = await payload.create({
-      collection: 'enquiry-forms',
+      collection: 'forms',
       data: {
         title: 'All Fields Form',
         slug: 'all-fields-' + Date.now(),
@@ -83,48 +87,33 @@ describe('Collections registered by formPlugin', () => {
           {
             title: 'Step 1',
             fields: [
-              { blockType: 'yesNo', name: 'q1', label: 'Yes or No?' },
-              { blockType: 'textInput', name: 'q2', label: 'Name', inputType: 'text' },
-              { blockType: 'emailInput', name: 'q3', label: 'Email' },
-              { blockType: 'textareaInput', name: 'q4', label: 'Notes', rows: 3 },
-              { blockType: 'checkboxInput', name: 'q5', label: 'Agree?' },
+              { blockType: 'text', name: 'q1', label: 'Name' },
+              { blockType: 'email', name: 'q2', label: 'Email' },
+              { blockType: 'phone', name: 'q3', label: 'Phone' },
+              { blockType: 'textarea', name: 'q4', label: 'Notes', rows: 3 },
+              { blockType: 'checkbox', name: 'q5', label: 'Agree?' },
               {
-                blockType: 'optionCards',
+                blockType: 'radioGroup',
                 name: 'q6',
                 label: 'Pick one',
                 options: [{ label: 'A', value: 'a' }, { label: 'B', value: 'b' }],
                 layout: 'row',
               },
               {
-                blockType: 'budgetRange',
+                blockType: 'checkboxGroup',
                 name: 'q7',
-                label: 'Budget',
-                options: [{ label: 'Low', value: 'low' }, { label: 'High', value: 'high' }],
+                label: 'Pick many',
+                options: [{ label: 'X', value: 'x' }, { label: 'Y', value: 'y' }],
               },
               {
-                blockType: 'numberStepper',
+                blockType: 'select',
                 name: 'q8',
-                label: 'Days',
-                defaultValue: 3,
-                min: 1,
-                max: 30,
-                step: 1,
+                label: 'Country',
+                options: [{ label: 'UK', value: 'uk' }],
               },
-              {
-                blockType: 'multiCounter',
-                name: 'q9',
-                label: 'Guests',
-                counters: [
-                  { label: 'Adults', name: 'adults', defaultValue: 1, min: 1 },
-                  { label: 'Children', name: 'children', defaultValue: 0, min: 0 },
-                ],
-              },
-              {
-                blockType: 'selectInput',
-                name: 'q10',
-                label: 'Destination',
-                options: [{ label: 'Paris', value: 'paris' }],
-              },
+              { blockType: 'number', name: 'q9', label: 'Age', min: 0, max: 120, step: 1 },
+              { blockType: 'date', name: 'q10', label: 'Date of birth' },
+              { blockType: 'file', name: 'q11', label: 'CV', accept: '.pdf', maxSizeMB: 5 },
             ],
           },
         ],
@@ -132,14 +121,12 @@ describe('Collections registered by formPlugin', () => {
       },
     })
 
-    expect(form.steps[0].fields).toHaveLength(10)
+    expect(form.steps[0].fields).toHaveLength(11)
   })
 
-  test('enquiry-submissions access.create is false via REST (admin UI cannot create)', async () => {
-    // The access rule returns false for create. Verify by checking the collection config.
-    const collection = payload.collections['enquiry-submissions']
+  test('form-submissions access.create is false (admin UI cannot create)', async () => {
+    const collection = payload.collections['form-submissions']
     expect(collection).toBeDefined()
-    // Access function returns false for unauthenticated create (admin UI would be blocked).
     const accessResult = (collection.config.access?.create as any)?.({ req: { user: null } })
     expect(accessResult).toBe(false)
   })
@@ -149,14 +136,25 @@ describe('fetchFormHandler', () => {
   let seededSlug: string
 
   beforeAll(async () => {
-    // Create a form to fetch
     seededSlug = 'fetch-test-' + Date.now()
     await payload.create({
-      collection: 'enquiry-forms',
+      collection: 'forms',
       data: {
         title: 'Fetch Test Form',
         slug: seededSlug,
-        steps: [{ title: 'Step 1', fields: [{ blockType: 'yesNo', name: 'q', label: 'Q?' }] }],
+        steps: [
+          {
+            title: 'Step 1',
+            fields: [
+              {
+                blockType: 'radioGroup',
+                name: 'q',
+                label: 'Q?',
+                options: [{ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' }],
+              },
+            ],
+          },
+        ],
         submissionActions: [
           {
             blockType: 'confirmationMessage',
@@ -183,8 +181,8 @@ describe('fetchFormHandler', () => {
   })
 
   test('returns 200 with form data for a known slug', async () => {
-    const handler = createFetchFormHandler({ collections: { forms: 'enquiry-forms' }, sendEmail: async () => {} })
-    const request = new Request(`http://localhost:3000/api/enquiry-forms/${seededSlug}`)
+    const handler = createFetchFormHandler({ collections: { forms: 'forms' } })
+    const request = new Request(`http://localhost:3000/api/forms/${seededSlug}`)
     const payloadRequest = await createPayloadRequest({
       config: await config,
       request,
@@ -198,8 +196,8 @@ describe('fetchFormHandler', () => {
   })
 
   test('returns 404 for an unknown slug', async () => {
-    const handler = createFetchFormHandler({ collections: { forms: 'enquiry-forms' }, sendEmail: async () => {} })
-    const request = new Request('http://localhost:3000/api/enquiry-forms/does-not-exist')
+    const handler = createFetchFormHandler({ collections: { forms: 'forms' } })
+    const request = new Request('http://localhost:3000/api/forms/does-not-exist')
     const payloadRequest = await createPayloadRequest({
       config: await config,
       request,
@@ -210,8 +208,8 @@ describe('fetchFormHandler', () => {
   })
 
   test('returns 400 when slug param is missing', async () => {
-    const handler = createFetchFormHandler({ collections: { forms: 'enquiry-forms' }, sendEmail: async () => {} })
-    const request = new Request('http://localhost:3000/api/enquiry-forms/')
+    const handler = createFetchFormHandler({ collections: { forms: 'forms' } })
+    const request = new Request('http://localhost:3000/api/forms/')
     const payloadRequest = await createPayloadRequest({
       config: await config,
       request,
@@ -230,7 +228,7 @@ describe('submitFormHandler', () => {
     capturedEmails.length = 0
     formSlug = 'submit-test-' + Date.now()
     await payload.create({
-      collection: 'enquiry-forms',
+      collection: 'forms',
       data: {
         title: 'Submit Test Form',
         slug: formSlug,
@@ -238,9 +236,15 @@ describe('submitFormHandler', () => {
           {
             title: 'Step 1',
             fields: [
-              { blockType: 'textInput', name: 'full_name', label: 'Full Name', required: true, inputType: 'text' },
-              { blockType: 'emailInput', name: 'email', label: 'Email', required: true },
-              { blockType: 'yesNo', name: 'newsletter', label: 'Subscribe?', required: false },
+              { blockType: 'text', name: 'full_name', label: 'Full Name', required: true },
+              { blockType: 'email', name: 'email', label: 'Email', required: true },
+              {
+                blockType: 'radioGroup',
+                name: 'newsletter',
+                label: 'Subscribe?',
+                required: false,
+                options: [{ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' }],
+              },
             ],
           },
         ],
@@ -249,7 +253,7 @@ describe('submitFormHandler', () => {
             blockType: 'sendEmail',
             to: 'admin@example.com',
             from: 'noreply@example.com',
-            subject: 'New enquiry from {{full_name}}',
+            subject: 'New submission from {{full_name}}',
             includeSubmissionData: true,
           },
           {
@@ -278,10 +282,12 @@ describe('submitFormHandler', () => {
 
   const makeRequest = async (slug: string, body: object) => {
     const handler = createSubmitFormHandler({
-      collections: { forms: 'enquiry-forms', submissions: 'enquiry-submissions' },
-      sendEmail: async (opts) => { capturedEmails.push(opts) },
+      collections: { forms: 'forms', submissions: 'form-submissions' },
+      sendEmail: async (opts) => {
+        capturedEmails.push(opts)
+      },
     })
-    const request = new Request(`http://localhost:3000/api/enquiry-submit/${slug}`, {
+    const request = new Request(`http://localhost:3000/api/form-submit/${slug}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -302,9 +308,8 @@ describe('submitFormHandler', () => {
     const body = await response.json()
     expect(body.success).toBe(true)
 
-    // Verify stored in DB
     const { docs } = await payload.find({
-      collection: 'enquiry-submissions',
+      collection: 'form-submissions',
       where: { form: { exists: true } },
     })
     const entry = docs.find((d: any) =>
@@ -319,7 +324,7 @@ describe('submitFormHandler', () => {
       data: { full_name: 'Bob', email: 'bob@example.com' },
     })
     expect(capturedEmails).toHaveLength(1)
-    expect(capturedEmails[0].subject).toBe('New enquiry from Bob')
+    expect(capturedEmails[0].subject).toBe('New submission from Bob')
     expect(capturedEmails[0].to).toBe('admin@example.com')
   })
 
@@ -341,7 +346,7 @@ describe('submitFormHandler', () => {
 
   test('returns 422 when required field is missing', async () => {
     const response = await makeRequest(formSlug, {
-      data: { newsletter: 'yes' }, // missing full_name and email
+      data: { newsletter: 'yes' },
     })
     expect(response.status).toBe(422)
     const body = await response.json()
@@ -362,7 +367,7 @@ describe('submitFormHandler', () => {
   test('redirect action url is returned in response actions', async () => {
     const redirectSlug = 'redirect-test-' + Date.now()
     await payload.create({
-      collection: 'enquiry-forms',
+      collection: 'forms',
       data: {
         title: 'Redirect Form',
         slug: redirectSlug,
