@@ -1,26 +1,28 @@
 import type { CollectionConfig } from 'payload'
 
-export type EnquirySubmissionsCollectionOptions = {
+export type SubmissionsCollectionOptions = {
   submissionsSlug: string
   formsSlug: string
+  singularLabel: string
+  pluralLabel: string
 }
 
-export const createEnquirySubmissionsCollection = ({
+export const createSubmissionsCollection = ({
   submissionsSlug,
   formsSlug,
-}: EnquirySubmissionsCollectionOptions): CollectionConfig => ({
+  singularLabel,
+  pluralLabel,
+}: SubmissionsCollectionOptions): CollectionConfig => ({
   slug: submissionsSlug,
-  labels: { singular: 'Enquiry Submission', plural: 'Enquiry Submissions' },
+  labels: { singular: singularLabel, plural: pluralLabel },
+  disableDuplicate: true,
   admin: {
     useAsTitle: 'submittedAt',
-    defaultColumns: ['form', 'submittedAt'],
+    defaultColumns: ['form', 'submittedAt', 'metadata'],
   },
-  disableDuplicate: true,
   access: {
-    // Submissions are created via the API endpoint (local API, bypasses access).
-    // Disable admin-UI creation to prevent accidental manual entries.
-    create: () => false,
     read: ({ req: { user } }) => !!user,
+    create: () => false,
     update: ({ req: { user } }) => !!user,
     delete: ({ req: { user } }) => !!user,
   },
@@ -30,20 +32,18 @@ export const createEnquirySubmissionsCollection = ({
       type: 'relationship',
       relationTo: formsSlug as any,
       required: true,
-      index: true,
     },
     {
       name: 'submittedAt',
       type: 'date',
       required: true,
-      index: true,
       admin: { readOnly: true },
     },
     {
       name: 'data',
       type: 'array',
       fields: [
-        { name: 'fieldName', type: 'text' },
+        { name: 'fieldName', type: 'text', required: true },
         { name: 'value', type: 'text' },
       ],
     },

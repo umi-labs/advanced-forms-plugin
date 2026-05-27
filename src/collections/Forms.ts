@@ -1,29 +1,25 @@
-import type { CollectionConfig } from 'payload'
-import { BudgetRangeBlock } from '../blocks/fields/BudgetRange.js'
-import { CheckboxInputBlock } from '../blocks/fields/CheckboxInput.js'
-import { EmailInputBlock } from '../blocks/fields/EmailInput.js'
-import { MultiCounterBlock } from '../blocks/fields/MultiCounter.js'
-import { NumberStepperBlock } from '../blocks/fields/NumberStepper.js'
-import { OptionCardsBlock } from '../blocks/fields/OptionCards.js'
-import { SelectInputBlock } from '../blocks/fields/SelectInput.js'
-import { TextInputBlock } from '../blocks/fields/TextInput.js'
-import { TextareaInputBlock } from '../blocks/fields/TextareaInput.js'
-import { YesNoBlock } from '../blocks/fields/YesNo.js'
+import type { Block, CollectionConfig } from 'payload'
 import { ConfirmationMessageBlock } from '../blocks/submissionActions/ConfirmationMessage.js'
 import { RedirectBlock } from '../blocks/submissionActions/Redirect.js'
 import { SendEmailBlock } from '../blocks/submissionActions/SendEmail.js'
 
-export type EnquiryFormsCollectionOptions = {
+export type FormsCollectionOptions = {
   formsSlug: string
   mediaCollection: string
+  singularLabel: string
+  pluralLabel: string
+  fieldBlocks: Block[]
 }
 
-export const createEnquiryFormsCollection = ({
+export const createFormsCollection = ({
   formsSlug,
   mediaCollection,
-}: EnquiryFormsCollectionOptions): CollectionConfig => ({
+  singularLabel,
+  pluralLabel,
+  fieldBlocks,
+}: FormsCollectionOptions): CollectionConfig => ({
   slug: formsSlug,
-  labels: { singular: 'Enquiry Form', plural: 'Enquiry Forms' },
+  labels: { singular: singularLabel, plural: pluralLabel },
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', 'updatedAt'],
@@ -47,7 +43,7 @@ export const createEnquiryFormsCollection = ({
       unique: true,
       index: true,
       admin: {
-        description: 'Used in the API and frontend. Must be unique. E.g. "travel-enquiry".',
+        description: 'Used in the API and frontend. Must be unique, e.g. "contact-form".',
       },
     },
     {
@@ -71,18 +67,7 @@ export const createEnquiryFormsCollection = ({
         {
           name: 'fields',
           type: 'blocks',
-          blocks: [
-            YesNoBlock,
-            OptionCardsBlock,
-            NumberStepperBlock,
-            MultiCounterBlock,
-            BudgetRangeBlock,
-            TextInputBlock,
-            EmailInputBlock,
-            TextareaInputBlock,
-            SelectInputBlock,
-            CheckboxInputBlock,
-          ],
+          blocks: fieldBlocks,
         },
       ],
     },
