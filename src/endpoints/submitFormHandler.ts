@@ -62,7 +62,7 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
       )
     }
 
-    const form = result.docs[0] as unknown as FormDocument
+    const form = result.docs[0] as FormDocument
 
     // Validate required fields across all steps
     const errors: Array<{ field: string; message: string }> = []

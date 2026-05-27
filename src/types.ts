@@ -222,9 +222,7 @@ export type BuiltInFieldSlug =
   | 'date'
   | 'file'
 
-export type FieldsConfig = Partial<Record<BuiltInFieldSlug, boolean | { block: Block }>> & {
-  [key: string]: boolean | { block: Block } | undefined
-}
+export type FieldsConfig = Record<string, boolean | { block: Block } | undefined>
 
 export type FormPluginConfig = {
   disabled?: boolean
