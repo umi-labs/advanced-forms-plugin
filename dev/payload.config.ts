@@ -20,7 +20,7 @@ if (!process.env.ROOT_DIR) {
 const buildConfigWithMemoryDB = async () => {
   if (process.env.NODE_ENV === 'test' || !process.env.DATABASE_URL) {
     const memoryDB = await MongoMemoryReplSet.create({
-      replSet: { count: 3, dbName: 'payloadmemory' },
+      replSet: { count: 1, dbName: 'payloadmemory' },
     })
     process.env.DATABASE_URL = `${memoryDB.getUri()}&retryWrites=true`
   }
