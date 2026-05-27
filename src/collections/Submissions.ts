@@ -30,7 +30,7 @@ export const createSubmissionsCollection = ({
     {
       name: 'form',
       type: 'relationship',
-      relationTo: formsSlug as any,
+      relationTo: formsSlug,
       required: true,
     },
     {

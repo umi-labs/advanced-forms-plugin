@@ -61,7 +61,7 @@ export const createFormsCollection = ({
         {
           name: 'icon',
           type: 'upload',
-          relationTo: mediaCollection as any,
+          relationTo: mediaCollection,
           admin: { description: 'Optional icon shown in the step indicator.' },
         },
         {
