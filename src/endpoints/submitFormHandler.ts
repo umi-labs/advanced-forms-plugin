@@ -1,5 +1,5 @@
 import type { PayloadHandler } from 'payload'
-import type { EnquiryForm, FormPluginConfig } from '../types.js'
+import type { FormDocument, FormPluginConfig } from '../types.js'
 import { sanitizeSubmission } from '../utilities/sanitizeSubmission.js'
 
 function interpolate(template: string, data: Record<string, unknown>): string {
@@ -62,7 +62,7 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
       )
     }
 
-    const form = result.docs[0] as unknown as EnquiryForm
+    const form = result.docs[0] as unknown as FormDocument
 
     // Validate required fields across all steps
     const errors: Array<{ field: string; message: string }> = []

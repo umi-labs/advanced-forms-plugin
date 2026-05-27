@@ -1,5 +1,5 @@
+import type { Block } from 'payload'
 import type { ReactNode } from 'react'
-import type { UseFormReturn } from 'react-hook-form'
 
 // ---------------------------------------------------------------------------
 // Shared sub-types
@@ -38,82 +38,85 @@ export type BaseFieldBlock = {
 // Field block types (discriminated union on blockType)
 // ---------------------------------------------------------------------------
 
-export type YesNoBlock = BaseFieldBlock & {
-  blockType: 'yesNo'
+export type TextBlock = BaseFieldBlock & {
+  blockType: 'text'
+  placeholder?: string | null
+  width?: 'full' | 'half' | null
 }
 
-export type OptionCardsBlock = BaseFieldBlock & {
-  blockType: 'optionCards'
-  options?: SelectOption[] | null
-  layout?: 'row' | 'grid' | null
-}
-
-export type NumberStepperBlock = BaseFieldBlock & {
-  blockType: 'numberStepper'
-  defaultValue?: number | null
-  min?: number | null
-  max?: number | null
-  step?: number | null
+export type EmailBlock = BaseFieldBlock & {
+  blockType: 'email'
   placeholder?: string | null
 }
 
-export type MultiCounterItem = {
-  id?: string
-  label: string
-  name: string
-  defaultValue?: number | null
-  min?: number | null
-  max?: number | null
-}
-
-export type MultiCounterBlock = BaseFieldBlock & {
-  blockType: 'multiCounter'
-  counters?: MultiCounterItem[] | null
-}
-
-export type BudgetRangeBlock = BaseFieldBlock & {
-  blockType: 'budgetRange'
-  options?: SelectOption[] | null
-}
-
-export type TextInputBlock = BaseFieldBlock & {
-  blockType: 'textInput'
-  placeholder?: string | null
-  inputType?: 'text' | 'tel' | null
-}
-
-export type EmailInputBlock = BaseFieldBlock & {
-  blockType: 'emailInput'
+export type PhoneBlock = BaseFieldBlock & {
+  blockType: 'phone'
   placeholder?: string | null
 }
 
-export type TextareaInputBlock = BaseFieldBlock & {
-  blockType: 'textareaInput'
+export type TextareaBlock = BaseFieldBlock & {
+  blockType: 'textarea'
   placeholder?: string | null
   rows?: number | null
 }
 
-export type SelectInputBlock = BaseFieldBlock & {
-  blockType: 'selectInput'
+export type CheckboxBlock = BaseFieldBlock & {
+  blockType: 'checkbox'
+}
+
+export type RadioGroupBlock = BaseFieldBlock & {
+  blockType: 'radioGroup'
+  options?: SelectOption[] | null
+  layout?: 'row' | 'grid' | null
+}
+
+export type CheckboxGroupBlock = BaseFieldBlock & {
+  blockType: 'checkboxGroup'
+  options?: SelectOption[] | null
+  layout?: 'row' | 'grid' | null
+}
+
+export type SelectBlock = BaseFieldBlock & {
+  blockType: 'select'
   placeholder?: string | null
   options?: SelectOption[] | null
 }
 
-export type CheckboxInputBlock = BaseFieldBlock & {
-  blockType: 'checkboxInput'
+export type NumberBlock = BaseFieldBlock & {
+  blockType: 'number'
+  placeholder?: string | null
+  defaultValue?: number | null
+  min?: number | null
+  max?: number | null
+  step?: number | null
+}
+
+export type DateBlock = BaseFieldBlock & {
+  blockType: 'date'
+  placeholder?: string | null
+  min?: string | null
+  max?: string | null
+}
+
+export type FileBlock = BaseFieldBlock & {
+  blockType: 'file'
+  accept?: string | null
+  maxSizeMB?: number | null
+  collection?: string | null
 }
 
 export type FormFieldBlock =
-  | YesNoBlock
-  | OptionCardsBlock
-  | NumberStepperBlock
-  | MultiCounterBlock
-  | BudgetRangeBlock
-  | TextInputBlock
-  | EmailInputBlock
-  | TextareaInputBlock
-  | SelectInputBlock
-  | CheckboxInputBlock
+  | TextBlock
+  | EmailBlock
+  | PhoneBlock
+  | TextareaBlock
+  | CheckboxBlock
+  | RadioGroupBlock
+  | CheckboxGroupBlock
+  | SelectBlock
+  | NumberBlock
+  | DateBlock
+  | FileBlock
 
 // ---------------------------------------------------------------------------
 // Submission action block types
@@ -148,10 +151,10 @@ export type SubmissionActionBlock =
   | RedirectActionBlock
 
 // ---------------------------------------------------------------------------
-// EnquiryForm aggregate
+// FormDocument aggregate (formerly EnquiryForm)
 // ---------------------------------------------------------------------------
 
-export type EnquiryFormStep = {
+export type FormStep = {
   id?: string
   title: string
   icon?: MediaObject | null
@@ -164,11 +167,11 @@ export type AdditionalContent = {
   content?: unknown
 }
 
-export type EnquiryForm = {
+export type FormDocument = {
   id: string
   title: string
   slug: string
-  steps: EnquiryFormStep[]
+  steps: FormStep[]
   additionalContent?: AdditionalContent | null
   submissionActions: SubmissionActionBlock[]
   updatedAt: string
@@ -193,7 +196,7 @@ export type SubmitError = {
 }
 
 // ---------------------------------------------------------------------------
-// Plugin config (also re-exported from index.ts)
+// Plugin config
 // ---------------------------------------------------------------------------
 
 export type SendEmailOptions = {
@@ -206,41 +209,61 @@ export type SendEmailOptions = {
   formTitle: string
 }
 
+export type BuiltInFieldSlug =
+  | 'text'
+  | 'email'
+  | 'phone'
+  | 'textarea'
+  | 'checkbox'
+  | 'radioGroup'
+  | 'checkboxGroup'
+  | 'select'
+  | 'number'
+  | 'date'
+  | 'file'
+
+export type FieldsConfig = Partial<Record<BuiltInFieldSlug, boolean | { block: Block }>> & {
+  [key: string]: boolean | { block: Block } | undefined
+}
+
 export type FormPluginConfig = {
   disabled?: boolean
   baseUrl?: string
   sendEmail?: (opts: SendEmailOptions) => Promise<void>
-  /** Slug of the media collection used for step icons. Defaults to 'media'. */
+  /** Slug of the Payload media collection used for step icons. Defaults to 'media'. */
   mediaCollection?: string
   collections?: {
+    /** Slug for the forms collection. Defaults to 'forms'. */
     forms?: string
+    /** Slug for the submissions collection. Defaults to 'form-submissions'. */
     submissions?: string
   }
+  /** Override admin labels for the plugin's collections. */
+  labels?: {
+    /** Singular label for the forms collection. Defaults to 'Form'. */
+    forms?: string
+    /** Singular label for the submissions collection. Defaults to 'Form Submission'. */
+    submissions?: string
+  }
+  /**
+   * Configure which field blocks are available in the form builder.
+   * - Omit key or set to `true`: include default block
+   * - Set to `false`: exclude block
+   * - Set to `{ block: MyBlock }`: replace default block with custom
+   * - Add a new key with `{ block: MyBlock }`: add custom block type
+   */
+  fields?: FieldsConfig
 }
 
 // ---------------------------------------------------------------------------
-// Frontend component props (used in Plans 4 & 5)
+// Frontend component props
 // ---------------------------------------------------------------------------
 
-export type EnquiryFormProps = {
-  form: EnquiryForm
+export type FormProps = {
+  form: FormDocument
   apiBase?: string
   className?: string
   onSuccess?: (result: SubmitResult) => void
   onError?: (error: SubmitError) => void
   additionalContent?: ReactNode
-}
-
-export type UseEnquiryFormReturn = {
-  currentStep: number
-  totalSteps: number
-  stepData: EnquiryFormStep
-  form: UseFormReturn<Record<string, unknown>>
-  goNext: () => Promise<boolean>
-  goBack: () => void
-  submit: () => Promise<SubmitResult>
-  isSubmitting: boolean
-  isComplete: boolean
-  result: SubmitResult | null
-  error: SubmitError | null
 }
