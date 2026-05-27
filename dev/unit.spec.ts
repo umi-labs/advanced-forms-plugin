@@ -224,3 +224,52 @@ describe('RedirectBlock', () => {
     expect(delay?.defaultValue).toBe(0)
   })
 })
+
+import { buildFormURL } from '../src/utilities/buildFormURL.js'
+import { sanitizeSubmission } from '../src/utilities/sanitizeSubmission.js'
+
+describe('buildFormURL', () => {
+  test('returns relative path when no baseUrl given', () => {
+    expect(buildFormURL({ slug: 'my-form' })).toBe('/api/enquiry-forms/my-form')
+  })
+
+  test('returns absolute URL when baseUrl given', () => {
+    expect(buildFormURL({ slug: 'my-form', baseUrl: 'https://example.com' }))
+      .toBe('https://example.com/api/enquiry-forms/my-form')
+  })
+
+  test('respects custom formsSlug', () => {
+    expect(buildFormURL({ slug: 'my-form', formsSlug: 'forms' }))
+      .toBe('/api/forms/my-form')
+  })
+})
+
+describe('sanitizeSubmission', () => {
+  test('converts string values as-is', () => {
+    const result = sanitizeSubmission({ name: 'Alice', city: 'London' })
+    expect(result).toEqual([
+      { fieldName: 'name', value: 'Alice' },
+      { fieldName: 'city', value: 'London' },
+    ])
+  })
+
+  test('JSON-stringifies object values (e.g. multiCounter)', () => {
+    const result = sanitizeSubmission({ guests: { adults: 2, children: 0 } })
+    expect(result).toEqual([
+      { fieldName: 'guests', value: '{"adults":2,"children":0}' },
+    ])
+  })
+
+  test('converts numbers to strings', () => {
+    const result = sanitizeSubmission({ duration: 7 })
+    expect(result).toEqual([{ fieldName: 'duration', value: '7' }])
+  })
+
+  test('converts null/undefined to empty string', () => {
+    const result = sanitizeSubmission({ notes: null, extra: undefined })
+    expect(result).toEqual([
+      { fieldName: 'notes', value: '' },
+      { fieldName: 'extra', value: '' },
+    ])
+  })
+})
