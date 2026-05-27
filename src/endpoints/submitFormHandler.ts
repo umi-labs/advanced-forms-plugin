@@ -31,7 +31,7 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
 
     let body: { data?: Record<string, unknown>; metadata?: Record<string, unknown> }
     try {
-      body = (await req.json()) as typeof body
+      body = (await req.json?.()) as typeof body
     } catch {
       return Response.json(
         { success: false, errors: [{ field: '', message: 'Invalid JSON body' }] },
