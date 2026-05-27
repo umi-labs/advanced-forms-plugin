@@ -1,7 +1,7 @@
-import type { EnquiryForm } from '../types.js'
+import type { FormDocument } from '../types.js'
 import { buildFormURL } from './buildFormURL.js'
 
-export async function fetchEnquiryForm({
+export async function fetchForm({
   slug,
   baseUrl,
   formsSlug,
@@ -9,18 +9,11 @@ export async function fetchEnquiryForm({
   slug: string
   baseUrl?: string
   formsSlug?: string
-}): Promise<EnquiryForm> {
+}): Promise<FormDocument> {
   const url = buildFormURL({ slug, baseUrl, formsSlug })
-
-  const res = await fetch(url, {
-    // Allow consuming Next.js apps to control caching via their own fetch options.
-    next: { revalidate: 0 },
-  } as RequestInit)
-
+  const res = await fetch(url, { next: { revalidate: 0 } } as RequestInit)
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error((body as any).error ?? `Failed to fetch form '${slug}': ${res.status}`)
+    throw new Error(`Failed to fetch form "${slug}": ${res.status} ${res.statusText}`)
   }
-
-  return res.json() as Promise<EnquiryForm>
+  return res.json() as Promise<FormDocument>
 }

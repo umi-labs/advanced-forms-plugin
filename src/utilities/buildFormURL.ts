@@ -1,7 +1,7 @@
 export function buildFormURL({
   baseUrl,
   slug,
-  formsSlug = 'enquiry-form-data',
+  formsSlug = 'form-data',
 }: {
   baseUrl?: string
   slug: string

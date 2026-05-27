@@ -1,10 +1,10 @@
 import { EnquiryForm } from '@foundrykit/form-plugin/client'
-import { fetchEnquiryForm } from '@foundrykit/form-plugin/rsc'
+import { fetchForm } from '@foundrykit/form-plugin/rsc'
 
 export default async function TestFormPage() {
   let form
   try {
-    form = await fetchEnquiryForm({
+    form = await fetchForm({
       slug: 'travel-enquiry',
       baseUrl: process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3000',
     })
