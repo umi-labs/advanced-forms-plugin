@@ -1,13 +1,19 @@
 import type { EmailAdapter, SendEmailOptions } from 'payload'
 
 /**
- * Logs all emails to stdout
+ * Captures all emails sent during tests. Tests can import this and clear/inspect it.
+ */
+export const capturedEmails: SendEmailOptions[] = []
+
+/**
+ * Logs all emails to stdout and captures them for inspection in tests.
  */
 export const testEmailAdapter: EmailAdapter<void> = ({ payload }) => ({
   name: 'test-email-adapter',
   defaultFromAddress: 'dev@payloadcms.com',
   defaultFromName: 'Payload Test',
   sendEmail: async (message) => {
+    capturedEmails.push(message)
     const stringifiedTo = getStringifiedToAddress(message)
     const res = `Test email to: '${stringifiedTo}', Subject: '${message.subject}'`
     payload.logger.info({ content: message, msg: res })

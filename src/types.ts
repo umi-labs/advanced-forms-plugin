@@ -241,15 +241,6 @@ export type SubmitError = {
 // Plugin config
 // ---------------------------------------------------------------------------
 
-export type SendEmailOptions = {
-  to: string
-  replyTo?: string
-  subject: string
-  html: string
-  submissionData: Record<string, unknown>
-  formTitle: string
-}
-
 export type BuiltInFieldSlug =
   | 'text'
   | 'email'
@@ -268,7 +259,6 @@ export type FieldsConfig = Record<string, boolean | { block: Block } | undefined
 export type FormPluginConfig = {
   disabled?: boolean
   baseUrl?: string
-  sendEmail?: (opts: SendEmailOptions) => Promise<void>
   /** Slug of the Payload media collection used for step icons. Defaults to 'media'. */
   mediaCollection?: string
   collections?: {

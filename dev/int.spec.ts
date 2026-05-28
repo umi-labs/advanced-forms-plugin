@@ -4,6 +4,7 @@ import { createPayloadRequest, getPayload } from 'payload'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { createFetchFormHandler } from '../src/endpoints/fetchFormHandler.js'
 import { createSubmitFormHandler } from '../src/endpoints/submitFormHandler.js'
+import { capturedEmails } from './helpers/testEmailAdapter.js'
 
 let payload: Payload
 
@@ -222,7 +223,6 @@ describe('fetchFormHandler', () => {
 
 describe('submitFormHandler', () => {
   let formSlug: string
-  const capturedEmails: any[] = []
 
   beforeAll(async () => {
     capturedEmails.length = 0
@@ -282,9 +282,6 @@ describe('submitFormHandler', () => {
   const makeRequest = async (slug: string, body: object) => {
     const handler = createSubmitFormHandler({
       collections: { forms: 'forms', submissions: 'form-submissions' },
-      sendEmail: async (opts) => {
-        capturedEmails.push(opts)
-      },
     })
     const request = new Request(`http://localhost:3000/api/form-submit/${slug}`, {
       method: 'POST',

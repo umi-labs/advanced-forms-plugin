@@ -105,23 +105,12 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
             ? buildEmailHtml(form.title, submissionData)
             : undefined
 
-        if (pluginOptions.sendEmail) {
-          await pluginOptions.sendEmail({
-            to: action.to,
-            replyTo: action.replyTo ?? emailValue,
-            subject: interpolate(action.subject, submissionData),
-            html: html ?? '',
-            submissionData,
-            formTitle: form.title,
-          })
-        } else {
-          await payload.sendEmail({
-            to: action.to,
-            replyTo: action.replyTo ?? emailValue,
-            subject: interpolate(action.subject, submissionData),
-            html,
-          })
-        }
+        await payload.sendEmail({
+          to: action.to,
+          replyTo: action.replyTo ?? emailValue,
+          subject: interpolate(action.subject, submissionData),
+          html,
+        })
       } else if (action.blockType === 'confirmationMessage') {
         responseActions.confirmationMessage = action.message
       } else if (action.blockType === 'redirect') {

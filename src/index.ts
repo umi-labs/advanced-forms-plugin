@@ -16,7 +16,7 @@ import { createFetchFormHandler } from './endpoints/fetchFormHandler.js'
 import { createSubmitFormHandler } from './endpoints/submitFormHandler.js'
 import type { FieldsConfig, FormPluginConfig } from './types.js'
 
-export type { FormPluginConfig, SendEmailOptions } from './types.js'
+export type { FormPluginConfig } from './types.js'
 
 const DEFAULT_FIELD_BLOCKS: Block[] = [
   TextBlock,

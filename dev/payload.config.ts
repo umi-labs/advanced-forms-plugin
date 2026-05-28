@@ -49,14 +49,7 @@ const buildConfigWithMemoryDB = async () => {
     onInit: async (payload) => {
       await seed(payload)
     },
-    plugins: [
-      formPlugin({
-        sendEmail: async (opts) => {
-          // Dev: log emails to console instead of sending
-          console.log('[dev email]', { to: opts.to, subject: opts.subject })
-        },
-      }),
-    ],
+    plugins: [formPlugin({})],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
     sharp,
     typescript: {

@@ -10,7 +10,7 @@ A multi-step form plugin for [Payload CMS 3](https://payloadcms.com). Adds a for
 - **Two collections** — `forms` and `form-submissions` added to your Payload config automatically
 - **REST API** — fetch form data and submit forms via Payload custom endpoints
 - **Frontend component** — `<EnquiryForm>` React client component with built-in step navigation and validation
-- **Fully customisable** — disable, replace, or add field block types; rename collection slugs; supply a custom email handler
+- **Fully customisable** — disable, replace, or add field block types; rename collection slugs
 
 ---
 
@@ -36,16 +36,17 @@ import { formPlugin } from '@foundrykit/advanced-forms-plugin'
 import { buildConfig } from 'payload'
 
 export default buildConfig({
-  plugins: [
-    formPlugin({
-      sendEmail: async ({ to, from, replyTo, subject, html }) => {
-        // call your email provider here (Resend, Nodemailer, etc.)
-      },
-    }),
-  ],
+  // Configure your email adapter here — the plugin uses payload.sendEmail
+  // for the `sendEmail` submission action.
+  // email: nodemailerAdapter({ ... }) or resendAdapter({ ... }), etc.
+  plugins: [formPlugin({})],
   // ...rest of your config
 })
 ```
+
+The `sendEmail` submission action uses Payload's built-in `payload.sendEmail`, which
+delegates to the [email adapter](https://payloadcms.com/docs/email/overview) you
+configure on the Payload config. No plugin-level email handler is required.
 
 ---
 
@@ -59,28 +60,12 @@ formPlugin(options: FormPluginConfig)
 |---|---|---|---|
 | `disabled` | `boolean` | `false` | Register collections but skip adding endpoints |
 | `baseUrl` | `string` | `''` | Base URL prepended when building form API URLs (e.g. `https://example.com`) |
-| `sendEmail` | `(opts: SendEmailOptions) => Promise<void>` | — | Called for each `sendEmail` submission action |
 | `mediaCollection` | `string` | `'media'` | Slug of your media collection, used for step icon uploads |
 | `collections.forms` | `string` | `'forms'` | Slug for the forms collection |
 | `collections.submissions` | `string` | `'form-submissions'` | Slug for the submissions collection |
 | `labels.forms` | `string` | `'Form'` | Singular admin label for forms |
 | `labels.submissions` | `string` | `'Form Submission'` | Singular admin label for submissions |
 | `fields` | `FieldsConfig` | all built-ins | Control which field block types are available in the form builder — see [Customising field blocks](#customising-field-blocks) |
-
-### `SendEmailOptions`
-
-```ts
-type SendEmailOptions = {
-  to: string
-  replyTo?: string
-  subject: string       // already interpolated (supports {{fieldName}} tokens)
-  html: string          // auto-generated table of submitted values
-  submissionData: Record<string, unknown>
-  formTitle: string
-}
-```
-
-If no `sendEmail` handler is provided, the plugin falls back to `payload.sendEmail` (uses Payload's configured email adapter).
 
 ---
 
@@ -135,7 +120,7 @@ Configure one or more actions per form. They execute in the order they appear.
 
 | Block | Description |
 |---|---|
-| `sendEmail` | Sends an email via your `sendEmail` handler. Subject supports `{{fieldName}}` interpolation. |
+| `sendEmail` | Sends an email via `payload.sendEmail` (uses your Payload [email adapter](https://payloadcms.com/docs/email/overview)). Subject supports `{{fieldName}}` interpolation. |
 | `confirmationMessage` | Returns a Lexical rich-text message in the API response for the frontend to display. |
 | `redirect` | Returns a `redirectUrl` in the API response. The frontend component handles the navigation. |
 
