@@ -20,6 +20,11 @@
     "emitDeclarationOnly": true,
     "target": "ES2022",
     "composite": true,
+    "paths": {
+      "@foundrykit/advanced-forms-plugin/client": ["./src/exports/client.ts"],
+      "@foundrykit/advanced-forms-plugin/rsc": ["./src/exports/rsc.ts"],
+      "@foundrykit/advanced-forms-plugin": ["./src/index.ts"]
+    },
     "plugins": [
       {
         "name": "next"
