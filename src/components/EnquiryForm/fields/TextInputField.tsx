@@ -21,7 +21,7 @@ export function TextInputField({ field, form }: Props) {
       </label>
       <input
         id={`field-${field.name}`}
-        type={field.inputType ?? 'text'}
+        type="text"
         placeholder={field.placeholder ?? undefined}
         className={['enquiry-field__input', error ? 'enquiry-field__input--error' : '']
           .filter(Boolean)

@@ -1,13 +1,18 @@
 import { describe, expect, test } from 'vitest'
 import { baseFieldBlockFields } from '../src/blocks/fields/shared.js'
 
+/** Flatten row-type fields one level deep so tests can find named fields regardless of layout. */
+function flatFields(fields: any[]): any[] {
+  return fields.flatMap((f) => (f.type === 'row' ? f.fields : [f]))
+}
+
 describe('baseFieldBlockFields', () => {
   test('exports an array', () => {
     expect(Array.isArray(baseFieldBlockFields)).toBe(true)
   })
 
   test('includes name, label, required, and tooltip fields', () => {
-    const names = baseFieldBlockFields.map((f) => ('name' in f ? f.name : null))
+    const names = flatFields(baseFieldBlockFields).map((f) => ('name' in f ? f.name : null))
     expect(names).toContain('name')
     expect(names).toContain('label')
     expect(names).toContain('required')
@@ -15,17 +20,17 @@ describe('baseFieldBlockFields', () => {
   })
 
   test('name field is required text', () => {
-    const field = baseFieldBlockFields.find((f) => 'name' in f && f.name === 'name')
+    const field = flatFields(baseFieldBlockFields).find((f) => 'name' in f && f.name === 'name')
     expect(field).toMatchObject({ type: 'text', required: true })
   })
 
   test('label field is required text', () => {
-    const field = baseFieldBlockFields.find((f) => 'name' in f && f.name === 'label')
+    const field = flatFields(baseFieldBlockFields).find((f) => 'name' in f && f.name === 'label')
     expect(field).toMatchObject({ type: 'text', required: true })
   })
 
   test('tooltip group has enabled checkbox and conditional text', () => {
-    const tooltip = baseFieldBlockFields.find((f) => 'name' in f && f.name === 'tooltip') as any
+    const tooltip = flatFields(baseFieldBlockFields).find((f) => 'name' in f && f.name === 'tooltip') as any
     expect(tooltip?.type).toBe('group')
     const subNames = tooltip?.fields?.map((f: any) => f.name)
     expect(subNames).toContain('enabled')
@@ -48,19 +53,19 @@ import { FileBlock } from '../src/blocks/fields/File.js'
 describe('TextBlock', () => {
   test('has slug text', () => expect(TextBlock.slug).toBe('text'))
   test('has all base fields', () => {
-    const names = TextBlock.fields.map((f) => ('name' in f ? f.name : null))
+    const names = flatFields(TextBlock.fields).map((f) => ('name' in f ? f.name : null))
     expect(names).toContain('name')
     expect(names).toContain('label')
     expect(names).toContain('required')
     expect(names).toContain('tooltip')
   })
   test('has placeholder and width fields', () => {
-    const names = TextBlock.fields.map((f) => ('name' in f ? f.name : null))
+    const names = flatFields(TextBlock.fields).map((f) => ('name' in f ? f.name : null))
     expect(names).toContain('placeholder')
     expect(names).toContain('width')
   })
   test('width defaults to full', () => {
-    const field = TextBlock.fields.find((f) => 'name' in f && f.name === 'width') as any
+    const field = flatFields(TextBlock.fields).find((f) => 'name' in f && f.name === 'width') as any
     expect(field?.defaultValue).toBe('full')
   })
 })
@@ -97,7 +102,7 @@ describe('TextareaBlock', () => {
 describe('CheckboxBlock', () => {
   test('has slug checkbox', () => expect(CheckboxBlock.slug).toBe('checkbox'))
   test('has only base fields', () => {
-    const extraNames = CheckboxBlock.fields
+    const extraNames = flatFields(CheckboxBlock.fields)
       .map((f) => ('name' in f ? f.name : null))
       .filter((n) => !['name', 'label', 'required', 'tooltip'].includes(n as string))
     expect(extraNames).toHaveLength(0)
@@ -202,20 +207,18 @@ import { RedirectBlock } from '../src/blocks/submissionActions/Redirect.js'
 
 describe('SendEmailBlock', () => {
   test('has slug sendEmail', () => expect(SendEmailBlock.slug).toBe('sendEmail'))
-  test('has to, from, replyTo, subject, includeSubmissionData fields', () => {
-    const names = SendEmailBlock.fields.map((f) => ('name' in f ? f.name : null))
+  test('has to, replyTo, subject, includeSubmissionData fields', () => {
+    const names = flatFields(SendEmailBlock.fields).map((f) => ('name' in f ? f.name : null))
     expect(names).toContain('to')
-    expect(names).toContain('from')
     expect(names).toContain('replyTo')
     expect(names).toContain('subject')
     expect(names).toContain('includeSubmissionData')
   })
-  test('to, from, and subject are required', () => {
-    const toField = SendEmailBlock.fields.find((f) => 'name' in f && f.name === 'to') as any
-    const fromField = SendEmailBlock.fields.find((f) => 'name' in f && f.name === 'from') as any
-    const subjectField = SendEmailBlock.fields.find((f) => 'name' in f && f.name === 'subject') as any
+  test('to and subject are required', () => {
+    const allFields = flatFields(SendEmailBlock.fields)
+    const toField = allFields.find((f) => 'name' in f && f.name === 'to') as any
+    const subjectField = allFields.find((f) => 'name' in f && f.name === 'subject') as any
     expect(toField?.required).toBe(true)
-    expect(fromField?.required).toBe(true)
     expect(subjectField?.required).toBe(true)
   })
 })

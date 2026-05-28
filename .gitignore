@@ -8,6 +8,7 @@
 
 /.idea/*
 !/.idea/runConfigurations
+/docs
 
 # testing
 /coverage

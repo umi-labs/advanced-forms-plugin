@@ -1,218 +1,324 @@
-# Payload Plugin Template
+# @foundrykit/form-plugin
 
-A template repo to create a [Payload CMS](https://payloadcms.com) plugin.
+A multi-step form plugin for [Payload CMS 3](https://payloadcms.com). Adds a form builder to your admin panel with 11 built-in field types, configurable submission actions, and a ready-to-use React component for the frontend.
 
-Payload is built with a robust infrastructure intended to support Plugins with ease. This provides a simple, modular, and reusable way for developers to extend the core capabilities of Payload.
+## Features
 
-To build your own Payload plugin, all you need is:
+- **Multi-step forms** — organise fields into named steps with optional icons and a progress indicator
+- **11 field types** — text, email, phone, textarea, checkbox, radio group, checkbox group, select, number, date, file upload
+- **Submission actions** — send email, show a confirmation message, or redirect after submission (multiple actions per form, executed in order)
+- **Two collections** — `forms` and `form-submissions` added to your Payload config automatically
+- **REST API** — fetch form data and submit forms via Payload custom endpoints
+- **Frontend component** — `<EnquiryForm>` React client component with built-in step navigation and validation
+- **Fully customisable** — disable, replace, or add field block types; rename collection slugs; supply a custom email handler
 
-- An understanding of the basic Payload concepts
-- And some JavaScript/Typescript experience
+---
 
-## Background
+## Installation
 
-Here is a short recap on how to integrate plugins with Payload, to learn more visit the [plugin overview page](https://payloadcms.com/docs/plugins/overview).
+```sh
+pnpm add @foundrykit/form-plugin
+```
 
-### How to install a plugin
+**Peer dependencies** (install if not already present):
 
-To install any plugin, simply add it to your payload.config() in the Plugin array.
+```sh
+pnpm add payload react react-hook-form @radix-ui/react-popover
+```
+
+---
+
+## Quick start
 
 ```ts
-import myPlugin from 'my-plugin'
+// payload.config.ts
+import { formPlugin } from '@foundrykit/form-plugin'
+import { buildConfig } from 'payload'
 
-export const config = buildConfig({
+export default buildConfig({
   plugins: [
-    // You can pass options to the plugin
-    myPlugin({
-      enabled: true,
+    formPlugin({
+      sendEmail: async ({ to, from, replyTo, subject, html }) => {
+        // call your email provider here (Resend, Nodemailer, etc.)
+      },
     }),
   ],
+  // ...rest of your config
 })
 ```
 
-### Initialization
+---
 
-The initialization process goes in the following order:
-
-1. Incoming config is validated
-2. **Plugins execute**
-3. Default options are integrated
-4. Sanitization cleans and validates data
-5. Final config gets initialized
-
-## Building the Plugin
-
-When you build a plugin, you are purely building a feature for your project and then abstracting it outside of the project.
-
-### Template Files
-
-In the Payload [plugin template](https://github.com/payloadcms/payload/tree/3.x/templates/plugin), you will see a common file structure that is used across all plugins:
-
-1. root folder
-2. /src folder
-3. /dev folder
-
-#### Root
-
-In the root folder, you will see various files that relate to the configuration of the plugin. We set up our environment in a similar manner in Payload core and across other projects, so hopefully these will look familiar:
-
-- **README**.md\* - This contains instructions on how to use the template. When you are ready, update this to contain instructions on how to use your Plugin.
-- **package**.json\* - Contains necessary scripts and dependencies. Overwrite the metadata in this file to describe your Plugin.
-- .**eslint**.config.js - Eslint configuration for reporting on problematic patterns.
-- .**gitignore** - List specific untracked files to omit from Git.
-- .**prettierrc**.json - Configuration for Prettier code formatting.
-- **tsconfig**.json - Configures the compiler options for TypeScript
-- .**swcrc** - Configuration for SWC, a fast compiler that transpiles and bundles TypeScript.
-- **vitest**.config.js - Config file for Vitest, defining how tests are run and how modules are resolved
-
-**IMPORTANT\***: You will need to modify these files.
-
-#### Dev
-
-In the dev folder, you’ll find a basic payload project, created with `npx create-payload-app` and the blank template.
-
-**IMPORTANT**: Make a copy of the `.env.example` file and rename it to `.env`. Update the `DATABASE_URL` to match the database you are using and your plugin name. Update `PAYLOAD_SECRET` to a unique string.
-**You will not be able to run `pnpm/yarn dev` until you have created this `.env` file.**
-
-`myPlugin` has already been added to the `payload.config()` file in this project.
+## Plugin options
 
 ```ts
-plugins: [
-  myPlugin({
-    collections: {
-      posts: true,
-    },
-  }),
-]
+formPlugin(options: FormPluginConfig)
 ```
 
-Later when you rename the plugin or add additional options, **make sure to update it here**.
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `disabled` | `boolean` | `false` | Register collections but skip adding endpoints |
+| `baseUrl` | `string` | `''` | Base URL prepended when building form API URLs (e.g. `https://example.com`) |
+| `sendEmail` | `(opts: SendEmailOptions) => Promise<void>` | — | Called for each `sendEmail` submission action |
+| `mediaCollection` | `string` | `'media'` | Slug of your media collection, used for step icon uploads |
+| `collections.forms` | `string` | `'forms'` | Slug for the forms collection |
+| `collections.submissions` | `string` | `'form-submissions'` | Slug for the submissions collection |
+| `labels.forms` | `string` | `'Form'` | Singular admin label for forms |
+| `labels.submissions` | `string` | `'Form Submission'` | Singular admin label for submissions |
+| `fields` | `FieldsConfig` | all built-ins | Control which field block types are available in the form builder — see [Customising field blocks](#customising-field-blocks) |
 
-You may wish to add collections or expand the test project depending on the purpose of your plugin. Just make sure to keep this dev environment as simplified as possible - users should be able to install your plugin without additional configuration required.
-
-When you’re ready to start development, initiate the project with `pnpm/npm/yarn dev` and pull up [http://localhost:3000](http://localhost:3000) in your browser.
-
-#### Src
-
-Now that we have our environment setup and we have a dev project ready to - it’s time to build the plugin!
-
-**index.ts**
-
-The essence of a Payload plugin is simply to extend the payload config - and that is exactly what we are doing in this file.
+### `SendEmailOptions`
 
 ```ts
-export const myPlugin =
-  (pluginOptions: MyPluginConfig) =>
-  (config: Config): Config => {
-    // do cool stuff with the config here
+type SendEmailOptions = {
+  to: string
+  from: string
+  replyTo?: string
+  subject: string       // already interpolated (supports {{fieldName}} tokens)
+  html: string          // auto-generated table of submitted values
+  submissionData: Record<string, unknown>
+  formTitle: string
+}
+```
 
-    return config
+---
+
+## Collections
+
+### Forms (`forms`)
+
+Stores form definitions. Publicly readable; create/update/delete require authentication.
+
+Each form document has:
+
+- **title** — display name
+- **slug** — unique identifier used in the API (e.g. `contact-form`)
+- **steps** — one or more steps, each with a title, optional icon, and a list of field blocks
+- **additionalContent** — optional rich text positioned above or below the form
+- **submissionActions** — one or more actions executed on successful submission
+
+### Form Submissions (`form-submissions`)
+
+One document per submission. Stores:
+
+- **form** — relationship to the parent form
+- **submittedAt** — ISO timestamp
+- **data** — key/value pairs of submitted field values
+- **metadata** — `userAgent`, `ip`, `referrer` captured from the request
+
+---
+
+## Field types
+
+| Block slug | Description |
+|---|---|
+| `text` | Single-line text input (supports `half` width) |
+| `email` | Email address input |
+| `phone` | Phone number input |
+| `textarea` | Multi-line text (configurable `rows`) |
+| `checkbox` | Single boolean checkbox |
+| `radioGroup` | Single choice from a list (`row` or `grid` layout) |
+| `checkboxGroup` | Multiple choices from a list (`row` or `grid` layout) |
+| `select` | Dropdown select |
+| `number` | Numeric input with optional `min`, `max`, `step` |
+| `date` | Date picker with optional `min`/`max` |
+| `file` | File upload to a Payload collection (configurable `accept`, `maxSizeMB`) |
+
+All field blocks share these base properties: `name`, `label`, `required`, `tooltip`.
+
+---
+
+## Submission actions
+
+Configure one or more actions per form. They execute in the order they appear.
+
+| Block | Description |
+|---|---|
+| `sendEmail` | Sends an email via your `sendEmail` handler. Subject supports `{{fieldName}}` interpolation. |
+| `confirmationMessage` | Returns a Lexical rich-text message in the API response for the frontend to display. |
+| `redirect` | Returns a `redirectUrl` in the API response. The frontend component handles the navigation. |
+
+---
+
+## REST API
+
+Both endpoints are registered at the Payload API root (`/api` by default).
+
+### `GET /api/form-data/:slug`
+
+Fetches a form document by its slug.
+
+**Response:** the full `FormDocument` JSON.
+
+### `POST /api/form-submit/:formSlug`
+
+Submits field data for a form.
+
+**Request body:**
+
+```json
+{
+  "data": { "name": "Alice", "email": "alice@example.com" },
+  "metadata": { "referrer": "https://example.com/about" }
+}
+```
+
+**Success response (`200`):**
+
+```json
+{
+  "success": true,
+  "actions": {
+    "confirmationMessage": { /* Lexical rich-text node */ },
+    "redirectUrl": "/thank-you"
   }
-```
-
-First, we receive the existing payload config along with any plugin options.
-
-From here, you can extend the config as you wish.
-
-Finally, you return the config and that is it!
-
-##### Spread Syntax
-
-Spread syntax (or the spread operator) is a feature in JavaScript that uses the dot notation **(...)** to spread elements from arrays, strings, or objects into various contexts.
-
-We are going to use spread syntax to allow us to add data to existing arrays without losing the existing data. It is crucial to spread the existing data correctly – else this can cause adverse behavior and conflicts with Payload config and other plugins.
-
-Let’s say you want to build a plugin that adds a new collection:
-
-```ts
-config.collections = [
-  ...(config.collections || []),
-  // Add additional collections here
-]
-```
-
-First we spread the `config.collections` to ensure that we don’t lose the existing collections, then you can add any additional collections just as you would in a regular payload config.
-
-This same logic is applied to other properties like admin, hooks, globals:
-
-```ts
-config.globals = [
-  ...(config.globals || []),
-  // Add additional globals here
-]
-
-config.hooks = {
-  ...(incomingConfig.hooks || {}),
-  // Add additional hooks here
 }
 ```
 
-Some properties will be slightly different to extend, for instance the onInit property:
+**Validation error response (`422`):**
 
-```ts
-import { onInitExtension } from './onInitExtension' // example file
-
-config.onInit = async (payload) => {
-  if (incomingConfig.onInit) await incomingConfig.onInit(payload)
-  // Add additional onInit code by defining an onInitExtension function
-  onInitExtension(pluginOptions, payload)
+```json
+{
+  "success": false,
+  "errors": [{ "field": "email", "message": "Email is required" }]
 }
 ```
 
-If you wish to add to the onInit, you must include the **async/await**. We don’t use spread syntax in this case, instead you must await the existing `onInit` before running additional functionality.
+---
 
-In the template, we have stubbed out some addition `onInit` actions that seeds in a document to the `plugin-collection`, you can use this as a base point to add more actions - and if not needed, feel free to delete it.
+## Frontend usage
 
-##### Types.ts
+### Server component — fetch form data
 
-If your plugin has options, you should define and provide types for these options.
+Import from `@foundrykit/form-plugin/rsc`:
 
-```ts
-export type MyPluginConfig = {
-  /**
-   * List of collections to add a custom field
-   */
-  collections?: Partial<Record<CollectionSlug, true>>
-  /**
-   * Disable the plugin
-   */
-  disabled?: boolean
+```tsx
+import { fetchForm } from '@foundrykit/form-plugin/rsc'
+
+export default async function ContactPage() {
+  const form = await fetchForm({ slug: 'contact-form' })
+  return <ContactForm form={form} />
 }
 ```
 
-If possible, include JSDoc comments to describe the options and their types. This allows a developer to see details about the options in their editor.
+`fetchForm` options:
 
-##### Testing
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `slug` | `string` | required | The form slug to fetch |
+| `baseUrl` | `string` | `''` | Override the API base URL |
+| `formsSlug` | `string` | `'forms'` | Override the forms collection slug used in the URL path |
 
-Having a test suite for your plugin is essential to ensure quality and stability. **Vitest** is a fast, modern testing framework that works seamlessly with Vite and supports TypeScript out of the box.
+### Client component — render the form
 
-Vitest organizes tests into test suites and cases, similar to other testing frameworks. We recommend creating individual tests based on the expected behavior of your plugin from start to finish.
+Import from `@foundrykit/form-plugin/client`:
 
-Writing tests with Vitest is very straightforward, and you can learn more about how it works in the [Vitest documentation.](https://vitest.dev/)
+```tsx
+'use client'
 
-For this template, we stubbed out `int.spec.ts` in the `dev` folder where you can write your tests.
+import { EnquiryForm } from '@foundrykit/form-plugin/client'
+import type { FormDocument } from '@foundrykit/form-plugin'
+
+export function ContactForm({ form }: { form: FormDocument }) {
+  return (
+    <EnquiryForm
+      form={form}
+      onSuccess={(result) => console.log('submitted', result)}
+      onError={(err) => console.error(err)}
+    />
+  )
+}
+```
+
+`EnquiryForm` props:
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `form` | `FormDocument` | required | Form data returned by `fetchForm` |
+| `apiBase` | `string` | `''` | Base URL for the submit endpoint |
+| `className` | `string` | — | CSS class applied to the root element |
+| `onSuccess` | `(result: SubmitResult) => void` | — | Called after successful submission |
+| `onError` | `(error: SubmitError) => void` | — | Called when the server returns validation errors |
+| `additionalContent` | `ReactNode` | — | Extra content rendered above or below the form (respects the `additionalContent.position` setting) |
+
+### Hook — custom form UI
+
+If you need full control over the form UI, use `useEnquiryForm` directly:
+
+```tsx
+'use client'
+
+import { useEnquiryForm } from '@foundrykit/form-plugin/client'
+
+export function MyCustomForm({ form }) {
+  const { currentStep, totalSteps, stepData, form: rhf, goNext, goBack, submit, isSubmitting } =
+    useEnquiryForm({ form, apiBase: '' })
+
+  // render whatever you like
+}
+```
+
+---
+
+## Customising field blocks
+
+The `fields` option in the plugin config controls which block types appear in the form builder:
 
 ```ts
-describe('Plugin tests', () => {
-  // Create tests to ensure expected behavior from the plugin
-  it('some condition that must be met', () => {
-   // Write your test logic here
-   expect(...)
-  })
+formPlugin({
+  fields: {
+    // disable a built-in type
+    file: false,
+
+    // replace a built-in type with your own block
+    text: { block: myCustomTextBlock },
+
+    // add a new type
+    budgetRange: { block: BudgetRangeBlock },
+  },
 })
 ```
 
-## Best practices
+Built-in slugs: `text`, `email`, `phone`, `textarea`, `checkbox`, `radioGroup`, `checkboxGroup`, `select`, `number`, `date`, `file`.
 
-With this tutorial and the plugin template, you should have everything you need to start building your own plugin.
-In addition to the setup, here are other best practices aim we follow:
+---
 
-- **Providing an enable / disable option:** For a better user experience, provide a way to disable the plugin without uninstalling it. This is especially important if your plugin adds additional webpack aliases, this will allow you to still let the webpack run to prevent errors.
-- **Include tests in your GitHub CI workflow**: If you’ve configured tests for your package, integrate them into your workflow to run the tests each time you commit to the plugin repository. Learn more about [how to configure tests into your GitHub CI workflow.](https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs)
-- **Publish your finished plugin to NPM**: The best way to share and allow others to use your plugin once it is complete is to publish an NPM package. This process is straightforward and well documented, find out more [creating and publishing a NPM package here.](https://docs.npmjs.com/creating-and-publishing-scoped-public-packages/).
-- **Add payload-plugin topic tag**: Apply the tag **payload-plugin **to your GitHub repository. This will boost the visibility of your plugin and ensure it gets listed with [existing payload plugins](https://github.com/topics/payload-plugin).
-- **Use [Semantic Versioning](https://semver.org/) (SemVar)** - With the SemVar system you release version numbers that reflect the nature of changes (major, minor, patch). Ensure all major versions reference their Payload compatibility.
+## Architecture overview
 
-# Questions
+```
+src/
+├── index.ts                  # Plugin entry — merges collections and endpoints into Payload config
+├── types.ts                  # All shared TypeScript types (field blocks, FormDocument, plugin config)
+├── collections/
+│   ├── Forms.ts              # createFormsCollection factory
+│   └── Submissions.ts        # createSubmissionsCollection factory
+├── blocks/
+│   ├── fields/               # One file per built-in field block type
+│   └── submissionActions/    # SendEmail, ConfirmationMessage, Redirect blocks
+├── endpoints/
+│   ├── fetchFormHandler.ts   # GET /api/form-data/:slug
+│   └── submitFormHandler.ts  # POST /api/form-submit/:formSlug — validates, stores, fires actions
+├── components/
+│   └── EnquiryForm/          # React client component and useEnquiryForm hook
+├── utilities/
+│   ├── fetchEnquiryForm.ts   # fetchForm — RSC utility wrapping the fetch endpoint
+│   ├── buildFormURL.ts       # URL builder for the form-data endpoint
+│   └── sanitizeSubmission.ts # Sanitises raw form data before storage
+└── exports/
+    ├── client.ts             # @foundrykit/form-plugin/client exports
+    └── rsc.ts                # @foundrykit/form-plugin/rsc exports
+```
 
-Please contact [Payload](mailto:dev@payloadcms.com) with any questions about using this plugin template.
+The plugin follows the standard Payload plugin pattern: `formPlugin(options)` returns a function that receives and returns the Payload `Config` object. Collections and endpoints are added using spread syntax to avoid overwriting existing config.
+
+---
+
+## Development
+
+```sh
+pnpm dev        # Start the dev app at http://localhost:3000
+pnpm test       # Run unit + integration + e2e tests
+pnpm build      # Compile to dist/
+```
+
+Copy `dev/.env.example` to `dev/.env` and set `DATABASE_URL` and `PAYLOAD_SECRET` before running `dev`.

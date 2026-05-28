@@ -2,17 +2,24 @@ import type { Field } from 'payload'
 
 export const baseFieldBlockFields: Field[] = [
   {
-    name: 'name',
-    type: 'text',
-    required: true,
-    admin: {
-      description: 'Unique key for this field. Used as the submission data key.',
-    },
-  },
-  {
-    name: 'label',
-    type: 'text',
-    required: true,
+    type: 'row',
+    fields: [
+      {
+        name: 'name',
+        type: 'text',
+        required: true,
+        admin: {
+          width: '50%',
+          description: 'Unique key for this field. Used as the submission data key.',
+        },
+      },
+      {
+        name: 'label',
+        type: 'text',
+        required: true,
+        admin: { width: '50%' },
+      },
+    ],
   },
   {
     name: 'required',

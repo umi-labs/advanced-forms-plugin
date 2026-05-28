@@ -1,4 +1,5 @@
 import type { Block } from 'payload'
+import type { UseFormReturn } from 'react-hook-form'
 import type { ReactNode } from 'react'
 
 // ---------------------------------------------------------------------------
@@ -105,6 +106,43 @@ export type FileBlock = BaseFieldBlock & {
   collection?: string | null
 }
 
+// Custom / extension field block types (can be used via the `fields` config option)
+
+export type YesNoBlock = BaseFieldBlock & { blockType: 'yesNo' }
+
+export type OptionCardsBlock = BaseFieldBlock & {
+  blockType: 'optionCards'
+  options?: SelectOption[] | null
+  layout?: 'row' | 'grid' | null
+}
+
+export type NumberStepperBlock = BaseFieldBlock & {
+  blockType: 'numberStepper'
+  placeholder?: string | null
+  defaultValue?: number | null
+  min?: number | null
+  max?: number | null
+  step?: number | null
+}
+
+export type MultiCounterItem = {
+  name: string
+  label: string
+  defaultValue?: number | null
+  min?: number | null
+  max?: number | null
+}
+
+export type MultiCounterBlock = BaseFieldBlock & {
+  blockType: 'multiCounter'
+  counters?: MultiCounterItem[] | null
+}
+
+export type BudgetRangeBlock = BaseFieldBlock & {
+  blockType: 'budgetRange'
+  options?: SelectOption[] | null
+}
+
 export type FormFieldBlock =
   | TextBlock
   | EmailBlock
@@ -117,6 +155,11 @@ export type FormFieldBlock =
   | NumberBlock
   | DateBlock
   | FileBlock
+  | YesNoBlock
+  | OptionCardsBlock
+  | NumberStepperBlock
+  | MultiCounterBlock
+  | BudgetRangeBlock
 
 // ---------------------------------------------------------------------------
 // Submission action block types
@@ -126,7 +169,6 @@ export type SendEmailActionBlock = {
   id?: string
   blockType: 'sendEmail'
   to: string
-  from: string
   replyTo?: string | null
   subject: string
   includeSubmissionData?: boolean | null
@@ -201,7 +243,6 @@ export type SubmitError = {
 
 export type SendEmailOptions = {
   to: string
-  from: string
   replyTo?: string
   subject: string
   html: string
@@ -265,3 +306,34 @@ export type FormProps = {
   onError?: (error: SubmitError) => void
   additionalContent?: ReactNode
 }
+
+// ---------------------------------------------------------------------------
+// Frontend component hook return type
+// ---------------------------------------------------------------------------
+
+export type UseEnquiryFormReturn = {
+  currentStep: number
+  totalSteps: number
+  stepData: FormStep
+  form: UseFormReturn<Record<string, unknown>>
+  goNext: () => Promise<boolean>
+  goBack: () => void
+  submit: () => Promise<SubmitResult>
+  isSubmitting: boolean
+  isComplete: boolean
+  result: SubmitResult | null
+  error: SubmitError | null
+}
+
+// ---------------------------------------------------------------------------
+// Legacy type aliases (renamed from earlier versions)
+// ---------------------------------------------------------------------------
+
+export type TextInputBlock = TextBlock
+export type EmailInputBlock = EmailBlock
+export type CheckboxInputBlock = CheckboxBlock
+export type SelectInputBlock = SelectBlock
+export type TextareaInputBlock = TextareaBlock
+export type EnquiryFormProps = FormProps
+export type EnquiryFormStep = FormStep
+export type EnquiryForm = FormDocument

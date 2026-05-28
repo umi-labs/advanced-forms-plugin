@@ -33,15 +33,15 @@ export function Step({ step, form }: Props) {
             return <MultiCounterField key={field.id ?? field.name} field={field} form={form} />
           case 'budgetRange':
             return <BudgetRangeField key={field.id ?? field.name} field={field} form={form} />
-          case 'textInput':
+          case 'text':
             return <TextInputField key={field.id ?? field.name} field={field} form={form} />
-          case 'emailInput':
+          case 'email':
             return <EmailInputField key={field.id ?? field.name} field={field} form={form} />
-          case 'textareaInput':
+          case 'textarea':
             return <TextareaField key={field.id ?? field.name} field={field} form={form} />
-          case 'selectInput':
+          case 'select':
             return <SelectField key={field.id ?? field.name} field={field} form={form} />
-          case 'checkboxInput':
+          case 'checkbox':
             return <CheckboxField key={field.id ?? field.name} field={field} form={form} />
           default:
             return null

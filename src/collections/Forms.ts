@@ -11,6 +11,14 @@ export type FormsCollectionOptions = {
   fieldBlocks: Block[]
 }
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 export const createFormsCollection = ({
   formsSlug,
   mediaCollection,
@@ -30,21 +38,38 @@ export const createFormsCollection = ({
     update: ({ req: { user } }) => !!user,
     delete: ({ req: { user } }) => !!user,
   },
+  hooks: {
+    beforeChange: [
+      ({ data }) => {
+        if (!data.slug && data.title) {
+          data.slug = slugify(data.title)
+        }
+        return data
+      },
+    ],
+  },
   fields: [
     {
-      name: 'title',
-      type: 'text',
-      required: true,
-    },
-    {
-      name: 'slug',
-      type: 'text',
-      required: true,
-      unique: true,
-      index: true,
-      admin: {
-        description: 'Used in the API and frontend. Must be unique, e.g. "contact-form".',
-      },
+      type: 'row',
+      fields: [
+        {
+          name: 'title',
+          type: 'text',
+          required: true,
+          admin: { width: '50%' },
+        },
+        {
+          name: 'slug',
+          type: 'text',
+          required: true,
+          unique: true,
+          index: true,
+          admin: {
+            width: '50%',
+            description: 'Auto-generated from title. Must be unique, e.g. "contact-form".',
+          },
+        },
+      ],
     },
     {
       name: 'steps',

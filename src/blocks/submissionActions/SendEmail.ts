@@ -6,29 +6,34 @@ export const SendEmailBlock: Block = {
   labels: { singular: 'Send Email', plural: 'Send Emails' },
   fields: [
     {
-      name: 'to',
-      type: 'text',
-      required: true,
-      admin: { description: 'Recipient email address.' },
-    },
-    {
-      name: 'from',
-      type: 'text',
-      required: true,
-      admin: { description: 'Sender address (must be authorised by your email provider).' },
-    },
-    {
-      name: 'replyTo',
-      type: 'text',
-      admin: {
-        description: "Reply-to address. Defaults to the submitter's email field if left blank.",
-      },
+      type: 'row',
+      fields: [
+        {
+          name: 'to',
+          type: 'text',
+          required: true,
+          admin: {
+            width: '50%',
+            description: 'Recipient email address.',
+          },
+        },
+        {
+          name: 'replyTo',
+          type: 'text',
+          admin: {
+            width: '50%',
+            description: "Reply-to address. Defaults to the submitter's email field if left blank.",
+          },
+        },
+      ],
     },
     {
       name: 'subject',
       type: 'text',
       required: true,
-      admin: { description: 'Supports {{field_name}} interpolation, e.g. "Enquiry from {{full_name}}".' },
+      admin: {
+        description: 'Supports {{field_name}} interpolation, e.g. "Enquiry from {{full_name}}".',
+      },
     },
     {
       name: 'includeSubmissionData',

@@ -252,7 +252,6 @@ describe('submitFormHandler', () => {
           {
             blockType: 'sendEmail',
             to: 'admin@example.com',
-            from: 'noreply@example.com',
             subject: 'New submission from {{full_name}}',
             includeSubmissionData: true,
           },
