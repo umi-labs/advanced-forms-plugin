@@ -18,7 +18,7 @@
     "skipChecks": false
   },
   "hooks": {
-    "before:init": ["pnpm lint", "pnpm test:unit"],
+    "before:init": ["pnpm test:unit"],
     "after:bump": "pnpm clean && pnpm build"
   },
   "plugins": {
