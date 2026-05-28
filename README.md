@@ -1,4 +1,4 @@
-# @foundrykit/form-plugin
+# @foundrykit/advanced-forms-plugin
 
 A multi-step form plugin for [Payload CMS 3](https://payloadcms.com). Adds a form builder to your admin panel with 11 built-in field types, configurable submission actions, and a ready-to-use React component for the frontend.
 
@@ -17,7 +17,7 @@ A multi-step form plugin for [Payload CMS 3](https://payloadcms.com). Adds a for
 ## Installation
 
 ```sh
-pnpm add @foundrykit/form-plugin
+pnpm add @foundrykit/advanced-forms-plugin
 ```
 
 **Peer dependencies** (install if not already present):
@@ -32,7 +32,7 @@ pnpm add payload react react-hook-form @radix-ui/react-popover
 
 ```ts
 // payload.config.ts
-import { formPlugin } from '@foundrykit/form-plugin'
+import { formPlugin } from '@foundrykit/advanced-forms-plugin'
 import { buildConfig } from 'payload'
 
 export default buildConfig({
@@ -72,7 +72,6 @@ formPlugin(options: FormPluginConfig)
 ```ts
 type SendEmailOptions = {
   to: string
-  from: string
   replyTo?: string
   subject: string       // already interpolated (supports {{fieldName}} tokens)
   html: string          // auto-generated table of submitted values
@@ -80,6 +79,8 @@ type SendEmailOptions = {
   formTitle: string
 }
 ```
+
+If no `sendEmail` handler is provided, the plugin falls back to `payload.sendEmail` (uses Payload's configured email adapter).
 
 ---
 
@@ -190,10 +191,10 @@ Submits field data for a form.
 
 ### Server component — fetch form data
 
-Import from `@foundrykit/form-plugin/rsc`:
+Import from `@foundrykit/advanced-forms-plugin/rsc`:
 
 ```tsx
-import { fetchForm } from '@foundrykit/form-plugin/rsc'
+import { fetchForm } from '@foundrykit/advanced-forms-plugin/rsc'
 
 export default async function ContactPage() {
   const form = await fetchForm({ slug: 'contact-form' })
@@ -211,13 +212,13 @@ export default async function ContactPage() {
 
 ### Client component — render the form
 
-Import from `@foundrykit/form-plugin/client`:
+Import from `@foundrykit/advanced-forms-plugin/client`:
 
 ```tsx
 'use client'
 
-import { EnquiryForm } from '@foundrykit/form-plugin/client'
-import type { FormDocument } from '@foundrykit/form-plugin'
+import { EnquiryForm } from '@foundrykit/advanced-forms-plugin/client'
+import type { FormDocument } from '@foundrykit/advanced-forms-plugin'
 
 export function ContactForm({ form }: { form: FormDocument }) {
   return (
@@ -248,7 +249,7 @@ If you need full control over the form UI, use `useEnquiryForm` directly:
 ```tsx
 'use client'
 
-import { useEnquiryForm } from '@foundrykit/form-plugin/client'
+import { useEnquiryForm } from '@foundrykit/advanced-forms-plugin/client'
 
 export function MyCustomForm({ form }) {
   const { currentStep, totalSteps, stepData, form: rhf, goNext, goBack, submit, isSubmitting } =
@@ -305,8 +306,8 @@ src/
 │   ├── buildFormURL.ts       # URL builder for the form-data endpoint
 │   └── sanitizeSubmission.ts # Sanitises raw form data before storage
 └── exports/
-    ├── client.ts             # @foundrykit/form-plugin/client exports
-    └── rsc.ts                # @foundrykit/form-plugin/rsc exports
+    ├── client.ts             # @foundrykit/advanced-forms-plugin/client exports
+    └── rsc.ts                # @foundrykit/advanced-forms-plugin/rsc exports
 ```
 
 The plugin follows the standard Payload plugin pattern: `formPlugin(options)` returns a function that receives and returns the Payload `Config` object. Collections and endpoints are added using spread syntax to avoid overwriting existing config.
