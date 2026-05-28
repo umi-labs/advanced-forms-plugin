@@ -1,5 +1,5 @@
 {
-  "name": "@foundrykit/form-plugin",
+  "name": "@foundrykit/advanced-forms-plugin",
   "version": "1.0.0",
   "description": "Multi-step enquiry form plugin for Payload CMS 3",
   "license": "MIT",
@@ -100,6 +100,7 @@
     "pnpm": "^9 || ^10"
   },
   "publishConfig": {
+    "access": "public",
     "exports": {
       ".": {
         "import": "./dist/index.js",
