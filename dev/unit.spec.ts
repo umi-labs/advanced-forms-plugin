@@ -104,7 +104,7 @@ describe('CheckboxBlock', () => {
   test('has only base fields', () => {
     const extraNames = flatFields(CheckboxBlock.fields)
       .map((f) => ('name' in f ? f.name : null))
-      .filter((n) => !['name', 'label', 'required', 'tooltip'].includes(n as string))
+      .filter((n) => !['name', 'nameLock', 'label', 'required', 'tooltip'].includes(n as string))
     expect(extraNames).toHaveLength(0)
   })
 })

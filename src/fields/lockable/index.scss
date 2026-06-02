@@ -1,0 +1,12 @@
+.lockable-text-field {
+  &__label-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__lock-button {
+    margin: 0;
+    padding-bottom: 0.3125rem;
+  }
+}
