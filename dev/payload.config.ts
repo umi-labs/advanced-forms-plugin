@@ -3,7 +3,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
 import { buildConfig } from 'payload'
-import { formPlugin } from '@foundrykit/form-plugin'
+import { formPlugin } from '@foundrykit/advanced-forms-plugin'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
