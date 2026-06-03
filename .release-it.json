@@ -13,14 +13,14 @@
     "releaseName": "v${version}"
   },
   "npm": {
-    "publish": true,
+    "publish": false,
     "publishPath": ".",
     "skipChecks": false
   },
   "hooks": {
     "before:init": ["pnpm test:unit"],
     "after:bump": "pnpm install --lockfile-only && pnpm clean && pnpm build",
-    "after:npm:release": "pnpm publish --no-git-checks --access public"
+    "after:release": "pnpm publish --no-git-checks --access public"
   },
   "plugins": {
     "@release-it/conventional-changelog": {
