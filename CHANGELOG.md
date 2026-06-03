@@ -1,5 +1,16 @@
 # Changelog
 
+## [](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.1.3...vnull) (2026-06-03)
+
+### Features
+
+* **slug:** adding auto-generated/lockable slugs ([88c06ee](https://github.com/umi-labs/advanced-forms-plugin/commit/88c06ee1f5d5b2d48fe3a6d3c9a9b64d526c8b33))
+* **slug:** adding auto-generated/lockable slugs ([1defaaf](https://github.com/umi-labs/advanced-forms-plugin/commit/1defaaf34705db1bd621dd15003efefa9b9559a7))
+
+### Bug Fixes
+
+* **package:** npm package update issues ([b12ca15](https://github.com/umi-labs/advanced-forms-plugin/commit/b12ca151c7d67522b47e6cb6c97d077e88c657d6))
+
 ## [1.1.3](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.1.2...v1.1.3) (2026-05-28)
 
 ## [1.1.2](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.1.1...v1.1.2) (2026-05-28)
