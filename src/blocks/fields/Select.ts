@@ -1,5 +1,5 @@
 import type { Block } from 'payload'
-import { baseFieldBlockFields } from './shared.js'
+import { baseFieldBlockFields, optionsArrayField } from './shared.js'
 
 export const SelectBlock: Block = {
   slug: 'select',
@@ -7,15 +7,6 @@ export const SelectBlock: Block = {
   fields: [
     ...baseFieldBlockFields,
     { name: 'placeholder', type: 'text' },
-    {
-      name: 'options',
-      type: 'array',
-      required: true,
-      minRows: 1,
-      fields: [
-        { name: 'label', type: 'text', required: true },
-        { name: 'value', type: 'text', required: true },
-      ],
-    },
+    optionsArrayField,
   ],
 }

@@ -1,4 +1,4 @@
-import type { Field } from 'payload'
+import type { ArrayField, Field } from 'payload'
 
 import { lockableTextField } from '../../fields/lockable/index.js'
 
@@ -50,3 +50,31 @@ export const baseFieldBlockFields: Field[] = [
     ],
   },
 ]
+
+const [optionValueField, optionValueLockField] = lockableTextField({
+  name: 'value',
+  fieldOverrides: {
+    admin: {
+      description: 'Auto-generated from the option label. Used as the submission value.',
+    },
+    required: true,
+  },
+  watch: 'label',
+})
+
+/**
+ * Shared `options` array field for blocks that present a list of choices
+ * (Radio Group, Checkbox Group, Select). Each option has a free-text `label`
+ * and a lockable, auto-slugged `value` that mirrors the label until unlocked.
+ */
+export const optionsArrayField: ArrayField = {
+  name: 'options',
+  type: 'array',
+  fields: [
+    { name: 'label', type: 'text', required: true },
+    optionValueField,
+    optionValueLockField,
+  ],
+  minRows: 1,
+  required: true,
+}
