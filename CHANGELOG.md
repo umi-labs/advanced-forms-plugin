@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.2](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.3.1...v1.3.2) (2026-06-03)
+
+### Features
+
+* **forms:** full-width title/slug and export field building blocks ([f7bdd68](https://github.com/umi-labs/advanced-forms-plugin/commit/f7bdd685904c11ec244517b80805a5171d03e0b2))
+
 ## [1.3.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.3.0...v1.3.1) (2026-06-03)
 
 ### Features
