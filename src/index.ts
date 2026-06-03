@@ -17,6 +17,8 @@ import { createSubmitFormHandler } from './endpoints/submitFormHandler.js'
 import type { FieldsConfig, FormPluginConfig } from './types.js'
 
 export type { FormPluginConfig } from './types.js'
+export { baseFieldBlockFields } from './blocks/fields/shared.js'
+export { lockableTextField } from './fields/lockable/index.js'
 
 const DEFAULT_FIELD_BLOCKS: Block[] = [
   TextBlock,

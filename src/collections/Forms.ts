@@ -25,7 +25,6 @@ export const createFormsCollection = ({
     fieldOverrides: {
       admin: {
         description: 'Auto-generated from title. Must be unique, e.g. "contact-form".',
-        width: '50%',
       },
       index: true,
       required: true,
@@ -48,17 +47,11 @@ export const createFormsCollection = ({
     },
     fields: [
       {
-        type: 'row',
-        fields: [
-          {
-            name: 'title',
-            type: 'text',
-            admin: { width: '50%' },
-            required: true,
-          },
-          slugField,
-        ],
+        name: 'title',
+        type: 'text',
+        required: true,
       },
+      slugField,
       slugLockField,
       {
         name: 'steps',
