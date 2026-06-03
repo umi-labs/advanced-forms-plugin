@@ -1,18 +1,19 @@
 'use client'
 
-import { Button, FieldLabel, TextInput, useField, useForm, useFormFields } from '@payloadcms/ui'
 import type { TextFieldClientProps } from 'payload'
 import type React from 'react'
+
+import { Button, FieldLabel, TextInput, useField, useForm, useFormFields } from '@payloadcms/ui'
 import { useCallback, useEffect } from 'react'
 
 import { formatSlug } from './formatSlug.js'
 import './index.scss'
 
 type LockableTextFieldProps = {
-  /** Sibling field name to derive the slugified value from (e.g. `title` or `label`). */
-  watch: string
   /** Sibling checkbox field name controlling whether the value is locked to the source. */
   checkboxFieldPath: string
+  /** Sibling field name to derive the slugified value from (e.g. `title` or `label`). */
+  watch: string
 } & TextFieldClientProps
 
 /**
@@ -20,16 +21,16 @@ type LockableTextFieldProps = {
  * Returns an empty string for top-level paths.
  */
 function getParentPath(path?: string): string {
-  if (!path || !path.includes('.')) return ''
+  if (!path || !path.includes('.')) {return ''}
   return path.slice(0, path.lastIndexOf('.'))
 }
 
 export const LockableTextField: React.FC<LockableTextFieldProps> = ({
-  field,
-  watch,
   checkboxFieldPath: checkboxFieldName,
+  field,
   path,
   readOnly: readOnlyFromProps,
+  watch,
 }) => {
   const { label, required } = field
 
@@ -38,7 +39,7 @@ export const LockableTextField: React.FC<LockableTextFieldProps> = ({
   const checkboxFieldPath = parentPath ? `${parentPath}.${checkboxFieldName}` : checkboxFieldName
   const watchFieldPath = parentPath ? `${parentPath}.${watch}` : watch
 
-  const { value, setValue } = useField<string>({ path: fieldPath })
+  const { setValue, value } = useField<string>({ path: fieldPath })
 
   const { dispatchFields } = useForm()
 
@@ -53,11 +54,11 @@ export const LockableTextField: React.FC<LockableTextFieldProps> = ({
   })
 
   useEffect(() => {
-    if (!checkboxValue) return
+    if (!checkboxValue) {return}
 
     if (watchValue) {
       const formatted = formatSlug(watchValue)
-      if (value !== formatted) setValue(formatted)
+      if (value !== formatted) {setValue(formatted)}
     } else if (value !== '') {
       setValue('')
     }
@@ -83,8 +84,8 @@ export const LockableTextField: React.FC<LockableTextFieldProps> = ({
         <FieldLabel htmlFor={`field-${fieldPath}`} label={label} required={required} />
 
         <Button
-          className="lockable-text-field__lock-button"
           buttonStyle="none"
+          className="lockable-text-field__lock-button"
           onClick={handleLock}
         >
           {checkboxValue ? 'Unlock' : 'Lock'}
@@ -92,10 +93,10 @@ export const LockableTextField: React.FC<LockableTextFieldProps> = ({
       </div>
 
       <TextInput
-        value={value}
         onChange={setValue}
         path={fieldPath}
         readOnly={Boolean(readOnly)}
+        value={value}
       />
     </div>
   )

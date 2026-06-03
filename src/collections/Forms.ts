@@ -1,50 +1,50 @@
 import type { Block, CollectionConfig } from 'payload'
+
 import { ConfirmationMessageBlock } from '../blocks/submissionActions/ConfirmationMessage.js'
 import { RedirectBlock } from '../blocks/submissionActions/Redirect.js'
 import { SendEmailBlock } from '../blocks/submissionActions/SendEmail.js'
 import { lockableTextField } from '../fields/lockable/index.js'
 
 export type FormsCollectionOptions = {
+  fieldBlocks: Block[]
   formsSlug: string
   mediaCollection: string
-  singularLabel: string
   pluralLabel: string
-  fieldBlocks: Block[]
+  singularLabel: string
 }
 
 export const createFormsCollection = ({
+  fieldBlocks,
   formsSlug,
   mediaCollection,
-  singularLabel,
   pluralLabel,
-  fieldBlocks,
+  singularLabel,
 }: FormsCollectionOptions): CollectionConfig => {
   const [slugField, slugLockField] = lockableTextField({
     name: 'slug',
-    watch: 'title',
     fieldOverrides: {
+      admin: {
+        description: 'Auto-generated from title. Must be unique, e.g. "contact-form".',
+        width: '50%',
+      },
+      index: true,
       required: true,
       unique: true,
-      index: true,
-      admin: {
-        width: '50%',
-        description: 'Auto-generated from title. Must be unique, e.g. "contact-form".',
-      },
     },
+    watch: 'title',
   })
 
   return {
     slug: formsSlug,
-    labels: { singular: singularLabel, plural: pluralLabel },
-    admin: {
-      useAsTitle: 'title',
-      defaultColumns: ['title', 'slug', 'updatedAt'],
-    },
     access: {
-      read: () => true,
       create: ({ req: { user } }) => !!user,
-      update: ({ req: { user } }) => !!user,
       delete: ({ req: { user } }) => !!user,
+      read: () => true,
+      update: ({ req: { user } }) => !!user,
+    },
+    admin: {
+      defaultColumns: ['title', 'slug', 'updatedAt'],
+      useAsTitle: 'title',
     },
     fields: [
       {
@@ -53,8 +53,8 @@ export const createFormsCollection = ({
           {
             name: 'title',
             type: 'text',
-            required: true,
             admin: { width: '50%' },
+            required: true,
           },
           slugField,
         ],
@@ -63,20 +63,18 @@ export const createFormsCollection = ({
       {
         name: 'steps',
         type: 'array',
-        required: true,
-        minRows: 1,
         fields: [
           {
             name: 'title',
             type: 'text',
-            required: true,
             admin: { description: 'Shown in the step progress indicator.' },
+            required: true,
           },
           {
             name: 'icon',
             type: 'upload',
-            relationTo: mediaCollection,
             admin: { description: 'Optional icon shown in the step indicator.' },
+            relationTo: mediaCollection,
           },
           {
             name: 'fields',
@@ -84,6 +82,8 @@ export const createFormsCollection = ({
             blocks: fieldBlocks,
           },
         ],
+        minRows: 1,
+        required: true,
       },
       {
         name: 'additionalContent',
@@ -97,14 +97,14 @@ export const createFormsCollection = ({
           {
             name: 'position',
             type: 'select',
+            admin: {
+              condition: (_, siblingData) => Boolean(siblingData?.enabled),
+            },
             defaultValue: 'below',
             options: [
               { label: 'Above form', value: 'above' },
               { label: 'Below form', value: 'below' },
             ],
-            admin: {
-              condition: (_, siblingData) => Boolean(siblingData?.enabled),
-            },
           },
           {
             name: 'content',
@@ -118,13 +118,14 @@ export const createFormsCollection = ({
       {
         name: 'submissionActions',
         type: 'blocks',
-        required: true,
-        minRows: 1,
-        blocks: [SendEmailBlock, ConfirmationMessageBlock, RedirectBlock],
         admin: {
           description: 'At least one action is required. Actions execute in order.',
         },
+        blocks: [SendEmailBlock, ConfirmationMessageBlock, RedirectBlock],
+        minRows: 1,
+        required: true,
       },
     ],
+    labels: { plural: pluralLabel, singular: singularLabel },
   }
 }

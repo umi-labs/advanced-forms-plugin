@@ -3,19 +3,19 @@ import type { CheckboxField, TextField } from 'payload'
 import { formatSlugHook } from './formatSlug.js'
 
 export type LockableTextFieldOptions = {
-  /** Name of the text field (e.g. `slug`, `name`). */
-  name: string
-  /** Name of the sibling field to derive the value from (e.g. `title`, `label`). */
-  watch: string
+  /** Partial overrides merged into the generated checkbox field. */
+  checkboxOverrides?: Partial<CheckboxField>
+  /** Partial overrides merged into the generated text field. */
+  fieldOverrides?: Partial<TextField>
   /**
    * Name of the lock checkbox field. Defaults to `${name}Lock`.
    * Must be unique among siblings.
    */
   lockName?: string
-  /** Partial overrides merged into the generated text field. */
-  fieldOverrides?: Partial<TextField>
-  /** Partial overrides merged into the generated checkbox field. */
-  checkboxOverrides?: Partial<CheckboxField>
+  /** Name of the text field (e.g. `slug`, `name`). */
+  name: string
+  /** Name of the sibling field to derive the value from (e.g. `title`, `label`). */
+  watch: string
 }
 
 /**
@@ -29,20 +29,20 @@ export type LockableTextFieldOptions = {
  */
 export const lockableTextField = ({
   name,
-  watch,
-  lockName,
-  fieldOverrides,
   checkboxOverrides,
+  fieldOverrides,
+  lockName,
+  watch,
 }: LockableTextFieldOptions): [TextField, CheckboxField] => {
   const resolvedLockName = lockName ?? `${name}Lock`
 
   const checkboxField: CheckboxField = {
     name: resolvedLockName,
     type: 'checkbox',
-    defaultValue: true,
     admin: {
       hidden: true,
     },
+    defaultValue: true,
     ...checkboxOverrides,
   }
 
@@ -54,25 +54,25 @@ export const lockableTextField = ({
     name,
     type: 'text',
     ...(fieldOverrides ?? {}),
+    admin: {
+      ...(fieldOverrides?.admin ?? {}),
+      components: {
+        ...(fieldOverrides?.admin?.components ?? {}),
+        Field: {
+          clientProps: {
+            checkboxFieldPath: resolvedLockName,
+            watch,
+          },
+          path: '@foundrykit/advanced-forms-plugin/client#LockableTextField',
+        },
+      },
+    },
     hooks: {
       ...(fieldOverrides?.hooks ?? {}),
       beforeValidate: [
         ...(fieldOverrides?.hooks?.beforeValidate ?? []),
         formatSlugHook(watch, name),
       ],
-    },
-    admin: {
-      ...(fieldOverrides?.admin ?? {}),
-      components: {
-        ...(fieldOverrides?.admin?.components ?? {}),
-        Field: {
-          path: '@foundrykit/advanced-forms-plugin/client#LockableTextField',
-          clientProps: {
-            watch,
-            checkboxFieldPath: resolvedLockName,
-          },
-        },
-      },
     },
   }
 

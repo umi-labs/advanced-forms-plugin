@@ -1,16 +1,17 @@
 import type { Field } from 'payload'
+
 import { lockableTextField } from '../../fields/lockable/index.js'
 
 const [nameField, nameLockField] = lockableTextField({
   name: 'name',
-  watch: 'label',
   fieldOverrides: {
-    required: true,
     admin: {
-      width: '50%',
       description: 'Unique key for this field. Used as the submission data key.',
+      width: '50%',
     },
+    required: true,
   },
+  watch: 'label',
 })
 
 export const baseFieldBlockFields: Field[] = [
@@ -20,8 +21,8 @@ export const baseFieldBlockFields: Field[] = [
       {
         name: 'label',
         type: 'text',
-        required: true,
         admin: { width: '50%' },
+        required: true,
       },
       nameField,
     ],
