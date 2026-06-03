@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.3.0...v1.3.1) (2026-06-03)
+
+### Features
+
+* **forms:** add introContent rich text per step and group title/icon in a row ([5ee7724](https://github.com/umi-labs/advanced-forms-plugin/commit/5ee77245bd42197441315bb3b7d11a820995d3b6))
+
 ## [](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.1.3...vnull) (2026-06-03)
 
 ### Features
