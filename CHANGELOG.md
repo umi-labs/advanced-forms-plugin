@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.3](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.3.2...v1.3.3) (2026-06-03)
+
+### Features
+
+* **forms:** lockable auto-generated value for option fields ([1ef56f3](https://github.com/umi-labs/advanced-forms-plugin/commit/1ef56f353390c144c18306865f0366797238d940))
+
 ## [1.3.2](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.3.1...v1.3.2) (2026-06-03)
 
 ### Features
