@@ -12,6 +12,7 @@ export function EnquiryForm({
   onSuccess,
   onError,
   additionalContent,
+  renderStepIntro,
 }: EnquiryFormProps) {
   const {
     currentStep,
@@ -86,6 +87,11 @@ export function EnquiryForm({
       <StepIndicator steps={form.steps} currentStep={currentStep} />
 
       <div className="enquiry-form__body">
+        {renderStepIntro && stepData.introContent ? (
+          <div className="enquiry-form__step-intro" data-testid="step-intro">
+            {renderStepIntro(stepData, currentStep)}
+          </div>
+        ) : null}
         <Step step={stepData} form={rhfForm} />
       </div>
 

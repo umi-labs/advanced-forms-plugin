@@ -200,6 +200,7 @@ export type FormStep = {
   id?: string
   title: string
   icon?: MediaObject | null
+  introContent?: unknown
   fields: FormFieldBlock[]
 }
 
@@ -295,6 +296,11 @@ export type FormProps = {
   onSuccess?: (result: SubmitResult) => void
   onError?: (error: SubmitError) => void
   additionalContent?: ReactNode
+  /**
+   * Optional render function for the per-step `introContent` rich text.
+   * Called for each step; return `null`/`undefined` to render nothing.
+   */
+  renderStepIntro?: (step: FormStep, index: number) => ReactNode
 }
 
 // ---------------------------------------------------------------------------

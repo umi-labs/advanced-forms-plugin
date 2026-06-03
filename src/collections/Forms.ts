@@ -65,16 +65,32 @@ export const createFormsCollection = ({
         type: 'array',
         fields: [
           {
-            name: 'title',
-            type: 'text',
-            admin: { description: 'Shown in the step progress indicator.' },
-            required: true,
+            type: 'row',
+            fields: [
+              {
+                name: 'title',
+                type: 'text',
+                admin: {
+                  description: 'Shown in the step progress indicator.',
+                  width: '50%',
+                },
+                required: true,
+              },
+              {
+                name: 'icon',
+                type: 'upload',
+                admin: {
+                  description: 'Optional icon shown in the step indicator.',
+                  width: '50%',
+                },
+                relationTo: mediaCollection,
+              },
+            ],
           },
           {
-            name: 'icon',
-            type: 'upload',
-            admin: { description: 'Optional icon shown in the step indicator.' },
-            relationTo: mediaCollection,
+            name: 'introContent',
+            type: 'richText',
+            admin: { description: 'Optional content shown above the form fields for this step.' },
           },
           {
             name: 'fields',
