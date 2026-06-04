@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.4.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.3.3...v1.4.0) (2026-06-04)
+
+### Features
+
+* **forms:** renderConfirmation, phone field, switch checkbox, row layouts, button label overrides ([6fc9161](https://github.com/umi-labs/advanced-forms-plugin/commit/6fc916186d6fa24a49e076d56cc1008308faf147))
+
 ## [1.3.3](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.3.2...v1.3.3) (2026-06-03)
 
 ### Features
