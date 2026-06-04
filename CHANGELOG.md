@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.5.0...v1.5.1) (2026-06-04)
+
+### Features
+
+* **validation:** collapse advanced fields + add buildZodSchemaFromForm ([415348e](https://github.com/umi-labs/advanced-forms-plugin/commit/415348e4c6b7e89728d85971737d5351992dd91b))
+
 ## [1.5.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.4.0...v1.5.0) (2026-06-04)
 
 ### Features
