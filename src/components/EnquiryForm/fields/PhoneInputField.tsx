@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { Controller, type UseFormReturn } from 'react-hook-form'
 import type { PhoneBlock, SelectOption } from '../../../types.js'
+import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
 import { FieldTooltip } from '../FieldTooltip.js'
 
 type Props = { field: PhoneBlock; form: UseFormReturn<Record<string, unknown>> }
@@ -55,6 +56,24 @@ export function PhoneInputField({ field, form }: Props) {
   const defaultCountry = field.defaultCountry ?? countries[0]?.value ?? ''
   const error = errors[field.name]
 
+  // Build admin-configured rules (minLength/maxLength/pattern apply to the
+  // typed number). The `required` rule is replaced with a custom `validate`
+  // that understands the composite { country, number, e164 } value shape.
+  const adminRules = buildFieldRules(field)
+  const { required: requiredMessage, ...textRules } = adminRules
+  const patternRule =
+    textRules.pattern && typeof textRules.pattern === 'object'
+      ? (textRules.pattern as { value: RegExp; message: string })
+      : null
+  const minLengthRule =
+    textRules.minLength && typeof textRules.minLength === 'object'
+      ? (textRules.minLength as { value: number; message: string })
+      : null
+  const maxLengthRule =
+    textRules.maxLength && typeof textRules.maxLength === 'object'
+      ? (textRules.maxLength as { value: number; message: string })
+      : null
+
   return (
     <div className="enquiry-field enquiry-field--phone">
       <label className="enquiry-field__label" htmlFor={`field-${field.name}`}>
@@ -70,9 +89,25 @@ export function PhoneInputField({ field, form }: Props) {
         defaultValue={buildPhoneValue(defaultCountry, '')}
         rules={{
           validate: (value) => {
-            if (!field.required) return true
-            if (isPhoneValue(value) && value.number.trim().length > 0) return true
-            return `${field.label} is required`
+            const number = isPhoneValue(value) ? value.number.trim() : ''
+            if (field.required && number.length === 0) {
+              return (
+                (typeof requiredMessage === 'string' ? requiredMessage : null) ??
+                `${field.label} is required`
+              )
+            }
+            // Skip the rest of the checks for empty optional values
+            if (number.length === 0) return true
+            if (minLengthRule && number.length < minLengthRule.value) {
+              return minLengthRule.message
+            }
+            if (maxLengthRule && number.length > maxLengthRule.value) {
+              return maxLengthRule.message
+            }
+            if (patternRule && !patternRule.value.test(number)) {
+              return patternRule.message
+            }
+            return true
           },
         }}
         render={({ field: ctrl }) => {

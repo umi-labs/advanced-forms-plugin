@@ -2,6 +2,7 @@
 
 import type { UseFormReturn } from 'react-hook-form'
 import type { BudgetRangeBlock } from '../../../types.js'
+import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
 import { FieldTooltip } from '../FieldTooltip.js'
 
 type Props = { field: BudgetRangeBlock; form: UseFormReturn<Record<string, unknown>> }
@@ -21,9 +22,7 @@ export function BudgetRangeField({ field, form }: Props) {
       </div>
       <input
         type="hidden"
-        {...register(field.name, {
-          required: field.required ? `${field.label} is required` : false,
-        })}
+        {...register(field.name, buildFieldRules(field))}
       />
       <div className="enquiry-field__budget-options">
         {(field.options ?? []).map((opt) => (

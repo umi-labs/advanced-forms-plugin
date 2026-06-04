@@ -226,6 +226,54 @@ export function ContactForm({ form }: { form: FormDocument }) {
 | `onSuccess` | `(result: SubmitResult) => void` | — | Called after successful submission |
 | `onError` | `(error: SubmitError) => void` | — | Called when the server returns validation errors |
 | `additionalContent` | `ReactNode` | — | Extra content rendered above or below the form (respects the `additionalContent.position` setting) |
+| `resolver` | `Resolver<Record<string, unknown>>` | — | Optional react-hook-form resolver (e.g. `zodResolver(schema)`). Merged with the per-field admin rules. |
+
+### Validation
+
+Every field block exposes an admin **Validation** group: `requiredMessage`,
+`minLength` / `maxLength` / `pattern` / `patternMessage` (for text-shaped
+fields), and `min` / `max` / `minMessage` / `maxMessage` (for numeric fields
+and the multi-counter total). These rules are wired into RHF via the
+`buildFieldRules` helper and are also exported from `/client` for use in
+custom field components.
+
+For richer cross-field logic, pass a form-level resolver. The plugin does
+**not** bundle `zod` or `@hookform/resolvers` — install them in your app:
+
+```sh
+pnpm add zod @hookform/resolvers
+```
+
+```tsx
+'use client'
+
+import { EnquiryForm } from '@foundrykit/advanced-forms-plugin/client'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+
+const schema = z
+  .object({
+    travelKnown: z.enum(['yes', 'no']).optional(),
+    travelPlans: z.string().optional(),
+  })
+  .passthrough()
+  .superRefine((data, ctx) => {
+    if (data.travelKnown === 'no' && !data.travelPlans) {
+      ctx.addIssue({
+        path: ['travelPlans'],
+        code: 'custom',
+        message: 'Tell us a bit about what you’re looking for',
+      })
+    }
+  })
+
+export function ContactForm({ form }) {
+  return <EnquiryForm form={form} resolver={zodResolver(schema)} />
+}
+```
+
+Per-field admin rules and the resolver run together — either source can flag
+a field invalid, and step-by-step validation (`goNext`) respects both.
 
 ### Hook — custom form UI
 

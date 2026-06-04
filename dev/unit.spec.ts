@@ -11,12 +11,34 @@ describe('baseFieldBlockFields', () => {
     expect(Array.isArray(baseFieldBlockFields)).toBe(true)
   })
 
-  test('includes name, label, required, and tooltip fields', () => {
+  test('includes name, label, required, tooltip, and validation fields', () => {
     const names = flatFields(baseFieldBlockFields).map((f) => ('name' in f ? f.name : null))
     expect(names).toContain('name')
     expect(names).toContain('label')
     expect(names).toContain('required')
     expect(names).toContain('tooltip')
+    expect(names).toContain('validation')
+  })
+
+  test('validation group exposes admin-configurable rule fields', () => {
+    const validation = flatFields(baseFieldBlockFields).find(
+      (f) => 'name' in f && f.name === 'validation',
+    ) as any
+    expect(validation?.type).toBe('group')
+    const subNames = validation?.fields?.map((f: any) => f.name)
+    for (const name of [
+      'requiredMessage',
+      'minLength',
+      'maxLength',
+      'pattern',
+      'patternMessage',
+      'min',
+      'max',
+      'minMessage',
+      'maxMessage',
+    ]) {
+      expect(subNames).toContain(name)
+    }
   })
 
   test('name field is required text', () => {
@@ -270,6 +292,63 @@ describe('RedirectBlock', () => {
 
 import { buildFormURL } from '../src/utilities/buildFormURL.js'
 import { sanitizeSubmission } from '../src/utilities/sanitizeSubmission.js'
+import { buildFieldRules } from '../src/utilities/buildFieldRules.js'
+
+describe('buildFieldRules', () => {
+  test('returns empty object when nothing is configured', () => {
+    expect(buildFieldRules({ label: 'X' } as any)).toEqual({})
+  })
+
+  test('emits default required message when required', () => {
+    const rules = buildFieldRules({ label: 'Name', required: true } as any)
+    expect(rules.required).toBe('Name is required')
+  })
+
+  test('uses validation.requiredMessage override', () => {
+    const rules = buildFieldRules({
+      label: 'Name',
+      required: true,
+      validation: { requiredMessage: 'Tell us your name' },
+    } as any)
+    expect(rules.required).toBe('Tell us your name')
+  })
+
+  test('emits minLength / maxLength rules with auto messages', () => {
+    const rules = buildFieldRules({
+      label: 'Name',
+      validation: { minLength: 2, maxLength: 50 },
+    } as any)
+    expect(rules.minLength).toEqual({ value: 2, message: 'Name must be at least 2 characters' })
+    expect(rules.maxLength).toEqual({ value: 50, message: 'Name must be at most 50 characters' })
+  })
+
+  test('emits min / max numeric rules with overridable messages', () => {
+    const rules = buildFieldRules({
+      label: 'Guests',
+      validation: { min: 1, max: 8, maxMessage: 'Too many guests' },
+    } as any)
+    expect(rules.min).toEqual({ value: 1, message: 'Guests must be ≥ 1' })
+    expect(rules.max).toEqual({ value: 8, message: 'Too many guests' })
+  })
+
+  test('compiles pattern from regex source', () => {
+    const rules = buildFieldRules({
+      label: 'Code',
+      validation: { pattern: '^[A-Z]{2,}$', patternMessage: 'Use capital letters' },
+    } as any)
+    expect((rules.pattern as any).value.test('AB')).toBe(true)
+    expect((rules.pattern as any).value.test('ab')).toBe(false)
+    expect((rules.pattern as any).message).toBe('Use capital letters')
+  })
+
+  test('silently ignores invalid regex sources', () => {
+    const rules = buildFieldRules({
+      label: 'Code',
+      validation: { pattern: '([' /* unterminated */ },
+    } as any)
+    expect(rules.pattern).toBeUndefined()
+  })
+})
 
 describe('buildFormURL', () => {
   test('returns relative path when no baseUrl given', () => {

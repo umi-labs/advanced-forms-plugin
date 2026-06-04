@@ -14,6 +14,7 @@ export function EnquiryForm({
   additionalContent,
   renderStepIntro,
   renderConfirmation,
+  resolver,
 }: EnquiryFormProps) {
   const {
     currentStep,
@@ -27,7 +28,7 @@ export function EnquiryForm({
     isComplete,
     result,
     error,
-  } = useEnquiryForm({ form, apiBase })
+  } = useEnquiryForm({ form, apiBase, resolver })
 
   // Redirect action — fire when complete and redirectUrl is set
   if (

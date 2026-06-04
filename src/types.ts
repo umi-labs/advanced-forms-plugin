@@ -1,5 +1,5 @@
 import type { Block } from 'payload'
-import type { UseFormReturn } from 'react-hook-form'
+import type { Resolver, UseFormReturn } from 'react-hook-form'
 import type { ReactNode } from 'react'
 
 // ---------------------------------------------------------------------------
@@ -23,6 +23,25 @@ export type SelectOption = {
   value: string
 }
 
+/**
+ * Optional, admin-configurable validation rules. Applied via `buildFieldRules`
+ * to RHF's `register(..., rules)` and merged with the form-level resolver if
+ * one is provided.
+ */
+export type FieldValidation = {
+  requiredMessage?: string | null
+  // Text-shaped (text, email, phone, textarea, select)
+  minLength?: number | null
+  maxLength?: number | null
+  pattern?: string | null
+  patternMessage?: string | null
+  // Numeric-shaped (number, numberStepper, multiCounter total)
+  min?: number | null
+  max?: number | null
+  minMessage?: string | null
+  maxMessage?: string | null
+}
+
 // ---------------------------------------------------------------------------
 // Base — all field blocks extend this
 // ---------------------------------------------------------------------------
@@ -33,6 +52,7 @@ export type BaseFieldBlock = {
   label: string
   required?: boolean | null
   tooltip?: FieldTooltip | null
+  validation?: FieldValidation | null
 }
 
 // ---------------------------------------------------------------------------
@@ -340,6 +360,12 @@ export type FormProps = {
    * "Form submitted successfully." message is shown.
    */
   renderConfirmation?: (message: unknown, result: SubmitResult) => ReactNode
+  /**
+   * Optional react-hook-form `Resolver` (e.g. `zodResolver(schema)`). Runs
+   * alongside the per-field admin rules — RHF natively merges both, so either
+   * source can flag a field as invalid.
+   */
+  resolver?: Resolver<Record<string, unknown>>
 }
 
 // ---------------------------------------------------------------------------

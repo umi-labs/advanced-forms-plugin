@@ -2,6 +2,7 @@
 
 import type { UseFormReturn } from 'react-hook-form'
 import type { TextInputBlock } from '../../../types.js'
+import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
 import { FieldTooltip } from '../FieldTooltip.js'
 
 type Props = { field: TextInputBlock; form: UseFormReturn<Record<string, unknown>> }
@@ -26,9 +27,7 @@ export function TextInputField({ field, form }: Props) {
         className={['enquiry-field__input', error ? 'enquiry-field__input--error' : '']
           .filter(Boolean)
           .join(' ')}
-        {...register(field.name, {
-          required: field.required ? `${field.label} is required` : false,
-        })}
+        {...register(field.name, buildFieldRules(field))}
       />
       {error && (
         <p className="enquiry-field__error" role="alert">

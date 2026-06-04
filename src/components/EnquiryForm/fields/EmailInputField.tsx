@@ -1,14 +1,24 @@
 'use client'
 
-import type { UseFormReturn } from 'react-hook-form'
+import type { RegisterOptions, UseFormReturn } from 'react-hook-form'
 import type { EmailInputBlock } from '../../../types.js'
+import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
 import { FieldTooltip } from '../FieldTooltip.js'
+
+const DEFAULT_EMAIL_PATTERN: RegisterOptions['pattern'] = {
+  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  message: 'Please enter a valid email address',
+}
 
 type Props = { field: EmailInputBlock; form: UseFormReturn<Record<string, unknown>> }
 
 export function EmailInputField({ field, form }: Props) {
   const { register, formState: { errors } } = form
   const error = errors[field.name]
+
+  // Built-in email pattern as a fallback — overridden if the editor configures
+  // a `validation.pattern` via the admin UI.
+  const rules: RegisterOptions = { pattern: DEFAULT_EMAIL_PATTERN, ...buildFieldRules(field) }
 
   return (
     <div className="enquiry-field enquiry-field--email">
@@ -26,13 +36,7 @@ export function EmailInputField({ field, form }: Props) {
         className={['enquiry-field__input', error ? 'enquiry-field__input--error' : '']
           .filter(Boolean)
           .join(' ')}
-        {...register(field.name, {
-          required: field.required ? `${field.label} is required` : false,
-          pattern: {
-            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-            message: 'Please enter a valid email address',
-          },
-        })}
+        {...register(field.name, rules)}
       />
       {error && (
         <p className="enquiry-field__error" role="alert">

@@ -49,6 +49,35 @@ export const baseFieldBlockFields: Field[] = [
       },
     ],
   },
+  {
+    name: 'validation',
+    type: 'group',
+    admin: {
+      description:
+        'Optional validation rules. Combine with the form-level Zod resolver for richer logic.',
+    },
+    fields: [
+      {
+        name: 'requiredMessage',
+        type: 'text',
+        admin: { description: 'Override "<Label> is required".' },
+      },
+      // Text-shaped fields (text, email, phone, textarea, select)
+      { name: 'minLength', type: 'number', min: 0 },
+      { name: 'maxLength', type: 'number', min: 0 },
+      {
+        name: 'pattern',
+        type: 'text',
+        admin: { description: 'JS regex source, e.g. ^[A-Z]{2,}$' },
+      },
+      { name: 'patternMessage', type: 'text' },
+      // Numeric-shaped fields (number, numberStepper, multiCounter total)
+      { name: 'min', type: 'number' },
+      { name: 'max', type: 'number' },
+      { name: 'minMessage', type: 'text' },
+      { name: 'maxMessage', type: 'text' },
+    ],
+  },
 ]
 
 const [optionValueField, optionValueLockField] = lockableTextField({

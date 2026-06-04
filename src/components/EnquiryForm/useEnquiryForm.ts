@@ -1,12 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { type Resolver, useForm } from 'react-hook-form'
 import type { EnquiryForm, SubmitError, SubmitResult, UseEnquiryFormReturn } from '../../types.js'
 
 type Options = {
   form: EnquiryForm
   apiBase?: string
+  /**
+   * Optional react-hook-form `Resolver` (e.g. `zodResolver(schema)`). Runs in
+   * addition to per-field rules registered via `buildFieldRules`.
+   */
+  resolver?: Resolver<Record<string, unknown>>
 }
 
 function buildDefaultValues(form: EnquiryForm): Record<string, unknown> {
@@ -27,7 +32,7 @@ function buildDefaultValues(form: EnquiryForm): Record<string, unknown> {
   return defaults
 }
 
-export function useEnquiryForm({ form, apiBase = '' }: Options): UseEnquiryFormReturn {
+export function useEnquiryForm({ form, apiBase = '', resolver }: Options): UseEnquiryFormReturn {
   const [currentStep, setCurrentStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
@@ -37,6 +42,7 @@ export function useEnquiryForm({ form, apiBase = '' }: Options): UseEnquiryFormR
   const rhfForm = useForm<Record<string, unknown>>({
     mode: 'onSubmit',
     defaultValues: buildDefaultValues(form),
+    resolver,
   })
   const totalSteps = form.steps.length
   const stepData = form.steps[currentStep]!
