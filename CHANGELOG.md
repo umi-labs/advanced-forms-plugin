@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.4.0...v1.5.0) (2026-06-04)
+
+### Features
+
+* **validation:** admin-configurable rules + form-level resolver ([717a15c](https://github.com/umi-labs/advanced-forms-plugin/commit/717a15c06d6eb7934a2edf4f266c347a0d2502d2))
+
 ## [1.4.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.3.3...v1.4.0) (2026-06-04)
 
 ### Features
