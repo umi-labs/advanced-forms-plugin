@@ -366,6 +366,145 @@ describe('buildFormURL', () => {
   })
 })
 
+import { z } from 'zod'
+import { buildZodSchemaFromForm } from '../src/utilities/buildZodSchemaFromForm.js'
+
+describe('buildZodSchemaFromForm', () => {
+  const wrap = (fields: any[]) => ({ steps: [{ title: 's', fields }] }) as any
+
+  test('builds an object schema keyed by field.name', () => {
+    const schema = buildZodSchemaFromForm(
+      wrap([
+        { name: 'first', label: 'First', blockType: 'text', required: true },
+        { name: 'note', label: 'Note', blockType: 'textarea' },
+      ]),
+    )
+    expect(schema.safeParse({ first: 'A', note: '' }).success).toBe(true)
+    const bad = schema.safeParse({ first: '', note: '' })
+    expect(bad.success).toBe(false)
+    expect(bad.error!.issues[0]!.message).toBe('First is required')
+  })
+
+  test('accepts a bare FormFieldBlock[] in place of a form document', () => {
+    const schema = buildZodSchemaFromForm([
+      { name: 'first', label: 'First', blockType: 'text', required: true },
+    ] as any)
+    expect(schema.safeParse({ first: 'A' }).success).toBe(true)
+    expect(schema.safeParse({ first: '' }).success).toBe(false)
+  })
+
+  test('email field rejects malformed values', () => {
+    const schema = buildZodSchemaFromForm(
+      wrap([{ name: 'email', label: 'Email', blockType: 'email', required: true }]),
+    )
+    expect(schema.safeParse({ email: 'a@b.co' }).success).toBe(true)
+    expect(schema.safeParse({ email: 'nope' }).success).toBe(false)
+  })
+
+  test('optional text accepts undefined and empty string', () => {
+    const schema = buildZodSchemaFromForm(
+      wrap([{ name: 'nick', label: 'Nick', blockType: 'text' }]),
+    )
+    expect(schema.safeParse({ nick: '' }).success).toBe(true)
+    expect(schema.safeParse({}).success).toBe(true)
+  })
+
+  test('applies minLength / maxLength / pattern with override messages', () => {
+    const schema = buildZodSchemaFromForm(
+      wrap([
+        {
+          name: 'code',
+          label: 'Code',
+          blockType: 'text',
+          required: true,
+          validation: {
+            minLength: 2,
+            maxLength: 4,
+            pattern: '^[A-Z]+$',
+            patternMessage: 'capitals only',
+          },
+        },
+      ]),
+    )
+    expect(schema.safeParse({ code: 'AB' }).success).toBe(true)
+    expect(schema.safeParse({ code: 'A' }).success).toBe(false)
+    expect(schema.safeParse({ code: 'ABCDE' }).success).toBe(false)
+    const r = schema.safeParse({ code: 'ab' })
+    expect(r.success).toBe(false)
+    expect(r.error!.issues.some((i) => i.message === 'capitals only')).toBe(true)
+  })
+
+  test('required checkbox must be true', () => {
+    const schema = buildZodSchemaFromForm(
+      wrap([{ name: 'agree', label: 'Agree', blockType: 'checkbox', required: true }]),
+    )
+    expect(schema.safeParse({ agree: true }).success).toBe(true)
+    const r = schema.safeParse({ agree: false })
+    expect(r.success).toBe(false)
+    expect(r.error!.issues[0]!.message).toBe('Agree is required')
+  })
+
+  test('required checkboxGroup needs at least one entry', () => {
+    const schema = buildZodSchemaFromForm(
+      wrap([
+        { name: 'topics', label: 'Topics', blockType: 'checkboxGroup', required: true },
+      ]),
+    )
+    expect(schema.safeParse({ topics: ['a'] }).success).toBe(true)
+    expect(schema.safeParse({ topics: [] }).success).toBe(false)
+  })
+
+  test('number applies min / max with overridable messages', () => {
+    const schema = buildZodSchemaFromForm(
+      wrap([
+        {
+          name: 'guests',
+          label: 'Guests',
+          blockType: 'number',
+          required: true,
+          validation: { min: 1, max: 8, maxMessage: 'too many' },
+        },
+      ]),
+    )
+    expect(schema.safeParse({ guests: 4 }).success).toBe(true)
+    expect(schema.safeParse({ guests: 0 }).success).toBe(false)
+    const r = schema.safeParse({ guests: 9 })
+    expect(r.success).toBe(false)
+    expect(r.error!.issues[0]!.message).toBe('too many')
+  })
+
+  test('multiCounter enforces per-counter and total constraints', () => {
+    const schema = buildZodSchemaFromForm(
+      wrap([
+        {
+          name: 'rooms',
+          label: 'Rooms',
+          blockType: 'multiCounter',
+          counters: [
+            { name: 'adults', label: 'Adults', min: 1, max: 4 },
+            { name: 'kids', label: 'Kids', min: 0, max: 4 },
+          ],
+          validation: { min: 2, max: 5 },
+        },
+      ]),
+    )
+    expect(schema.safeParse({ rooms: { adults: 2, kids: 1 } }).success).toBe(true)
+    expect(schema.safeParse({ rooms: { adults: 0, kids: 1 } }).success).toBe(false)
+    const tooMany = schema.safeParse({ rooms: { adults: 4, kids: 4 } })
+    expect(tooMany.success).toBe(false)
+    expect(tooMany.error!.issues.some((i) => /total/.test(i.message))).toBe(true)
+  })
+
+  test('honours fieldSchemas override for custom blockTypes', () => {
+    const schema = buildZodSchemaFromForm(
+      wrap([{ name: 'custom', label: 'Custom', blockType: 'mySpecial', required: true }]),
+      { fieldSchemas: { mySpecial: () => z.literal('ok') } },
+    )
+    expect(schema.safeParse({ custom: 'ok' }).success).toBe(true)
+    expect(schema.safeParse({ custom: 'no' }).success).toBe(false)
+  })
+})
+
 describe('sanitizeSubmission', () => {
   test('converts string values as-is', () => {
     const result = sanitizeSubmission({ name: 'Alice', city: 'London' })

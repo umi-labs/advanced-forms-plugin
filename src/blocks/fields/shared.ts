@@ -50,9 +50,15 @@ export const baseFieldBlockFields: Field[] = [
     ],
   },
   {
+    name: 'showAdvanced',
+    type: 'checkbox',
+    label: 'Show advanced settings',
+  },
+  {
     name: 'validation',
     type: 'group',
     admin: {
+      condition: (_, siblingData) => Boolean(siblingData?.showAdvanced),
       description:
         'Optional validation rules. Combine with the form-level Zod resolver for richer logic.',
     },
