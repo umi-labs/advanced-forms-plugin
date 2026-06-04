@@ -7,5 +7,15 @@ export const EmailBlock: Block = {
   fields: [
     ...baseFieldBlockFields,
     { name: 'placeholder', type: 'text' },
+    {
+      name: 'width',
+      type: 'select',
+      defaultValue: 'full',
+      options: [
+        { label: 'Full width', value: 'full' },
+        { label: 'Half width', value: 'half' },
+        { label: 'Third width', value: 'third' },
+      ],
+    },
   ],
 }

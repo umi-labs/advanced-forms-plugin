@@ -8,5 +8,15 @@ export const SelectBlock: Block = {
     ...baseFieldBlockFields,
     { name: 'placeholder', type: 'text' },
     optionsArrayField,
+    {
+      name: 'width',
+      type: 'select',
+      defaultValue: 'full',
+      options: [
+        { label: 'Full width', value: 'full' },
+        { label: 'Half width', value: 'half' },
+        { label: 'Third width', value: 'third' },
+      ],
+    },
   ],
 }

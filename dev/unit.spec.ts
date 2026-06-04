@@ -68,6 +68,11 @@ describe('TextBlock', () => {
     const field = flatFields(TextBlock.fields).find((f) => 'name' in f && f.name === 'width') as any
     expect(field?.defaultValue).toBe('full')
   })
+  test('width includes third option', () => {
+    const field = flatFields(TextBlock.fields).find((f) => 'name' in f && f.name === 'width') as any
+    const values = field?.options?.map((o: any) => o.value)
+    expect(values).toContain('third')
+  })
 })
 
 describe('EmailBlock', () => {
@@ -80,9 +85,19 @@ describe('EmailBlock', () => {
 
 describe('PhoneBlock', () => {
   test('has slug phone', () => expect(PhoneBlock.slug).toBe('phone'))
-  test('has placeholder field', () => {
+  test('has placeholder, width, defaultCountry, countries fields', () => {
     const names = PhoneBlock.fields.map((f) => ('name' in f ? f.name : null))
     expect(names).toContain('placeholder')
+    expect(names).toContain('width')
+    expect(names).toContain('defaultCountry')
+    expect(names).toContain('countries')
+  })
+  test('countries is an array of { label, value }', () => {
+    const countries = PhoneBlock.fields.find((f) => 'name' in f && f.name === 'countries') as any
+    expect(countries?.type).toBe('array')
+    const subNames = countries?.fields?.map((f: any) => f.name)
+    expect(subNames).toContain('label')
+    expect(subNames).toContain('value')
   })
 })
 
@@ -101,11 +116,15 @@ describe('TextareaBlock', () => {
 
 describe('CheckboxBlock', () => {
   test('has slug checkbox', () => expect(CheckboxBlock.slug).toBe('checkbox'))
-  test('has only base fields', () => {
-    const extraNames = flatFields(CheckboxBlock.fields)
-      .map((f) => ('name' in f ? f.name : null))
-      .filter((n) => !['name', 'nameLock', 'label', 'required', 'tooltip'].includes(n as string))
-    expect(extraNames).toHaveLength(0)
+  test('has appearance field with checkbox + switch options', () => {
+    const appearance = flatFields(CheckboxBlock.fields).find(
+      (f) => 'name' in f && f.name === 'appearance',
+    ) as any
+    expect(appearance?.type).toBe('select')
+    expect(appearance?.defaultValue).toBe('checkbox')
+    const values = appearance?.options?.map((o: any) => o.value)
+    expect(values).toContain('checkbox')
+    expect(values).toContain('switch')
   })
 })
 

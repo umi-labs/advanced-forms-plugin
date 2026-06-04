@@ -39,20 +39,31 @@ export type BaseFieldBlock = {
 // Field block types (discriminated union on blockType)
 // ---------------------------------------------------------------------------
 
+/** Width of an input within a step. Consecutive non-`'full'` fields in `Step`
+ *  are grouped into the same row. */
+export type FieldWidth = 'full' | 'half' | 'third'
+
 export type TextBlock = BaseFieldBlock & {
   blockType: 'text'
   placeholder?: string | null
-  width?: 'full' | 'half' | null
+  width?: FieldWidth | null
 }
 
 export type EmailBlock = BaseFieldBlock & {
   blockType: 'email'
   placeholder?: string | null
+  width?: FieldWidth | null
 }
 
 export type PhoneBlock = BaseFieldBlock & {
   blockType: 'phone'
   placeholder?: string | null
+  width?: FieldWidth | null
+  /** ISO/dial value of the default selected country (e.g. `"+44"`). */
+  defaultCountry?: string | null
+  /** Country options for the picker. `value` should be the dial code so the
+   *  field can build an E.164 number. Defaults to a small built-in list. */
+  countries?: SelectOption[] | null
 }
 
 export type TextareaBlock = BaseFieldBlock & {
@@ -63,6 +74,8 @@ export type TextareaBlock = BaseFieldBlock & {
 
 export type CheckboxBlock = BaseFieldBlock & {
   blockType: 'checkbox'
+  /** Visual presentation. Defaults to `'checkbox'`. Data shape is unchanged. */
+  appearance?: 'checkbox' | 'switch' | null
 }
 
 export type RadioGroupBlock = BaseFieldBlock & {
@@ -81,6 +94,7 @@ export type SelectBlock = BaseFieldBlock & {
   blockType: 'select'
   placeholder?: string | null
   options?: SelectOption[] | null
+  width?: FieldWidth | null
 }
 
 export type NumberBlock = BaseFieldBlock & {
@@ -200,8 +214,23 @@ export type FormStep = {
   id?: string
   title: string
   icon?: MediaObject | null
+  /** Optional icon shown in the StepIndicator when this step is complete.
+   *  Falls back to a built-in tick icon. */
+  completedIcon?: MediaObject | null
   introContent?: unknown
   fields: FormFieldBlock[]
+  /** Per-step override for the "Back" button label. */
+  backLabel?: string | null
+  /** Per-step override for the "Next" (or "Submit" on the final step) button label. */
+  nextLabel?: string | null
+}
+
+export type FormButtonLabels = {
+  back?: string | null
+  next?: string | null
+  submit?: string | null
+  /** Label for the "Back" button on the final step. Falls back to `back`. */
+  backLast?: string | null
 }
 
 export type AdditionalContent = {
@@ -216,6 +245,9 @@ export type FormDocument = {
   slug: string
   steps: FormStep[]
   additionalContent?: AdditionalContent | null
+  /** Document-level overrides for navigation button labels. Per-step `backLabel`
+   *  / `nextLabel` take precedence over these. */
+  buttonLabels?: FormButtonLabels | null
   submissionActions: SubmissionActionBlock[]
   updatedAt: string
   createdAt: string
@@ -301,6 +333,13 @@ export type FormProps = {
    * Called for each step; return `null`/`undefined` to render nothing.
    */
   renderStepIntro?: (step: FormStep, index: number) => ReactNode
+  /**
+   * Optional render function for the confirmation message after a successful
+   * submission. Receives the raw `confirmationMessage` payload (typically
+   * Lexical JSON) plus the full `SubmitResult`. If omitted, a default
+   * "Form submitted successfully." message is shown.
+   */
+  renderConfirmation?: (message: unknown, result: SubmitResult) => ReactNode
 }
 
 // ---------------------------------------------------------------------------

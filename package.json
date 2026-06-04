@@ -19,6 +19,11 @@
       "import": "./dist/exports/rsc.js",
       "types": "./dist/exports/rsc.d.ts",
       "default": "./dist/exports/rsc.js"
+    },
+    "./rich-text": {
+      "import": "./dist/exports/rich-text.js",
+      "types": "./dist/exports/rich-text.d.ts",
+      "default": "./dist/exports/rich-text.js"
     }
   },
   "main": "./dist/index.js",
@@ -92,10 +97,16 @@
     "vitest": "4.0.18"
   },
   "peerDependencies": {
+    "@payloadcms/richtext-lexical": "^3.0.0",
     "@radix-ui/react-popover": "^1.1.0",
     "payload": "^3.84.1",
     "react": "^19",
     "react-hook-form": "^7"
+  },
+  "peerDependenciesMeta": {
+    "@payloadcms/richtext-lexical": {
+      "optional": true
+    }
   },
   "engines": {
     "node": "^18.20.2 || >=20.9.0",

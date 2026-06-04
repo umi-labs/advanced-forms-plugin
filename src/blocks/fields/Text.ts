@@ -14,6 +14,7 @@ export const TextBlock: Block = {
       options: [
         { label: 'Full width', value: 'full' },
         { label: 'Half width', value: 'half' },
+        { label: 'Third width', value: 'third' },
       ],
     },
   ],

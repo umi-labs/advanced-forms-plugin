@@ -81,6 +81,15 @@ export const createFormsCollection = ({
             ],
           },
           {
+            name: 'completedIcon',
+            type: 'upload',
+            admin: {
+              description:
+                'Optional icon shown in the step indicator when this step is complete. Falls back to a built-in tick icon.',
+            },
+            relationTo: mediaCollection,
+          },
+          {
             name: 'introContent',
             type: 'richText',
             admin: { description: 'Optional content shown above the form fields for this step.' },
@@ -90,9 +99,62 @@ export const createFormsCollection = ({
             type: 'blocks',
             blocks: fieldBlocks,
           },
+          {
+            type: 'row',
+            fields: [
+              {
+                name: 'backLabel',
+                type: 'text',
+                admin: {
+                  description: 'Optional override for the "Back" button label on this step.',
+                  width: '50%',
+                },
+              },
+              {
+                name: 'nextLabel',
+                type: 'text',
+                admin: {
+                  description:
+                    'Optional override for the "Next" (or "Submit" on the final step) button label on this step.',
+                  width: '50%',
+                },
+              },
+            ],
+          },
         ],
         minRows: 1,
         required: true,
+      },
+      {
+        name: 'buttonLabels',
+        type: 'group',
+        admin: {
+          description:
+            'Document-level overrides for navigation button labels. Per-step labels take precedence.',
+        },
+        fields: [
+          {
+            type: 'row',
+            fields: [
+              { name: 'back', type: 'text', admin: { width: '50%' } },
+              { name: 'next', type: 'text', admin: { width: '50%' } },
+            ],
+          },
+          {
+            type: 'row',
+            fields: [
+              { name: 'submit', type: 'text', admin: { width: '50%' } },
+              {
+                name: 'backLast',
+                type: 'text',
+                admin: {
+                  description: 'Label for the "Back" button on the final step. Falls back to `back`.',
+                  width: '50%',
+                },
+              },
+            ],
+          },
+        ],
       },
       {
         name: 'additionalContent',

@@ -13,6 +13,7 @@ export function EnquiryForm({
   onError,
   additionalContent,
   renderStepIntro,
+  renderConfirmation,
 }: EnquiryFormProps) {
   const {
     currentStep,
@@ -61,7 +62,11 @@ export function EnquiryForm({
     form.additionalContent?.enabled &&
     (form.additionalContent.position === 'below' || !form.additionalContent.position)
 
-  if (isComplete && result?.actions.confirmationMessage) {
+  // ---------------------------------------------------------------------------
+  // Confirmation state
+  // ---------------------------------------------------------------------------
+  if (isComplete) {
+    const message = result?.actions.confirmationMessage
     return (
       <div
         className={['enquiry-form enquiry-form--complete', className]
@@ -69,13 +74,37 @@ export function EnquiryForm({
           .join(' ')}
         data-testid="enquiry-form-confirmation"
       >
-        {/* Consuming project renders the rich text; we expose the raw data */}
+        {showAbove && additionalContent}
+
+        <StepIndicator steps={form.steps} currentStep={totalSteps} allComplete />
+
         <div className="enquiry-form__confirmation-message">
-          Form submitted successfully.
+          {renderConfirmation && result
+            ? renderConfirmation(message, result)
+            : message !== undefined && message !== null
+              ? // No bundled rich-text renderer — pass raw payload through as
+                // pre-formatted JSON so consumers can see something while they
+                // wire up their own renderer.
+                typeof message === 'string'
+                ? message
+                : 'Form submitted successfully.'
+              : 'Form submitted successfully.'}
         </div>
+
+        {showBelow && additionalContent}
       </div>
     )
   }
+
+  // ---------------------------------------------------------------------------
+  // Button labels — per-step overrides win over document-level overrides which
+  // win over the built-in defaults.
+  // ---------------------------------------------------------------------------
+  const isLastStep = currentStep === totalSteps - 1
+  const docLabels = form.buttonLabels ?? {}
+  const backLabel = stepData.backLabel ?? (isLastStep ? docLabels.backLast : null) ?? docLabels.back ?? 'Back'
+  const nextLabel = stepData.nextLabel ?? docLabels.next ?? 'Next'
+  const submitLabel = stepData.nextLabel ?? docLabels.submit ?? 'Submit'
 
   return (
     <div
@@ -109,18 +138,18 @@ export function EnquiryForm({
             onClick={goBack}
             data-testid="btn-back"
           >
-            Back
+            {backLabel}
           </button>
         )}
 
-        {currentStep < totalSteps - 1 ? (
+        {!isLastStep ? (
           <button
             type="button"
             className="enquiry-form__btn enquiry-form__btn--next"
             onClick={handleNext}
             data-testid="btn-next"
           >
-            Next
+            {nextLabel}
           </button>
         ) : (
           <button
@@ -130,7 +159,7 @@ export function EnquiryForm({
             disabled={isSubmitting}
             data-testid="btn-submit"
           >
-            {isSubmitting ? 'Submitting…' : 'Submit'}
+            {isSubmitting ? 'Submitting…' : submitLabel}
           </button>
         )}
       </div>

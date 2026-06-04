@@ -9,23 +9,53 @@ type Props = { field: CheckboxInputBlock; form: UseFormReturn<Record<string, unk
 export function CheckboxField({ field, form }: Props) {
   const { register, formState: { errors } } = form
   const error = errors[field.name]
+  const appearance = field.appearance ?? 'checkbox'
+  const isSwitch = appearance === 'switch'
+
+  const inputProps = register(field.name, {
+    required: field.required ? `${field.label} is required` : false,
+  })
 
   return (
-    <div className="enquiry-field enquiry-field--checkbox">
-      <label className="enquiry-field__checkbox-label" htmlFor={`field-${field.name}`}>
-        <input
-          id={`field-${field.name}`}
-          type="checkbox"
-          className="enquiry-field__checkbox"
-          {...register(field.name, {
-            required: field.required ? `${field.label} is required` : false,
-          })}
-        />
-        {field.label}
-        {field.required && <span className="enquiry-field__required" aria-hidden="true">*</span>}
-        {field.tooltip?.enabled && field.tooltip.text && (
-          <FieldTooltip text={field.tooltip.text} />
+    <div
+      className={`enquiry-field enquiry-field--checkbox enquiry-field--${appearance}`}
+    >
+      <label
+        className={
+          isSwitch ? 'enquiry-field__switch-label' : 'enquiry-field__checkbox-label'
+        }
+        htmlFor={`field-${field.name}`}
+      >
+        {isSwitch ? (
+          <span className="enquiry-field__switch">
+            <input
+              id={`field-${field.name}`}
+              type="checkbox"
+              role="switch"
+              className="enquiry-field__switch-input"
+              {...inputProps}
+            />
+            <span className="enquiry-field__switch-track" aria-hidden="true">
+              <span className="enquiry-field__switch-thumb" />
+            </span>
+          </span>
+        ) : (
+          <input
+            id={`field-${field.name}`}
+            type="checkbox"
+            className="enquiry-field__checkbox"
+            {...inputProps}
+          />
         )}
+        <span className="enquiry-field__checkbox-text">
+          {field.label}
+          {field.required && (
+            <span className="enquiry-field__required" aria-hidden="true">*</span>
+          )}
+          {field.tooltip?.enabled && field.tooltip.text && (
+            <FieldTooltip text={field.tooltip.text} />
+          )}
+        </span>
       </label>
       {error && (
         <p className="enquiry-field__error" role="alert">
