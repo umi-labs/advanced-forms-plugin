@@ -1,5 +1,7 @@
 import type { PayloadHandler } from 'payload'
-import type { FormPluginConfig } from '../types.js'
+import type { FormDocument, FormPluginConfig } from '../types.js'
+
+import { normalizeFormSteps } from '../utilities/normalizeFormSteps.js'
 
 export const createFetchFormHandler = (pluginOptions: FormPluginConfig): PayloadHandler =>
   async (req) => {
@@ -25,5 +27,8 @@ export const createFetchFormHandler = (pluginOptions: FormPluginConfig): Payload
       return Response.json({ error: `Form '${slug}' not found` }, { status: 404 })
     }
 
-    return Response.json(result.docs[0])
+    // Collapse single-stage / multi-stage authoring into the canonical `steps`
+    // shape the runtime always consumes.
+    const doc = result.docs[0] as FormDocument
+    return Response.json({ ...doc, steps: normalizeFormSteps(doc) })
   }

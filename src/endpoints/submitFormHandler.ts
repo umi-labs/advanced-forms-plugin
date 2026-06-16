@@ -1,5 +1,6 @@
 import type { PayloadHandler } from 'payload'
 import type { FormDocument, FormPluginConfig } from '../types.js'
+import { normalizeFormSteps } from '../utilities/normalizeFormSteps.js'
 import { sanitizeSubmission } from '../utilities/sanitizeSubmission.js'
 
 function interpolate(template: string, data: Record<string, unknown>): string {
@@ -66,7 +67,7 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
 
     // Validate required fields across all steps
     const errors: Array<{ field: string; message: string }> = []
-    for (const step of form.steps) {
+    for (const step of normalizeFormSteps(form)) {
       for (const field of step.fields) {
         const value = submissionData[field.name]
         if (field.required && (value === undefined || value === null || value === '')) {

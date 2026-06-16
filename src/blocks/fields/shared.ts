@@ -21,7 +21,10 @@ export const baseFieldBlockFields: Field[] = [
       {
         name: 'label',
         type: 'text',
-        admin: { width: '50%' },
+        admin: {
+          description: 'Shown to the visitor above this field.',
+          width: '50%',
+        },
         required: true,
       },
       nameField,
@@ -31,20 +34,30 @@ export const baseFieldBlockFields: Field[] = [
   {
     name: 'required',
     type: 'checkbox',
+    admin: {
+      description: 'Visitors must complete this field before the form can be submitted.',
+    },
   },
   {
     name: 'tooltip',
     type: 'group',
+    admin: {
+      description: 'Show a small help icon next to the field label with extra guidance on hover.',
+    },
     fields: [
       {
         name: 'enabled',
         type: 'checkbox',
+        admin: {
+          description: 'Show a help tooltip for this field.',
+        },
       },
       {
         name: 'text',
         type: 'textarea',
         admin: {
           condition: (_, siblingData) => Boolean(siblingData?.enabled),
+          description: 'The text shown inside the tooltip.',
         },
       },
     ],
@@ -52,6 +65,9 @@ export const baseFieldBlockFields: Field[] = [
   {
     name: 'showAdvanced',
     type: 'checkbox',
+    admin: {
+      description: 'Reveal extra settings like placeholder, width, and validation rules.',
+    },
     label: 'Show advanced settings',
   },
   {

@@ -25,6 +25,7 @@ export const createFormsCollection = ({
     fieldOverrides: {
       admin: {
         description: 'Auto-generated from title. Must be unique, e.g. "contact-form".',
+        width: '50%',
       },
       index: true,
       required: true,
@@ -47,15 +48,48 @@ export const createFormsCollection = ({
     },
     fields: [
       {
-        name: 'title',
-        type: 'text',
-        required: true,
+        type: 'row',
+        fields: [
+          {
+            name: 'title',
+            type: 'text',
+            admin: {
+              description: 'The name of this form, shown in the admin list and used as the document title.',
+              width: '50%',
+            },
+            required: true,
+          },
+          slugField,
+        ],
       },
-      slugField,
       slugLockField,
+      {
+        name: 'multiStep',
+        type: 'checkbox',
+        admin: {
+          description:
+            'Split this form into multiple stages with their own progress indicator and Back/Next navigation. Leave off for a simple single-page form.',
+        },
+        defaultValue: false,
+        label: 'Multi-stage form',
+      },
+      {
+        name: 'fields',
+        type: 'blocks',
+        admin: {
+          condition: (_, siblingData) => !siblingData?.multiStep,
+          description: 'The fields shown on this form, in order.',
+        },
+        blocks: fieldBlocks,
+        labels: { plural: 'Fields', singular: 'Field' },
+      },
       {
         name: 'steps',
         type: 'array',
+        admin: {
+          condition: (_, siblingData) => Boolean(siblingData?.multiStep),
+          description: 'Each stage is shown on its own page with Back/Next navigation between them.',
+        },
         fields: [
           {
             type: 'row',
@@ -130,39 +164,66 @@ export const createFormsCollection = ({
         type: 'group',
         admin: {
           description:
-            'Document-level overrides for navigation button labels. Per-step labels take precedence.',
+            'Override the text on the form navigation buttons. Leave blank to use the defaults ("Back", "Next", "Submit").',
         },
         fields: [
           {
-            type: 'row',
-            fields: [
-              { name: 'back', type: 'text', admin: { width: '50%' } },
-              { name: 'next', type: 'text', admin: { width: '50%' } },
-            ],
+            name: 'submit',
+            type: 'text',
+            admin: {
+              description: 'Label for the button that submits the form. Defaults to "Submit".',
+              placeholder: 'Submit',
+            },
           },
           {
             type: 'row',
+            admin: {
+              condition: (data) => Boolean(data?.multiStep),
+            },
             fields: [
-              { name: 'submit', type: 'text', admin: { width: '50%' } },
               {
-                name: 'backLast',
+                name: 'back',
                 type: 'text',
                 admin: {
-                  description: 'Label for the "Back" button on the final step. Falls back to `back`.',
+                  description: 'Label for the "Back" button. Defaults to "Back".',
+                  placeholder: 'Back',
+                  width: '50%',
+                },
+              },
+              {
+                name: 'next',
+                type: 'text',
+                admin: {
+                  description: 'Label for the "Next" button between stages. Defaults to "Next".',
+                  placeholder: 'Next',
                   width: '50%',
                 },
               },
             ],
+          },
+          {
+            name: 'backLast',
+            type: 'text',
+            admin: {
+              condition: (data) => Boolean(data?.multiStep),
+              description: 'Label for the "Back" button on the final stage. Falls back to "Back".',
+            },
           },
         ],
       },
       {
         name: 'additionalContent',
         type: 'group',
+        admin: {
+          description: 'Optional rich-text content rendered above or below the form (e.g. intro copy or a privacy notice).',
+        },
         fields: [
           {
             name: 'enabled',
             type: 'checkbox',
+            admin: {
+              description: 'Show the additional content alongside this form.',
+            },
             defaultValue: false,
           },
           {
@@ -170,6 +231,7 @@ export const createFormsCollection = ({
             type: 'select',
             admin: {
               condition: (_, siblingData) => Boolean(siblingData?.enabled),
+              description: 'Where the content appears relative to the form.',
             },
             defaultValue: 'below',
             options: [

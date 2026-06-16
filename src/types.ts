@@ -263,6 +263,12 @@ export type FormDocument = {
   id: string
   title: string
   slug: string
+  /** Whether this form is authored as multiple stages. When false (the
+   *  default), fields live on the top-level `fields` array instead of `steps`. */
+  multiStep?: boolean | null
+  /** Flat field list used by single-stage forms (`multiStep` falsy). The API
+   *  response always also exposes a normalized `steps` array. */
+  fields?: FormFieldBlock[] | null
   steps: FormStep[]
   additionalContent?: AdditionalContent | null
   /** Document-level overrides for navigation button labels. Per-step `backLabel`

@@ -8,3 +8,4 @@ export {
   type BuildZodSchemaOptions,
   type FieldSchemaBuilder,
 } from '../utilities/buildZodSchemaFromForm.js'
+export { normalizeFormSteps } from '../utilities/normalizeFormSteps.js'

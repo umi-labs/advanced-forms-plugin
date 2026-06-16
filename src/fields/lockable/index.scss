@@ -1,4 +1,16 @@
 .lockable-text-field {
+  // Payload doesn't apply `admin.width` to fields rendered via a custom
+  // component, so inside a `row` this field would otherwise shrink to its
+  // content width. Growing to fill the remaining space lets it sit flush
+  // beside a sibling (e.g. Title/Slug, Label/Name). When rendered on its own
+  // (not inside a row) it's a block-level element and stays full width.
+  flex: 1 1 auto;
+  min-width: 0;
+
+  input {
+    width: 100%;
+  }
+
   &__label-wrapper {
     display: flex;
     justify-content: space-between;

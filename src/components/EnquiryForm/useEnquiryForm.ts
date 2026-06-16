@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { type Resolver, useForm } from 'react-hook-form'
 import type { EnquiryForm, SubmitError, SubmitResult, UseEnquiryFormReturn } from '../../types.js'
+import { normalizeFormSteps } from '../../utilities/normalizeFormSteps.js'
 
 type Options = {
   form: EnquiryForm
@@ -14,9 +15,9 @@ type Options = {
   resolver?: Resolver<Record<string, unknown>>
 }
 
-function buildDefaultValues(form: EnquiryForm): Record<string, unknown> {
+function buildDefaultValues(steps: EnquiryForm['steps']): Record<string, unknown> {
   const defaults: Record<string, unknown> = {}
-  for (const step of form.steps) {
+  for (const step of steps) {
     for (const field of step.fields) {
       if (field.blockType === 'numberStepper' && field.defaultValue !== undefined) {
         defaults[field.name] = field.defaultValue
@@ -39,13 +40,15 @@ export function useEnquiryForm({ form, apiBase = '', resolver }: Options): UseEn
   const [result, setResult] = useState<SubmitResult | null>(null)
   const [error, setError] = useState<SubmitError | null>(null)
 
+  const steps = normalizeFormSteps(form)
+
   const rhfForm = useForm<Record<string, unknown>>({
     mode: 'onSubmit',
-    defaultValues: buildDefaultValues(form),
+    defaultValues: buildDefaultValues(steps),
     resolver,
   })
-  const totalSteps = form.steps.length
-  const stepData = form.steps[currentStep]!
+  const totalSteps = steps.length
+  const stepData = steps[currentStep]!
 
   const getCurrentStepFieldNames = () =>
     (stepData.fields ?? []).map((f) => f.name)

@@ -57,6 +57,10 @@ export function EnquiryForm({
     }
   }
 
+  // Single-stage forms render as one step — there's nothing to indicate, so
+  // the progress indicator is hidden.
+  const showStepIndicator = totalSteps > 1
+
   const showAbove =
     form.additionalContent?.enabled && form.additionalContent.position === 'above'
   const showBelow =
@@ -77,7 +81,9 @@ export function EnquiryForm({
       >
         {showAbove && additionalContent}
 
-        <StepIndicator steps={form.steps} currentStep={totalSteps} allComplete />
+        {showStepIndicator && (
+          <StepIndicator steps={form.steps} currentStep={totalSteps} allComplete />
+        )}
 
         <div className="enquiry-form__confirmation-message">
           {renderConfirmation && result
@@ -114,7 +120,7 @@ export function EnquiryForm({
     >
       {showAbove && additionalContent}
 
-      <StepIndicator steps={form.steps} currentStep={currentStep} />
+      {showStepIndicator && <StepIndicator steps={form.steps} currentStep={currentStep} />}
 
       <div className="enquiry-form__body">
         {renderStepIntro && stepData.introContent ? (
