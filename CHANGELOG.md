@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.2](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.5.1...v1.5.2) (2026-06-16)
+
+### Features
+
+* **forms:** make multi-stage opt-in and tidy form builder UI ([65a693d](https://github.com/umi-labs/advanced-forms-plugin/commit/65a693d34325faf693b9c026e100548d4b0bc7ba))
+
 ## [1.5.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.5.0...v1.5.1) (2026-06-04)
 
 ### Features
