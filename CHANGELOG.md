@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.7.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.5.2...v1.7.0) (2026-06-22)
+
+### Features
+
+* **forms:** add submission context passthrough ([6c24e85](https://github.com/umi-labs/advanced-forms-plugin/commit/6c24e856a04240e108b0692a4822f2a6c30aad49))
+
 ## [1.5.2](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.5.1...v1.5.2) (2026-06-16)
 
 ### Features
