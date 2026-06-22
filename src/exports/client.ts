@@ -9,3 +9,4 @@ export {
   type FieldSchemaBuilder,
 } from '../utilities/buildZodSchemaFromForm.js'
 export { normalizeFormSteps } from '../utilities/normalizeFormSteps.js'
+export type { EnquirySubmissionContext } from '../types.js'

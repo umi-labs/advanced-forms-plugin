@@ -283,12 +283,18 @@ export type FormDocument = {
 // API response types
 // ---------------------------------------------------------------------------
 
+/** Arbitrary, JSON-serialisable context recorded against the submission.
+ *  Not rendered; not part of `data`. Stored verbatim on the submission. */
+export type EnquirySubmissionContext = Record<string, unknown>
+
 export type SubmitResult = {
   success: true
   actions: {
     confirmationMessage?: unknown
     redirectUrl?: string
   }
+  /** ID of the created submission, when the endpoint returns it. */
+  submissionId?: string
 }
 
 export type SubmitError = {
@@ -372,6 +378,12 @@ export type FormProps = {
    * source can flag a field as invalid.
    */
   resolver?: Resolver<Record<string, unknown>>
+  /**
+   * Arbitrary, JSON-serialisable context recorded against the submission
+   * (e.g. hotel/itinerary/offer reference). Not rendered and not part of
+   * `data` — stored verbatim on the submission.
+   */
+  context?: EnquirySubmissionContext
 }
 
 // ---------------------------------------------------------------------------

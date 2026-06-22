@@ -2,7 +2,13 @@
 
 import { useState } from 'react'
 import { type Resolver, useForm } from 'react-hook-form'
-import type { EnquiryForm, SubmitError, SubmitResult, UseEnquiryFormReturn } from '../../types.js'
+import type {
+  EnquiryForm,
+  EnquirySubmissionContext,
+  SubmitError,
+  SubmitResult,
+  UseEnquiryFormReturn,
+} from '../../types.js'
 import { normalizeFormSteps } from '../../utilities/normalizeFormSteps.js'
 
 type Options = {
@@ -13,6 +19,11 @@ type Options = {
    * addition to per-field rules registered via `buildFieldRules`.
    */
   resolver?: Resolver<Record<string, unknown>>
+  /**
+   * Arbitrary, JSON-serialisable context recorded against the submission.
+   * Sent as a top-level `context` key on the submit request when provided.
+   */
+  context?: EnquirySubmissionContext
 }
 
 function buildDefaultValues(steps: EnquiryForm['steps']): Record<string, unknown> {
@@ -33,7 +44,12 @@ function buildDefaultValues(steps: EnquiryForm['steps']): Record<string, unknown
   return defaults
 }
 
-export function useEnquiryForm({ form, apiBase = '', resolver }: Options): UseEnquiryFormReturn {
+export function useEnquiryForm({
+  form,
+  apiBase = '',
+  resolver,
+  context,
+}: Options): UseEnquiryFormReturn {
   const [currentStep, setCurrentStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
@@ -75,6 +91,7 @@ export function useEnquiryForm({ form, apiBase = '', resolver }: Options): UseEn
         body: JSON.stringify({
           data: rhfForm.getValues(),
           metadata: { referrer: typeof window !== 'undefined' ? document.referrer : '' },
+          ...(context ? { context } : {}),
         }),
       })
 

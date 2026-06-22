@@ -30,7 +30,11 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
       )
     }
 
-    let body: { data?: Record<string, unknown>; metadata?: Record<string, unknown> }
+    let body: {
+      data?: Record<string, unknown>
+      metadata?: Record<string, unknown>
+      context?: unknown
+    }
     try {
       body = (await req.json?.()) as typeof body
     } catch {
@@ -42,6 +46,10 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
 
     const submissionData = body.data ?? {}
     const metadata = body.metadata ?? {}
+    // Only persist context when it's a plain object; ignore arrays/primitives/null.
+    const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+      typeof value === 'object' && value !== null && !Array.isArray(value)
+    const context = isPlainObject(body.context) ? body.context : undefined
 
     const formsSlug = (pluginOptions.collections?.forms ?? 'forms') as Parameters<
       typeof payload.find
@@ -81,7 +89,7 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
     }
 
     // Store submission
-    await payload.create({
+    const submission = await payload.create({
       collection: submissionsSlug,
       data: {
         form: form.id,
@@ -92,6 +100,7 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
           ip: req.headers.get('x-forwarded-for') ?? '',
           referrer: String(metadata.referrer ?? ''),
         },
+        ...(context ? { context } : {}),
       },
     })
 
@@ -119,5 +128,9 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
       }
     }
 
-    return Response.json({ success: true, actions: responseActions })
+    return Response.json({
+      success: true,
+      actions: responseActions,
+      submissionId: String(submission.id),
+    })
   }

@@ -322,6 +322,38 @@ describe('submitFormHandler', () => {
     expect(entry).toBeDefined()
   })
 
+  test('persists a plain-object context and returns submissionId', async () => {
+    const ctx = { collection: 'hotels', id: 42, slug: 'the-grand', title: 'The Grand' }
+    const response = await makeRequest(formSlug, {
+      data: { full_name: 'Eve', email: 'eve@example.com' },
+      context: ctx,
+    })
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.submissionId).toBeDefined()
+
+    const submission = await payload.findByID({
+      collection: 'form-submissions',
+      id: body.submissionId,
+    })
+    expect(submission.context).toEqual(ctx)
+  })
+
+  test('ignores non-object context and still stores the submission', async () => {
+    const response = await makeRequest(formSlug, {
+      data: { full_name: 'Frank', email: 'frank@example.com' },
+      context: 'not-an-object',
+    })
+    expect(response.status).toBe(200)
+    const body = await response.json()
+
+    const submission = await payload.findByID({
+      collection: 'form-submissions',
+      id: body.submissionId,
+    })
+    expect(submission.context ?? null).toBeNull()
+  })
+
   test('sendEmail action interpolates subject and fires callback', async () => {
     capturedEmails.length = 0
     await makeRequest(formSlug, {

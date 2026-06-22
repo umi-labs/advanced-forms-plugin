@@ -56,5 +56,14 @@ export const createSubmissionsCollection = ({
         { name: 'referrer', type: 'text' },
       ],
     },
+    {
+      name: 'context',
+      type: 'json',
+      admin: {
+        readOnly: true,
+        description:
+          'Context the enquiry was submitted with (e.g. hotel/itinerary/offer reference).',
+      },
+    },
   ],
 })
