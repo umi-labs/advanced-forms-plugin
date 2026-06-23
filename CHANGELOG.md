@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.8.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.8.0...v1.8.1) (2026-06-23)
+
+### Bug Fixes
+
+* **forms:** correct client submit path to match registered endpoint ([3a0ee36](https://github.com/umi-labs/advanced-forms-plugin/commit/3a0ee36d73bb5a820c0917ab16d2deebe3bd9ae9))
+
 ## [1.8.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.7.1...v1.8.0) (2026-06-23)
 
 ### Features
