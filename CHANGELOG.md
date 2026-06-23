@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.7.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.7.0...v1.7.1) (2026-06-23)
+
+### Features
+
+* **intro:** updating intro content to allow for headings to be used ([197c5ef](https://github.com/umi-labs/advanced-forms-plugin/commit/197c5efa01a8421f042f5b7bd1a07b3044b92602))
+
 ## [1.7.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.5.2...v1.7.0) (2026-06-22)
 
 ### Features
