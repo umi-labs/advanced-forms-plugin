@@ -532,3 +532,97 @@ describe('sanitizeSubmission', () => {
     ])
   })
 })
+
+import { createFormsCollection } from '../src/collections/Forms.js'
+import { buildIndicatorSteps } from '../src/utilities/buildIndicatorSteps.js'
+import type { FormDocument } from '../src/types.js'
+
+const formsCollection = createFormsCollection({
+  fieldBlocks: [TextBlock],
+  formsSlug: 'forms',
+  mediaCollection: 'media',
+  pluralLabel: 'Forms',
+  singularLabel: 'Form',
+})
+
+describe('Forms collection confirmationStage config', () => {
+  const group = flatFields(formsCollection.fields).find(
+    (f) => 'name' in f && f.name === 'confirmationStage',
+  ) as any
+
+  test('exposes a confirmationStage group', () => {
+    expect(group?.type).toBe('group')
+  })
+
+  test('group has enabled, label and icon fields', () => {
+    const subNames = flatFields(group?.fields ?? []).map((f: any) => f.name)
+    expect(subNames).toContain('enabled')
+    expect(subNames).toContain('label')
+    expect(subNames).toContain('icon')
+  })
+
+  test('icon relates to the media collection', () => {
+    const icon = flatFields(group?.fields ?? []).find((f: any) => f.name === 'icon')
+    expect(icon).toMatchObject({ type: 'upload', relationTo: 'media' })
+  })
+})
+
+function makeForm(overrides: Partial<FormDocument> = {}): FormDocument {
+  return {
+    id: '1',
+    title: 'Enquiry',
+    slug: 'enquiry',
+    multiStep: true,
+    steps: [
+      { title: 'Your Trip', fields: [] },
+      { title: 'Your Details', fields: [] },
+    ],
+    submissionActions: [],
+    updatedAt: '',
+    createdAt: '',
+    ...overrides,
+  }
+}
+
+describe('buildIndicatorSteps', () => {
+  test('returns the field steps unchanged when no confirmation stage', () => {
+    const steps = buildIndicatorSteps(makeForm())
+    expect(steps.map((s) => s.title)).toEqual(['Your Trip', 'Your Details'])
+  })
+
+  test('returns field steps unchanged when confirmation stage disabled', () => {
+    const steps = buildIndicatorSteps(
+      makeForm({ confirmationStage: { enabled: false, label: 'Confirmation' } }),
+    )
+    expect(steps).toHaveLength(2)
+  })
+
+  test('appends a single confirmation stage when enabled on a multi-step form', () => {
+    const steps = buildIndicatorSteps(
+      makeForm({ confirmationStage: { enabled: true, label: 'All Done' } }),
+    )
+    expect(steps).toHaveLength(3)
+    expect(steps[2].title).toBe('All Done')
+  })
+
+  test('defaults the title to "Confirmation" when no label set', () => {
+    const steps = buildIndicatorSteps(makeForm({ confirmationStage: { enabled: true } }))
+    expect(steps[2].title).toBe('Confirmation')
+  })
+
+  test('uses the configured icon for both icon and completedIcon', () => {
+    const icon = { url: '/clipboard.svg' } as any
+    const steps = buildIndicatorSteps(
+      makeForm({ confirmationStage: { enabled: true, icon } }),
+    )
+    expect(steps[2].icon).toBe(icon)
+    expect(steps[2].completedIcon).toBe(icon)
+  })
+
+  test('does not append when the form has only one stage', () => {
+    const steps = buildIndicatorSteps(
+      makeForm({ steps: [{ title: 'Only', fields: [] }], confirmationStage: { enabled: true } }),
+    )
+    expect(steps).toHaveLength(1)
+  })
+})

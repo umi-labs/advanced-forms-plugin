@@ -169,6 +169,52 @@ export const createFormsCollection = ({
         required: true,
       },
       {
+        name: 'confirmationStage',
+        type: 'group',
+        admin: {
+          condition: (data) => Boolean(data?.multiStep),
+          description:
+            'Show a final "Confirmation" stage in the progress indicator, representing the thank-you screen after submission. This is indicator-only — it does not add an extra page or field step.',
+        },
+        fields: [
+          {
+            name: 'enabled',
+            type: 'checkbox',
+            admin: {
+              description: 'Append a confirmation stage to the step indicator.',
+            },
+            defaultValue: false,
+          },
+          {
+            type: 'row',
+            admin: {
+              condition: (_, siblingData) => Boolean(siblingData?.enabled),
+            },
+            fields: [
+              {
+                name: 'label',
+                type: 'text',
+                admin: {
+                  description: 'Label shown under the confirmation dot. Defaults to "Confirmation".',
+                  placeholder: 'Confirmation',
+                  width: '50%',
+                },
+              },
+              {
+                name: 'icon',
+                type: 'upload',
+                admin: {
+                  description: 'Optional icon shown for the confirmation stage in the indicator.',
+                  width: '50%',
+                },
+                relationTo: mediaCollection,
+              },
+            ],
+          },
+        ],
+        label: 'Confirmation stage',
+      },
+      {
         name: 'buttonLabels',
         type: 'group',
         admin: {
