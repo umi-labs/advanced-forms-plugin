@@ -4,6 +4,7 @@ import { ConfirmationMessageBlock } from '../blocks/submissionActions/Confirmati
 import { RedirectBlock } from '../blocks/submissionActions/Redirect.js'
 import { SendEmailBlock } from '../blocks/submissionActions/SendEmail.js'
 import { lockableTextField } from '../fields/lockable/index.js'
+import { HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 
 export type FormsCollectionOptions = {
   fieldBlocks: Block[]
@@ -54,7 +55,8 @@ export const createFormsCollection = ({
             name: 'title',
             type: 'text',
             admin: {
-              description: 'The name of this form, shown in the admin list and used as the document title.',
+              description:
+                'The name of this form, shown in the admin list and used as the document title.',
               width: '50%',
             },
             required: true,
@@ -88,7 +90,8 @@ export const createFormsCollection = ({
         type: 'array',
         admin: {
           condition: (_, siblingData) => Boolean(siblingData?.multiStep),
-          description: 'Each stage is shown on its own page with Back/Next navigation between them.',
+          description:
+            'Each stage is shown on its own page with Back/Next navigation between them.',
         },
         fields: [
           {
@@ -127,6 +130,12 @@ export const createFormsCollection = ({
             name: 'introContent',
             type: 'richText',
             admin: { description: 'Optional content shown above the form fields for this step.' },
+            editor: lexicalEditor({
+              features: ({ defaultFeatures, rootFeatures }) => [
+                ...defaultFeatures,
+                HeadingFeature(),
+              ],
+            }),
           },
           {
             name: 'fields',
@@ -215,7 +224,8 @@ export const createFormsCollection = ({
         name: 'additionalContent',
         type: 'group',
         admin: {
-          description: 'Optional rich-text content rendered above or below the form (e.g. intro copy or a privacy notice).',
+          description:
+            'Optional rich-text content rendered above or below the form (e.g. intro copy or a privacy notice).',
         },
         fields: [
           {
