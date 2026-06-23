@@ -1,6 +1,7 @@
 'use client'
 
 import type { EnquiryFormProps } from '../../types.js'
+import { buildIndicatorSteps } from '../../utilities/buildIndicatorSteps.js'
 import { Step } from './Step.js'
 import { StepIndicator } from './StepIndicator.js'
 import { useEnquiryForm } from './useEnquiryForm.js'
@@ -62,6 +63,13 @@ export function EnquiryForm({
   // the progress indicator is hidden.
   const showStepIndicator = totalSteps > 1
 
+  // The indicator may include a synthetic, non-navigable "Confirmation" stage
+  // appended after the field steps. It is indicator-only — navigation, the
+  // Submit button and `totalSteps` are unaffected (they come from
+  // `useEnquiryForm` / `normalizeFormSteps`).
+  const indicatorSteps = buildIndicatorSteps(form)
+  const hasConfirmationStage = indicatorSteps.length > form.steps.length
+
   const showAbove =
     form.additionalContent?.enabled && form.additionalContent.position === 'above'
   const showBelow =
@@ -82,9 +90,14 @@ export function EnquiryForm({
       >
         {showAbove && additionalContent}
 
-        {showStepIndicator && (
-          <StepIndicator steps={form.steps} currentStep={totalSteps} allComplete />
-        )}
+        {showStepIndicator &&
+          (hasConfirmationStage ? (
+            // Field steps complete (ticked); the confirmation stage is the
+            // active step on the confirmation screen.
+            <StepIndicator steps={indicatorSteps} currentStep={totalSteps} />
+          ) : (
+            <StepIndicator steps={form.steps} currentStep={totalSteps} allComplete />
+          ))}
 
         <div className="enquiry-form__confirmation-message">
           {renderConfirmation && result
@@ -121,7 +134,7 @@ export function EnquiryForm({
     >
       {showAbove && additionalContent}
 
-      {showStepIndicator && <StepIndicator steps={form.steps} currentStep={currentStep} />}
+      {showStepIndicator && <StepIndicator steps={indicatorSteps} currentStep={currentStep} />}
 
       <div className="enquiry-form__body">
         {renderStepIntro && stepData.introContent ? (

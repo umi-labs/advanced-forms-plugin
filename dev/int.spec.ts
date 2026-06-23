@@ -208,6 +208,56 @@ describe('fetchFormHandler', () => {
     expect(response.status).toBe(404)
   })
 
+  test('returns the configured confirmationStage', async () => {
+    const slug = 'confirmation-stage-' + Date.now()
+    await payload.create({
+      collection: 'forms',
+      data: {
+        title: 'Confirmation Stage Form',
+        slug,
+        multiStep: true,
+        steps: [
+          { title: 'Your Trip', fields: [] },
+          { title: 'Your Details', fields: [] },
+        ],
+        confirmationStage: { enabled: true, label: 'All Done' },
+        submissionActions: [
+          {
+            blockType: 'confirmationMessage',
+            message: {
+              root: {
+                type: 'root',
+                children: [
+                  {
+                    type: 'paragraph',
+                    children: [{ type: 'text', text: 'Thank you!', version: 1 }],
+                    version: 1,
+                  },
+                ],
+                direction: 'ltr',
+                format: '',
+                indent: 0,
+                version: 1,
+              },
+            },
+          },
+        ],
+      },
+    })
+
+    const handler = createFetchFormHandler({ collections: { forms: 'forms' } })
+    const request = new Request(`http://localhost:3000/api/forms/${slug}`)
+    const payloadRequest = await createPayloadRequest({
+      config: await config,
+      request,
+      params: { slug },
+    })
+    const response = await handler(payloadRequest)
+    const body = await response.json()
+    expect(body.confirmationStage?.enabled).toBe(true)
+    expect(body.confirmationStage?.label).toBe('All Done')
+  })
+
   test('returns 400 when slug param is missing', async () => {
     const handler = createFetchFormHandler({ collections: { forms: 'forms' } })
     const request = new Request('http://localhost:3000/api/forms/')

@@ -259,6 +259,17 @@ export type AdditionalContent = {
   content?: unknown
 }
 
+/** Optional synthetic final stage shown in the step indicator (only) of a
+ *  multi-stage form, representing the post-submit confirmation screen. It is
+ *  never a navigable field step. */
+export type ConfirmationStage = {
+  enabled?: boolean | null
+  /** Label shown under the stage dot. Falls back to "Confirmation". */
+  label?: string | null
+  /** Icon shown in the indicator for the confirmation stage. */
+  icon?: MediaObject | null
+}
+
 export type FormDocument = {
   id: string
   title: string
@@ -270,6 +281,9 @@ export type FormDocument = {
    *  response always also exposes a normalized `steps` array. */
   fields?: FormFieldBlock[] | null
   steps: FormStep[]
+  /** Optional confirmation stage appended to the step indicator only (does not
+   *  add a navigable step). Only meaningful for multi-stage forms. */
+  confirmationStage?: ConfirmationStage | null
   additionalContent?: AdditionalContent | null
   /** Document-level overrides for navigation button labels. Per-step `backLabel`
    *  / `nextLabel` take precedence over these. */
