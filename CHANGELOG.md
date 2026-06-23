@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.8.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.7.1...v1.8.0) (2026-06-23)
+
+### Features
+
+* **forms:** add optional Confirmation stage to multi-step indicator ([0dd33d3](https://github.com/umi-labs/advanced-forms-plugin/commit/0dd33d38fa2f7f9e262783e94915d7dbe8bca0ba))
+
 ## [1.7.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.7.0...v1.7.1) (2026-06-23)
 
 ### Features

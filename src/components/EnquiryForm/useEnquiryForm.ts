@@ -9,7 +9,9 @@ import type {
   SubmitResult,
   UseEnquiryFormReturn,
 } from '../../types.js'
+import { buildSubmitURL } from '../../utilities/buildSubmitURL.js'
 import { normalizeFormSteps } from '../../utilities/normalizeFormSteps.js'
+import { normalizeSubmitError } from '../../utilities/normalizeSubmitError.js'
 
 type Options = {
   form: EnquiryForm
@@ -85,7 +87,7 @@ export function useEnquiryForm({
     setError(null)
 
     try {
-      const res = await fetch(`${apiBase}/api/enquiry-submit/${form.slug}`, {
+      const res = await fetch(buildSubmitURL({ apiBase, formSlug: form.slug }), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -95,16 +97,20 @@ export function useEnquiryForm({
         }),
       })
 
-      const json = (await res.json()) as SubmitResult | SubmitError
+      // The body may not be the expected JSON shape (e.g. a 404/500 returns
+      // `{ message }` with no `errors`). Parse defensively so the UI never
+      // renders against a malformed error object.
+      const json = (await res.json().catch(() => null)) as SubmitResult | SubmitError | null
 
-      if (json.success) {
+      if (res.ok && json && (json as SubmitResult).success) {
         setIsComplete(true)
         setResult(json as SubmitResult)
         return json as SubmitResult
-      } else {
-        setError(json as SubmitError)
-        throw json
       }
+
+      const err = normalizeSubmitError(json)
+      setError(err)
+      throw err
     } finally {
       setIsSubmitting(false)
     }

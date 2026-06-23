@@ -15,6 +15,7 @@ import { createSubmissionsCollection } from './collections/Submissions.js'
 import { createFetchFormHandler } from './endpoints/fetchFormHandler.js'
 import { createSubmitFormHandler } from './endpoints/submitFormHandler.js'
 import type { FieldsConfig, FormPluginConfig } from './types.js'
+import { FORM_SUBMIT_PATH } from './utilities/buildSubmitURL.js'
 
 export type { FormPluginConfig } from './types.js'
 export { baseFieldBlockFields, optionsArrayField } from './blocks/fields/shared.js'
@@ -96,7 +97,7 @@ export const formPlugin =
       {
         handler: createSubmitFormHandler(pluginOptions),
         method: 'post',
-        path: '/form-submit/:formSlug',
+        path: `/${FORM_SUBMIT_PATH}/:formSlug`,
       },
     ]
 
