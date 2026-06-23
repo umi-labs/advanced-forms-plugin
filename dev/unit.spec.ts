@@ -626,3 +626,50 @@ describe('buildIndicatorSteps', () => {
     expect(steps).toHaveLength(1)
   })
 })
+
+import { buildSubmitURL, FORM_SUBMIT_PATH } from '../src/utilities/buildSubmitURL.js'
+import { formPlugin } from '../src/index.js'
+
+describe('buildSubmitURL', () => {
+  test('targets the /api/form-submit/:slug endpoint', () => {
+    expect(buildSubmitURL({ formSlug: 'enquiry' })).toBe('/api/form-submit/enquiry')
+  })
+
+  test('prefixes with apiBase when provided', () => {
+    expect(buildSubmitURL({ apiBase: 'https://x.test', formSlug: 'enquiry' })).toBe(
+      'https://x.test/api/form-submit/enquiry',
+    )
+  })
+})
+
+describe('plugin endpoint registration matches the client submit path', () => {
+  test('registers a POST endpoint at the path the client posts to', () => {
+    const config = formPlugin({})({ collections: [] } as any)
+    const submit = (config.endpoints ?? []).find((e: any) => e.method === 'post')
+    expect(submit?.path).toBe(`/${FORM_SUBMIT_PATH}/:formSlug`)
+    // The client builds its URL from the same constant, so they cannot drift.
+    expect(buildSubmitURL({ formSlug: ':formSlug' })).toBe(`/api${submit?.path}`)
+  })
+})
+
+import { normalizeSubmitError } from '../src/utilities/normalizeSubmitError.js'
+
+describe('normalizeSubmitError', () => {
+  test('passes through a well-formed SubmitError unchanged', () => {
+    const err = { success: false as const, errors: [{ field: 'email', message: 'Required' }] }
+    expect(normalizeSubmitError(err)).toBe(err)
+  })
+
+  test('wraps a payload-style { message } 404 into an errors array', () => {
+    const out = normalizeSubmitError({ message: 'Route not found "/api/x"' })
+    expect(out.success).toBe(false)
+    expect(out.errors).toEqual([{ field: '', message: 'Route not found "/api/x"' }])
+  })
+
+  test('falls back to a generic message for null / non-JSON bodies', () => {
+    const out = normalizeSubmitError(null)
+    expect(out.success).toBe(false)
+    expect(out.errors).toHaveLength(1)
+    expect(out.errors[0].message).toMatch(/try again/i)
+  })
+})
