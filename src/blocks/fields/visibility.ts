@@ -1,10 +1,10 @@
-import type { Block, Field } from 'payload'
+import type { Block, Field, SelectField } from 'payload'
 
 /** Client export path for the custom source dropdown (created in Task 4). */
 export const SOURCE_PICKER_PATH =
   '@foundrykit/advanced-forms-plugin/client#ConditionSourceField'
 
-const operatorField: Field = {
+const operatorField: SelectField = {
   name: 'operator',
   type: 'select',
   defaultValue: 'equals',
@@ -55,7 +55,7 @@ const conditionBlock: Block = {
   ],
 }
 
-const matchField: Field = {
+const matchField: SelectField = {
   name: 'match',
   type: 'select',
   defaultValue: 'all',
@@ -84,7 +84,7 @@ export function buildVisibilityField(
   options: { includeAction?: boolean } = {},
 ): Field {
   const { includeAction = true } = options
-  const showWhenEnabled = (_: unknown, siblingData: { enabled?: boolean }) =>
+  const showWhenEnabled = (_: unknown, siblingData: Record<string, unknown>) =>
     Boolean(siblingData?.enabled)
 
   const fields: Field[] = [
