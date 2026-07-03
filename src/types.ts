@@ -1,4 +1,4 @@
-import type { Block } from 'payload'
+import type { Block, RichTextField } from 'payload'
 import type { Resolver, UseFormReturn } from 'react-hook-form'
 import type { ReactNode } from 'react'
 
@@ -361,6 +361,14 @@ export type FormPluginConfig = {
    * - Add a new key with `{ block: MyBlock }`: add custom block type
    */
   fields?: FieldsConfig
+  /**
+   * Editor applied to the consumer-facing rich-text fields — the confirmation
+   * message and the additional content. Pass a configured `lexicalEditor(...)`
+   * to enable custom Lexical blocks/features in those fields. When omitted, the
+   * fields fall back to the Payload root editor. Does not affect a step's intro
+   * content (which keeps its own headings-enabled editor).
+   */
+  richTextEditor?: RichTextField['editor']
 }
 
 // ---------------------------------------------------------------------------

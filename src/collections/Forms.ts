@@ -1,6 +1,6 @@
-import type { Block, CollectionConfig } from 'payload'
+import type { Block, CollectionConfig, RichTextField } from 'payload'
 
-import { ConfirmationMessageBlock } from '../blocks/submissionActions/ConfirmationMessage.js'
+import { createConfirmationMessageBlock } from '../blocks/submissionActions/ConfirmationMessage.js'
 import { RedirectBlock } from '../blocks/submissionActions/Redirect.js'
 import { SendEmailBlock } from '../blocks/submissionActions/SendEmail.js'
 import { lockableTextField } from '../fields/lockable/index.js'
@@ -12,6 +12,9 @@ export type FormsCollectionOptions = {
   mediaCollection: string
   pluralLabel: string
   singularLabel: string
+  /** Editor for the confirmation message and additional content rich-text
+   *  fields. When omitted those fields fall back to the root editor. */
+  richTextEditor?: RichTextField['editor']
 }
 
 export const createFormsCollection = ({
@@ -20,6 +23,7 @@ export const createFormsCollection = ({
   mediaCollection,
   pluralLabel,
   singularLabel,
+  richTextEditor,
 }: FormsCollectionOptions): CollectionConfig => {
   const [slugField, slugLockField] = lockableTextField({
     name: 'slug',
@@ -301,6 +305,7 @@ export const createFormsCollection = ({
             admin: {
               condition: (_, siblingData) => Boolean(siblingData?.enabled),
             },
+            ...(richTextEditor ? { editor: richTextEditor } : {}),
           },
         ],
       },
@@ -310,7 +315,11 @@ export const createFormsCollection = ({
         admin: {
           description: 'At least one action is required. Actions execute in order.',
         },
-        blocks: [SendEmailBlock, ConfirmationMessageBlock, RedirectBlock],
+        blocks: [
+          SendEmailBlock,
+          createConfirmationMessageBlock({ editor: richTextEditor }),
+          RedirectBlock,
+        ],
         minRows: 1,
         required: true,
       },

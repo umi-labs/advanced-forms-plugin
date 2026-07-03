@@ -243,7 +243,9 @@ describe('FileBlock', () => {
 })
 
 import { SendEmailBlock } from '../src/blocks/submissionActions/SendEmail.js'
-import { ConfirmationMessageBlock } from '../src/blocks/submissionActions/ConfirmationMessage.js'
+import { createConfirmationMessageBlock } from '../src/blocks/submissionActions/ConfirmationMessage.js'
+
+const ConfirmationMessageBlock = createConfirmationMessageBlock()
 import { RedirectBlock } from '../src/blocks/submissionActions/Redirect.js'
 
 describe('SendEmailBlock', () => {
@@ -671,5 +673,50 @@ describe('normalizeSubmitError', () => {
     expect(out.success).toBe(false)
     expect(out.errors).toHaveLength(1)
     expect(out.errors[0].message).toMatch(/try again/i)
+  })
+})
+
+describe('Forms collection richTextEditor option', () => {
+  const sentinel = { sentinel: 'editor' } as any
+  const coll = createFormsCollection({
+    fieldBlocks: [TextBlock],
+    formsSlug: 'forms',
+    mediaCollection: 'media',
+    pluralLabel: 'Forms',
+    singularLabel: 'Form',
+    richTextEditor: sentinel,
+  })
+
+  const getConfirmationMessageField = (c: any) => {
+    const actions = c.fields.find((f: any) => f.name === 'submissionActions')
+    const block = actions.blocks.find((b: any) => b.slug === 'confirmationMessage')
+    return block.fields.find((f: any) => f.name === 'message')
+  }
+  const getAdditionalContentField = (c: any) => {
+    const group = flatFields(c.fields).find((f: any) => f.name === 'additionalContent')
+    return group.fields.find((f: any) => f.name === 'content')
+  }
+  const getIntroContentField = (c: any) => {
+    const steps = c.fields.find((f: any) => f.name === 'steps')
+    return steps.fields.find((f: any) => f.name === 'introContent')
+  }
+
+  test('applies the editor to the confirmation message field', () => {
+    expect(getConfirmationMessageField(coll).editor).toBe(sentinel)
+  })
+
+  test('applies the editor to the additional content field', () => {
+    expect(getAdditionalContentField(coll).editor).toBe(sentinel)
+  })
+
+  test('does NOT apply the editor to step intro content', () => {
+    const intro = getIntroContentField(coll)
+    expect(intro.editor).not.toBe(sentinel)
+    expect(intro.editor).toBeDefined()
+  })
+
+  test('omits the editor (root fallback) when not provided', () => {
+    expect(getConfirmationMessageField(formsCollection).editor).toBeUndefined()
+    expect(getAdditionalContentField(formsCollection).editor).toBeUndefined()
   })
 })

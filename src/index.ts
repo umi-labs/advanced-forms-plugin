@@ -74,6 +74,7 @@ export const formPlugin =
         singularLabel: singularFormsLabel,
         pluralLabel: singularFormsLabel + 's',
         fieldBlocks,
+        richTextEditor: pluginOptions.richTextEditor,
       }),
       createSubmissionsCollection({
         submissionsSlug,
