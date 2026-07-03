@@ -815,4 +815,17 @@ describe('conditions/evaluateRule', () => {
     expect(ruleMatches(rule, { country: 'UK' })).toBe(true)
     expect(ruleMatches(rule, { country: 'FR' })).toBe(false)
   })
+
+  test('ruleMatches: disabled rule always returns true', () => {
+    const rule: VisibilityRule = {
+      enabled: false,
+      conditions: [c('country', 'equals', 'UK')],
+    }
+    expect(ruleMatches(rule, { country: 'FR' })).toBe(true)
+  })
+
+  test('equals on a missing source fails closed, not "undefined"-matches', () => {
+    expect(evaluateCondition(c('ghost', 'equals', 'undefined'), {})).toBe(false)
+    expect(evaluateCondition(c('ghost', 'notEquals', 'undefined'), {})).toBe(false)
+  })
 })

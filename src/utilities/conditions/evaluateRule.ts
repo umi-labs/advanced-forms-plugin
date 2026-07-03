@@ -32,6 +32,9 @@ export function evaluateCondition(
   values: Record<string, unknown>,
 ): boolean {
   const actual = resolveValue(cond.source, values)
+  if (actual === undefined && (cond.operator === 'equals' || cond.operator === 'notEquals')) {
+    return false
+  }
   const expected = cond.value ?? ''
 
   switch (cond.operator) {
@@ -94,6 +97,7 @@ export function ruleMatches(
   values: Record<string, unknown>,
 ): boolean {
   if (!rule) return true
+  if (rule.enabled === false) return true
   const nodes = rule.conditions ?? []
   if (nodes.length === 0) return true
   return evaluateNodes(rule.match ?? 'all', nodes, values)
