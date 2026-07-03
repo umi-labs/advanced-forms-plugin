@@ -829,3 +829,111 @@ describe('conditions/evaluateRule', () => {
     expect(evaluateCondition(c('ghost', 'notEquals', 'undefined'), {})).toBe(false)
   })
 })
+
+import {
+  isFieldVisible,
+  isFieldRequired,
+  isStepVisible,
+  getVisibleFields,
+  getVisibleSteps,
+  stripHiddenValues,
+} from '../src/utilities/conditions/index.js'
+import type { FormFieldBlock, FormStep } from '../src/types.js'
+
+const field = (over: Partial<FormFieldBlock>): FormFieldBlock =>
+  ({ name: 'f', label: 'F', blockType: 'text', ...over }) as FormFieldBlock
+
+describe('conditions/visibility', () => {
+  test('non-conditional field is always visible', () => {
+    expect(isFieldVisible(field({ name: 'a' }), {})).toBe(true)
+  })
+
+  test('show-action field is hidden until its rule matches', () => {
+    const f = field({
+      name: 'why',
+      visibility: {
+        enabled: true,
+        action: 'show',
+        conditions: [{ source: 'other', operator: 'equals', value: 'yes' }],
+      },
+    })
+    expect(isFieldVisible(f, { other: 'no' })).toBe(false)
+    expect(isFieldVisible(f, { other: 'yes' })).toBe(true)
+  })
+
+  test('require-action field stays visible but toggles required', () => {
+    const f = field({
+      name: 'explain',
+      required: false,
+      visibility: {
+        enabled: true,
+        action: 'require',
+        conditions: [{ source: 'reason', operator: 'equals', value: 'other' }],
+      },
+    })
+    expect(isFieldVisible(f, { reason: 'x' })).toBe(true)
+    expect(isFieldRequired(f, { reason: 'x' })).toBe(false)
+    expect(isFieldRequired(f, { reason: 'other' })).toBe(true)
+  })
+
+  test('base required is respected when no rule', () => {
+    expect(isFieldRequired(field({ required: true }), {})).toBe(true)
+  })
+
+  test('step visibility + getVisibleSteps skips hidden steps', () => {
+    const steps: FormStep[] = [
+      { title: 'One', fields: [] },
+      {
+        title: 'Two',
+        fields: [],
+        visibility: {
+          enabled: true,
+          conditions: [{ source: 'wantsTwo', operator: 'isChecked' }],
+        },
+      },
+    ]
+    expect(isStepVisible(steps[1]!, { wantsTwo: false })).toBe(false)
+    expect(getVisibleSteps(steps, { wantsTwo: false }).map((s) => s.title)).toEqual(['One'])
+    expect(getVisibleSteps(steps, { wantsTwo: true }).map((s) => s.title)).toEqual(['One', 'Two'])
+  })
+
+  test('getVisibleFields filters hidden fields', () => {
+    const step: FormStep = {
+      title: 'S',
+      fields: [
+        field({ name: 'always' }),
+        field({
+          name: 'maybe',
+          visibility: {
+            enabled: true,
+            action: 'show',
+            conditions: [{ source: 'always', operator: 'equals', value: 'go' }],
+          },
+        }),
+      ],
+    }
+    expect(getVisibleFields(step, { always: 'no' }).map((f) => f.name)).toEqual(['always'])
+    expect(getVisibleFields(step, { always: 'go' }).map((f) => f.name)).toEqual(['always', 'maybe'])
+  })
+
+  test('stripHiddenValues removes values for hidden fields only', () => {
+    const steps: FormStep[] = [
+      {
+        title: 'S',
+        fields: [
+          field({ name: 'always' }),
+          field({
+            name: 'maybe',
+            visibility: {
+              enabled: true,
+              action: 'show',
+              conditions: [{ source: 'always', operator: 'equals', value: 'go' }],
+            },
+          }),
+        ],
+      },
+    ]
+    const out = stripHiddenValues(steps, { always: 'no', maybe: 'leaked' })
+    expect(out).toEqual({ always: 'no' })
+  })
+})
