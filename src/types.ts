@@ -43,6 +43,55 @@ export type FieldValidation = {
 }
 
 // ---------------------------------------------------------------------------
+// Conditional visibility (see docs/superpowers/plans/2026-07-03-conditional-fields.md)
+// ---------------------------------------------------------------------------
+
+export type ConditionOperator =
+  | 'equals'
+  | 'notEquals'
+  | 'gt'
+  | 'gte'
+  | 'lt'
+  | 'lte'
+  | 'isChecked'
+  | 'isNotChecked'
+  | 'contains'
+  | 'isEmpty'
+  | 'isNotEmpty'
+
+export type ConditionMatch = 'all' | 'any'
+
+export type Condition = {
+  blockType?: 'condition'
+  id?: string
+  /** Name (or dot-path e.g. `guests.adults`) of the field to test. */
+  source: string
+  operator: ConditionOperator
+  /** Compared value. Ignored for unary operators (isChecked/isEmpty/etc). */
+  value?: string | null
+}
+
+/** One level of nesting only: a group holds plain conditions, never groups. */
+export type ConditionGroup = {
+  blockType: 'group'
+  id?: string
+  match?: ConditionMatch | null
+  conditions?: Condition[] | null
+}
+
+export type ConditionNode = Condition | ConditionGroup
+
+export type VisibilityAction = 'show' | 'require'
+
+export type VisibilityRule = {
+  enabled?: boolean | null
+  /** What happens when the rule matches. Steps always behave as 'show'. */
+  action?: VisibilityAction | null
+  match?: ConditionMatch | null
+  conditions?: ConditionNode[] | null
+}
+
+// ---------------------------------------------------------------------------
 // Base — all field blocks extend this
 // ---------------------------------------------------------------------------
 
@@ -53,6 +102,7 @@ export type BaseFieldBlock = {
   required?: boolean | null
   tooltip?: FieldTooltip | null
   validation?: FieldValidation | null
+  visibility?: VisibilityRule | null
 }
 
 // ---------------------------------------------------------------------------
@@ -239,6 +289,7 @@ export type FormStep = {
   completedIcon?: MediaObject | null
   introContent?: unknown
   fields: FormFieldBlock[]
+  visibility?: VisibilityRule | null
   /** Per-step override for the "Back" button label. */
   backLabel?: string | null
   /** Per-step override for the "Next" (or "Submit" on the final step) button label. */

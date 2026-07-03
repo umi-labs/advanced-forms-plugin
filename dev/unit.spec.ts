@@ -720,3 +720,99 @@ describe('Forms collection richTextEditor option', () => {
     expect(getAdditionalContentField(formsCollection).editor).toBeUndefined()
   })
 })
+
+import {
+  resolveValue,
+  evaluateCondition,
+  evaluateNodes,
+  ruleMatches,
+} from '../src/utilities/conditions/evaluateRule.js'
+import type { Condition, VisibilityRule } from '../src/types.js'
+
+const c = (source: string, operator: any, value?: string): Condition => ({
+  source,
+  operator,
+  value,
+})
+
+describe('conditions/evaluateRule', () => {
+  test('resolveValue reads top-level and dot-path values', () => {
+    const values = { country: 'UK', guests: { adults: 3 } }
+    expect(resolveValue('country', values)).toBe('UK')
+    expect(resolveValue('guests.adults', values)).toBe(3)
+    expect(resolveValue('missing', values)).toBeUndefined()
+    expect(resolveValue('guests.kids', values)).toBeUndefined()
+  })
+
+  test('equals / notEquals coerce to string', () => {
+    expect(evaluateCondition(c('n', 'equals', '5'), { n: 5 })).toBe(true)
+    expect(evaluateCondition(c('n', 'equals', '5'), { n: '5' })).toBe(true)
+    expect(evaluateCondition(c('n', 'notEquals', '5'), { n: 6 })).toBe(true)
+  })
+
+  test('numeric comparisons', () => {
+    expect(evaluateCondition(c('n', 'gt', '10'), { n: 12 })).toBe(true)
+    expect(evaluateCondition(c('n', 'gte', '10'), { n: 10 })).toBe(true)
+    expect(evaluateCondition(c('n', 'lt', '10'), { n: 3 })).toBe(true)
+    expect(evaluateCondition(c('n', 'lte', '10'), { n: 10 })).toBe(true)
+    expect(evaluateCondition(c('n', 'gt', '10'), { n: 'abc' })).toBe(false)
+  })
+
+  test('isChecked / isNotChecked treat true and "true" as checked', () => {
+    expect(evaluateCondition(c('agree', 'isChecked'), { agree: true })).toBe(true)
+    expect(evaluateCondition(c('agree', 'isChecked'), { agree: 'true' })).toBe(true)
+    expect(evaluateCondition(c('agree', 'isChecked'), { agree: false })).toBe(false)
+    expect(evaluateCondition(c('agree', 'isNotChecked'), { agree: false })).toBe(true)
+  })
+
+  test('contains works on arrays and strings', () => {
+    expect(evaluateCondition(c('tags', 'contains', 'a'), { tags: ['a', 'b'] })).toBe(true)
+    expect(evaluateCondition(c('tags', 'contains', 'x'), { tags: ['a', 'b'] })).toBe(false)
+    expect(evaluateCondition(c('name', 'contains', 'oh'), { name: 'John' })).toBe(true)
+  })
+
+  test('isEmpty / isNotEmpty', () => {
+    expect(evaluateCondition(c('x', 'isEmpty'), { x: '' })).toBe(true)
+    expect(evaluateCondition(c('x', 'isEmpty'), { x: [] })).toBe(true)
+    expect(evaluateCondition(c('x', 'isEmpty'), {})).toBe(true)
+    expect(evaluateCondition(c('x', 'isNotEmpty'), { x: 'hi' })).toBe(true)
+  })
+
+  test('unknown source fails closed (false), never throws', () => {
+    expect(evaluateCondition(c('nope', 'equals', '1'), {})).toBe(false)
+  })
+
+  test('evaluateNodes ALL vs ANY', () => {
+    const values = { a: 1, b: 2 }
+    const nodes = [c('a', 'equals', '1'), c('b', 'equals', '99')]
+    expect(evaluateNodes('all', nodes, values)).toBe(false)
+    expect(evaluateNodes('any', nodes, values)).toBe(true)
+  })
+
+  test('evaluateNodes supports one level of grouping (A AND (B OR C))', () => {
+    const values = { a: 1, b: 5, cc: 9 }
+    const nodes = [
+      c('a', 'equals', '1'),
+      {
+        blockType: 'group' as const,
+        match: 'any' as const,
+        conditions: [c('b', 'equals', '999'), c('cc', 'equals', '9')],
+      },
+    ]
+    expect(evaluateNodes('all', nodes, values)).toBe(true)
+  })
+
+  test('ruleMatches: empty/undefined rule matches (true)', () => {
+    expect(ruleMatches(undefined, {})).toBe(true)
+    expect(ruleMatches({ enabled: true, conditions: [] }, {})).toBe(true)
+  })
+
+  test('ruleMatches evaluates conditions with default match=all', () => {
+    const rule: VisibilityRule = {
+      enabled: true,
+      conditions: [c('country', 'equals', 'UK')],
+    }
+    expect(ruleMatches(rule, { country: 'UK' })).toBe(true)
+    expect(ruleMatches(rule, { country: 'FR' })).toBe(false)
+  })
+})
