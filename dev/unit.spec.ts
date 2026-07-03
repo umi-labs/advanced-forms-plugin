@@ -830,6 +830,61 @@ describe('conditions/evaluateRule', () => {
   })
 })
 
+import { buildVisibilityField } from '../src/blocks/fields/visibility.js'
+
+describe('buildVisibilityField', () => {
+  const vis = buildVisibilityField({ includeAction: true }) as any
+
+  test('is a group named visibility', () => {
+    expect(vis.type).toBe('group')
+    expect(vis.name).toBe('visibility')
+  })
+
+  test('has enabled, action, match, conditions', () => {
+    const names = vis.fields.map((f: any) => f.name)
+    expect(names).toContain('enabled')
+    expect(names).toContain('action')
+    expect(names).toContain('match')
+    expect(names).toContain('conditions')
+  })
+
+  test('action select offers show and require', () => {
+    const action = vis.fields.find((f: any) => f.name === 'action')
+    const values = action.options.map((o: any) => o.value)
+    expect(values).toContain('show')
+    expect(values).toContain('require')
+  })
+
+  test('conditions is a blocks field with condition and group blocks', () => {
+    const conditions = vis.fields.find((f: any) => f.name === 'conditions')
+    expect(conditions.type).toBe('blocks')
+    const slugs = conditions.blocks.map((b: any) => b.slug)
+    expect(slugs).toContain('condition')
+    expect(slugs).toContain('group')
+  })
+
+  test('the group block nests only plain conditions (one level)', () => {
+    const conditions = vis.fields.find((f: any) => f.name === 'conditions')
+    const groupBlock = conditions.blocks.find((b: any) => b.slug === 'group')
+    const nested = groupBlock.fields.find((f: any) => f.name === 'conditions')
+    expect(nested.type).toBe('blocks')
+    expect(nested.blocks.map((b: any) => b.slug)).toEqual(['condition'])
+  })
+
+  test('condition source uses the custom picker component', () => {
+    const conditions = vis.fields.find((f: any) => f.name === 'conditions')
+    const cond = conditions.blocks.find((b: any) => b.slug === 'condition')
+    const source = cond.fields.find((f: any) => f.name === 'source')
+    expect(source.admin.components.Field.path).toContain('ConditionSourceField')
+  })
+
+  test('omits action when includeAction is false (steps)', () => {
+    const stepVis = buildVisibilityField({ includeAction: false }) as any
+    const names = stepVis.fields.map((f: any) => f.name)
+    expect(names).not.toContain('action')
+  })
+})
+
 import {
   isFieldVisible,
   isFieldRequired,
