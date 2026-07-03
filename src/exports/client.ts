@@ -10,3 +10,4 @@ export {
 } from '../utilities/buildZodSchemaFromForm.js'
 export { normalizeFormSteps } from '../utilities/normalizeFormSteps.js'
 export type { EnquirySubmissionContext } from '../types.js'
+export { ConditionSourceField } from '../fields/conditions/ConditionSourceField.js'
