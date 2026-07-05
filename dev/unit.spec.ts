@@ -885,6 +885,37 @@ describe('buildVisibilityField', () => {
   })
 })
 
+describe('visibility wiring', () => {
+  test('baseFieldBlockFields includes a visibility group', () => {
+    const names = flatFields(baseFieldBlockFields).map((f: any) =>
+      'name' in f ? f.name : null,
+    )
+    expect(names).toContain('visibility')
+    const vis = flatFields(baseFieldBlockFields).find(
+      (f: any) => f.name === 'visibility',
+    ) as any
+    expect(vis.type).toBe('group')
+  })
+
+  test('every field block exposes visibility (via base fields)', () => {
+    const names = flatFields(TextBlock.fields).map((f: any) =>
+      'name' in f ? f.name : null,
+    )
+    expect(names).toContain('visibility')
+  })
+
+  test('step config includes a visibility group without an action select', () => {
+    const steps = formsCollection.fields.find(
+      (f: any) => 'name' in f && f.name === 'steps',
+    ) as any
+    const vis = steps.fields.find((f: any) => f.name === 'visibility')
+    expect(vis?.type).toBe('group')
+    const subNames = vis.fields.map((f: any) => f.name)
+    expect(subNames).not.toContain('action')
+    expect(subNames).toContain('conditions')
+  })
+})
+
 import {
   isFieldVisible,
   isFieldRequired,

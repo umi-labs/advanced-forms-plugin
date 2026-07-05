@@ -1,6 +1,7 @@
 import type { ArrayField, Field } from 'payload'
 
 import { lockableTextField } from '../../fields/lockable/index.js'
+import { buildVisibilityField } from './visibility.js'
 
 const [nameField, nameLockField] = lockableTextField({
   name: 'name',
@@ -100,6 +101,7 @@ export const baseFieldBlockFields: Field[] = [
       { name: 'maxMessage', type: 'text' },
     ],
   },
+  buildVisibilityField(),
 ]
 
 const [optionValueField, optionValueLockField] = lockableTextField({

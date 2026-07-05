@@ -4,6 +4,7 @@ import { createConfirmationMessageBlock } from '../blocks/submissionActions/Conf
 import { RedirectBlock } from '../blocks/submissionActions/Redirect.js'
 import { SendEmailBlock } from '../blocks/submissionActions/SendEmail.js'
 import { lockableTextField } from '../fields/lockable/index.js'
+import { buildVisibilityField } from '../blocks/fields/visibility.js'
 import { HeadingFeature, lexicalEditor } from '@payloadcms/richtext-lexical'
 
 export type FormsCollectionOptions = {
@@ -146,6 +147,7 @@ export const createFormsCollection = ({
             type: 'blocks',
             blocks: fieldBlocks,
           },
+          buildVisibilityField({ includeAction: false }),
           {
             type: 'row',
             fields: [
