@@ -1039,3 +1039,61 @@ describe('conditions/visibility', () => {
     expect(out).toEqual({ always: 'no' })
   })
 })
+
+import { validateVisibleSubmission } from '../src/utilities/validateVisibleSubmission.js'
+
+describe('validateVisibleSubmission', () => {
+  const form = {
+    multiStep: false,
+    title: 'T',
+    fields: [
+      { name: 'reason', label: 'Reason', blockType: 'text', required: true },
+      {
+        name: 'detail',
+        label: 'Detail',
+        blockType: 'text',
+        required: true,
+        visibility: {
+          enabled: true,
+          action: 'show',
+          conditions: [{ source: 'reason', operator: 'equals', value: 'other' }],
+        },
+      },
+    ],
+  } as any
+
+  test('hidden required field does not error and is stripped', () => {
+    const res = validateVisibleSubmission(form, { reason: 'simple', detail: 'sneaky' })
+    expect(res.errors).toEqual([])
+    expect(res.data).toEqual({ reason: 'simple' })
+  })
+
+  test('visible required field left blank errors', () => {
+    const res = validateVisibleSubmission(form, { reason: 'other', detail: '' })
+    expect(res.errors).toEqual([{ field: 'detail', message: 'Detail is required' }])
+  })
+
+  test('require-action field enforced only when rule matches', () => {
+    const f = {
+      multiStep: false,
+      title: 'T',
+      fields: [
+        { name: 'kind', label: 'Kind', blockType: 'text' },
+        {
+          name: 'note',
+          label: 'Note',
+          blockType: 'text',
+          visibility: {
+            enabled: true,
+            action: 'require',
+            conditions: [{ source: 'kind', operator: 'equals', value: 'x' }],
+          },
+        },
+      ],
+    } as any
+    expect(validateVisibleSubmission(f, { kind: 'y', note: '' }).errors).toEqual([])
+    expect(validateVisibleSubmission(f, { kind: 'x', note: '' }).errors).toEqual([
+      { field: 'note', message: 'Note is required' },
+    ])
+  })
+})

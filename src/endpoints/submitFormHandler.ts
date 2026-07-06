@@ -1,7 +1,7 @@
 import type { PayloadHandler } from 'payload'
 import type { FormDocument, FormPluginConfig } from '../types.js'
-import { normalizeFormSteps } from '../utilities/normalizeFormSteps.js'
 import { sanitizeSubmission } from '../utilities/sanitizeSubmission.js'
+import { validateVisibleSubmission } from '../utilities/validateVisibleSubmission.js'
 
 function interpolate(template: string, data: Record<string, unknown>): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => String(data[key] ?? ''))
@@ -73,16 +73,9 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
 
     const form = result.docs[0] as FormDocument
 
-    // Validate required fields across all steps
-    const errors: Array<{ field: string; message: string }> = []
-    for (const step of normalizeFormSteps(form)) {
-      for (const field of step.fields) {
-        const value = submissionData[field.name]
-        if (field.required && (value === undefined || value === null || value === '')) {
-          errors.push({ field: field.name, message: `${field.label} is required` })
-        }
-      }
-    }
+    // Validate required fields (respecting conditional visibility) and strip
+    // values for fields hidden by their conditions so they are never stored.
+    const { errors, data: visibleData } = validateVisibleSubmission(form, submissionData)
 
     if (errors.length > 0) {
       return Response.json({ success: false, errors }, { status: 422 })
@@ -94,7 +87,7 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
       data: {
         form: form.id,
         submittedAt: new Date().toISOString(),
-        data: sanitizeSubmission(submissionData),
+        data: sanitizeSubmission(visibleData),
         metadata: {
           userAgent: req.headers.get('user-agent') ?? '',
           ip: req.headers.get('x-forwarded-for') ?? '',
