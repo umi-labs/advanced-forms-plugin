@@ -929,6 +929,22 @@ import type { FormFieldBlock, FormStep } from '../src/types.js'
 const field = (over: Partial<FormFieldBlock>): FormFieldBlock =>
   ({ name: 'f', label: 'F', blockType: 'text', ...over }) as FormFieldBlock
 
+describe('buildFieldRules requiredOverride', () => {
+  test('requiredOverride=true forces required even if field.required is false', () => {
+    const rules = buildFieldRules({ label: 'Explain', required: false } as any, true)
+    expect(rules.required).toBe('Explain is required')
+  })
+
+  test('requiredOverride=false suppresses required even if field.required is true', () => {
+    const rules = buildFieldRules({ label: 'X', required: true } as any, false)
+    expect(rules.required).toBeUndefined()
+  })
+
+  test('omitting requiredOverride keeps existing behavior', () => {
+    expect(buildFieldRules({ label: 'X', required: true } as any).required).toBe('X is required')
+  })
+})
+
 describe('conditions/visibility', () => {
   test('non-conditional field is always visible', () => {
     expect(isFieldVisible(field({ name: 'a' }), {})).toBe(true)
