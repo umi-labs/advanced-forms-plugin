@@ -5,6 +5,7 @@ import { type Resolver, useForm } from 'react-hook-form'
 import type {
   EnquiryForm,
   EnquirySubmissionContext,
+  FormStep,
   SubmitError,
   SubmitResult,
   UseEnquiryFormReturn,
@@ -70,8 +71,8 @@ export function useEnquiryForm({
   const watchedValues = rhfForm.watch()
   const steps = getVisibleSteps(allSteps, watchedValues)
   const totalSteps = steps.length
-  const safeStep = Math.min(currentStep, steps.length - 1)
-  const stepData = steps[safeStep]!
+  const safeStep = steps.length > 0 ? Math.min(currentStep, steps.length - 1) : 0
+  const stepData: FormStep = steps[safeStep] ?? { title: '', fields: [] }
 
   const getCurrentStepFieldNames = () =>
     (stepData.fields ?? [])
