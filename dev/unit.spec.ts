@@ -1040,6 +1040,33 @@ describe('conditions/visibility', () => {
   })
 })
 
+describe('buildIndicatorSteps with conditional steps', () => {
+  test('drops steps hidden by their visibility rule', () => {
+    const form = makeForm({
+      steps: [
+        { title: 'One', fields: [] },
+        {
+          title: 'Two',
+          fields: [],
+          visibility: {
+            enabled: true,
+            conditions: [{ source: 'go', operator: 'isChecked' }],
+          },
+        },
+      ],
+    })
+    expect(buildIndicatorSteps(form, { go: false }).map((s) => s.title)).toEqual(['One'])
+    expect(buildIndicatorSteps(form, { go: true }).map((s) => s.title)).toEqual(['One', 'Two'])
+  })
+
+  test('defaults to all steps visible when no values passed', () => {
+    expect(buildIndicatorSteps(makeForm()).map((s) => s.title)).toEqual([
+      'Your Trip',
+      'Your Details',
+    ])
+  })
+})
+
 import { validateVisibleSubmission } from '../src/utilities/validateVisibleSubmission.js'
 
 describe('validateVisibleSubmission', () => {

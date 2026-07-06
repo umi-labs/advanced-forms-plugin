@@ -3,6 +3,7 @@
 import type { UseFormReturn } from 'react-hook-form'
 import type { OptionCardsBlock } from '../../../types.js'
 import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
+import { isFieldRequired } from '../../../utilities/conditions/index.js'
 import { FieldTooltip } from '../FieldTooltip.js'
 
 type Props = { field: OptionCardsBlock; form: UseFormReturn<Record<string, unknown>> }
@@ -22,7 +23,7 @@ export function OptionCardsField({ field, form }: Props) {
       </div>
       <input
         type="hidden"
-        {...register(field.name, buildFieldRules(field))}
+        {...register(field.name, buildFieldRules(field, isFieldRequired(field, form.getValues())))}
       />
       <div
         className={[

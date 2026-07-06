@@ -3,6 +3,7 @@
 import type { UseFormReturn } from 'react-hook-form'
 import type { TextareaInputBlock } from '../../../types.js'
 import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
+import { isFieldRequired } from '../../../utilities/conditions/index.js'
 import { FieldTooltip } from '../FieldTooltip.js'
 
 type Props = { field: TextareaInputBlock; form: UseFormReturn<Record<string, unknown>> }
@@ -27,7 +28,7 @@ export function TextareaField({ field, form }: Props) {
         className={['enquiry-field__textarea', error ? 'enquiry-field__textarea--error' : '']
           .filter(Boolean)
           .join(' ')}
-        {...register(field.name, buildFieldRules(field))}
+        {...register(field.name, buildFieldRules(field, isFieldRequired(field, form.getValues())))}
       />
       {error && (
         <p className="enquiry-field__error" role="alert">

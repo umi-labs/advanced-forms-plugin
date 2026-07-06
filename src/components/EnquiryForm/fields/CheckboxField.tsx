@@ -3,6 +3,7 @@
 import type { UseFormReturn } from 'react-hook-form'
 import type { CheckboxInputBlock } from '../../../types.js'
 import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
+import { isFieldRequired } from '../../../utilities/conditions/index.js'
 import { FieldTooltip } from '../FieldTooltip.js'
 
 type Props = { field: CheckboxInputBlock; form: UseFormReturn<Record<string, unknown>> }
@@ -13,7 +14,7 @@ export function CheckboxField({ field, form }: Props) {
   const appearance = field.appearance ?? 'checkbox'
   const isSwitch = appearance === 'switch'
 
-  const inputProps = register(field.name, buildFieldRules(field))
+  const inputProps = register(field.name, buildFieldRules(field, isFieldRequired(field, form.getValues())))
 
   return (
     <div

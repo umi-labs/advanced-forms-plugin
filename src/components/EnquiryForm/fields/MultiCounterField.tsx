@@ -3,6 +3,7 @@
 import type { UseFormReturn } from 'react-hook-form'
 import type { MultiCounterBlock, MultiCounterItem } from '../../../types.js'
 import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
+import { isFieldRequired } from '../../../utilities/conditions/index.js'
 import { FieldTooltip } from '../FieldTooltip.js'
 
 type Props = { field: MultiCounterBlock; form: UseFormReturn<Record<string, unknown>> }
@@ -20,7 +21,7 @@ export function MultiCounterField({ field, form }: Props) {
   // `min`/`max` from the admin validation group apply to the **total** of all
   // counters. We strip those numeric rules out of the shared helper output and
   // re-implement them via a `validate` callback that sums the counter values.
-  const { min: _ignoreMin, max: _ignoreMax, ...baseRules } = buildFieldRules(field)
+  const { min: _ignoreMin, max: _ignoreMax, ...baseRules } = buildFieldRules(field, isFieldRequired(field, form.getValues()))
   const v = field.validation ?? {}
   const totalMin = typeof v.min === 'number' ? v.min : null
   const totalMax = typeof v.max === 'number' ? v.max : null

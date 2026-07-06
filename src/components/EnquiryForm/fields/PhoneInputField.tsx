@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { Controller, type UseFormReturn } from 'react-hook-form'
 import type { PhoneBlock, SelectOption } from '../../../types.js'
 import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
+import { isFieldRequired } from '../../../utilities/conditions/index.js'
 import { FieldTooltip } from '../FieldTooltip.js'
 
 type Props = { field: PhoneBlock; form: UseFormReturn<Record<string, unknown>> }
@@ -59,7 +60,7 @@ export function PhoneInputField({ field, form }: Props) {
   // Build admin-configured rules (minLength/maxLength/pattern apply to the
   // typed number). The `required` rule is replaced with a custom `validate`
   // that understands the composite { country, number, e164 } value shape.
-  const adminRules = buildFieldRules(field)
+  const adminRules = buildFieldRules(field, isFieldRequired(field, form.getValues()))
   const { required: requiredMessage, ...textRules } = adminRules
   const patternRule =
     textRules.pattern && typeof textRules.pattern === 'object'
@@ -90,7 +91,7 @@ export function PhoneInputField({ field, form }: Props) {
         rules={{
           validate: (value) => {
             const number = isPhoneValue(value) ? value.number.trim() : ''
-            if (field.required && number.length === 0) {
+            if (isFieldRequired(field, form.getValues()) && number.length === 0) {
               return (
                 (typeof requiredMessage === 'string' ? requiredMessage : null) ??
                 `${field.label} is required`
