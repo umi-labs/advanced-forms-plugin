@@ -20,6 +20,8 @@ import { FORM_SUBMIT_PATH } from './utilities/buildSubmitURL.js'
 export type { FormPluginConfig } from './types.js'
 export { baseFieldBlockFields, optionsArrayField } from './blocks/fields/shared.js'
 export { lockableTextField } from './fields/lockable/index.js'
+export { buildVisibilityField } from './blocks/fields/visibility.js'
+export { validateVisibleSubmission } from './utilities/validateVisibleSubmission.js'
 
 const DEFAULT_FIELD_BLOCKS: Block[] = [
   TextBlock,
