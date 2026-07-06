@@ -99,7 +99,7 @@ export function useEnquiryForm({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          data: stripHiddenValues(steps, rhfForm.getValues()),
+          data: stripHiddenValues(allSteps, rhfForm.getValues()),
           metadata: { referrer: typeof window !== 'undefined' ? document.referrer : '' },
           ...(context ? { context } : {}),
         }),

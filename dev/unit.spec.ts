@@ -1123,4 +1123,29 @@ describe('validateVisibleSubmission', () => {
       { field: 'note', message: 'Note is required' },
     ])
   })
+
+  test('required field inside a hidden step is not enforced and is stripped', () => {
+    const form = {
+      multiStep: true,
+      title: 'T',
+      steps: [
+        { title: 'One', fields: [{ name: 'wantsMore', label: 'More?', blockType: 'checkbox' }] },
+        {
+          title: 'Two',
+          visibility: {
+            enabled: true,
+            conditions: [{ source: 'wantsMore', operator: 'isChecked' }],
+          },
+          fields: [{ name: 'detail', label: 'Detail', blockType: 'text', required: true }],
+        },
+      ],
+    } as any
+    // step two hidden (wantsMore not checked): no error, detail stripped
+    const hidden = validateVisibleSubmission(form, { wantsMore: false, detail: '' })
+    expect(hidden.errors).toEqual([])
+    expect(hidden.data).toEqual({ wantsMore: false })
+    // step two visible (wantsMore checked) with blank required: errors
+    const shown = validateVisibleSubmission(form, { wantsMore: true, detail: '' })
+    expect(shown.errors).toEqual([{ field: 'detail', message: 'Detail is required' }])
+  })
 })

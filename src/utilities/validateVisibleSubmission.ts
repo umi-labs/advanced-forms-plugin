@@ -3,6 +3,7 @@ import { normalizeFormSteps } from './normalizeFormSteps.js'
 import {
   isFieldRequired,
   isFieldVisible,
+  isStepVisible,
   stripHiddenValues,
 } from './conditions/index.js'
 
@@ -16,6 +17,7 @@ export function validateVisibleSubmission(
   const errors: Array<{ field: string; message: string }> = []
 
   for (const step of steps) {
+    if (!isStepVisible(step, data)) continue
     for (const field of step.fields as FormFieldBlock[]) {
       if (!field?.name) continue
       if (!isFieldVisible(field, data)) continue
