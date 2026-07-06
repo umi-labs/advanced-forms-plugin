@@ -1149,3 +1149,53 @@ describe('validateVisibleSubmission', () => {
     expect(shown.errors).toEqual([{ field: 'detail', message: 'Detail is required' }])
   })
 })
+
+import {
+  collectSourceFields,
+  collectSourceNames,
+} from '../src/fields/conditions/collectSourceFields.js'
+
+describe('collectSourceFields', () => {
+  const state = {
+    'fields.0.name': { value: 'travel' },
+    'fields.0.blockType': { value: 'yesNo' },
+    'fields.1.name': { value: 'colour' },
+    'fields.1.blockType': { value: 'select' },
+    'fields.1.options.0.label': { value: 'Red' },
+    'fields.1.options.0.value': { value: 'red' },
+    'fields.1.options.1.label': { value: 'Blue' },
+    'fields.1.options.1.value': { value: 'blue' },
+    'fields.2.name': { value: 'guests' },
+    'fields.2.blockType': { value: 'multiCounter' },
+    'fields.2.counters.0.name': { value: 'adults' },
+    'fields.3.name': { value: '' }, // unnamed / stub block — excluded
+  } as any
+
+  test('collectSourceNames returns sorted names including counter dot-paths', () => {
+    expect(collectSourceNames(state)).toEqual(['colour', 'guests.adults', 'travel'])
+  })
+
+  test('captures blockType per field', () => {
+    const map = collectSourceFields(state)
+    expect(map.get('travel')?.blockType).toBe('yesNo')
+    expect(map.get('colour')?.blockType).toBe('select')
+  })
+
+  test('captures a choice field’s options in order with label fallback', () => {
+    const map = collectSourceFields(state)
+    expect(map.get('colour')?.options).toEqual([
+      { label: 'Red', value: 'red' },
+      { label: 'Blue', value: 'blue' },
+    ])
+  })
+
+  test('exposes multiCounter counters as numeric dot-path sources', () => {
+    const map = collectSourceFields(state)
+    expect(map.get('guests.adults')).toEqual({ blockType: 'number', options: [] })
+  })
+
+  test('defaults blockType to text when none is present', () => {
+    const map = collectSourceFields({ 'fields.0.name': { value: 'note' } } as any)
+    expect(map.get('note')?.blockType).toBe('text')
+  })
+})

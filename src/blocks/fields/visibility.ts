@@ -4,6 +4,11 @@ import type { Block, Field, SelectField } from 'payload'
 export const SOURCE_PICKER_PATH =
   '@foundrykit/advanced-forms-plugin/client#ConditionSourceField'
 
+/** Client export path for the adaptive value input, which changes its control
+ *  to match the selected source field's type. */
+export const VALUE_PICKER_PATH =
+  '@foundrykit/advanced-forms-plugin/client#ConditionValueField'
+
 const operatorField: SelectField = {
   name: 'operator',
   type: 'select',
@@ -50,6 +55,9 @@ const conditionBlock: Block = {
       admin: {
         description: 'The value to compare against.',
         condition: (_, siblingData) => !UNARY_OPERATORS.includes(siblingData?.operator),
+        components: {
+          Field: { path: VALUE_PICKER_PATH },
+        },
       },
     },
   ],
