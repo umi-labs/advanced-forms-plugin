@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.10.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.9.0...v1.10.0) (2026-08-06)
+
+### Features
+
+* **conditions:** Payload-styled source picker + adaptive value input ([4bea6be](https://github.com/umi-labs/advanced-forms-plugin/commit/4bea6bed25605115c14f03126eb085293e58179d))
+
 ## [1.9.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.8.1...v1.9.0) (2026-07-06)
 
 ### Features

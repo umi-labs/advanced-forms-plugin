@@ -1,6 +1,6 @@
 {
   "name": "@foundrykit/advanced-forms-plugin",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Multi-step enquiry form plugin for Payload CMS 3",
   "license": "MIT",
   "type": "module",
