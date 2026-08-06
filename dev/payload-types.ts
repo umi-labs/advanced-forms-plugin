@@ -6,14 +6,71 @@
  * and re-run `payload generate:types` to regenerate this file.
  */
 
+/**
+ * Supported timezones in IANA format.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "supportedTimezones".
+ */
+export type SupportedTimezones =
+  | 'Pacific/Midway'
+  | 'Pacific/Niue'
+  | 'Pacific/Honolulu'
+  | 'Pacific/Rarotonga'
+  | 'America/Anchorage'
+  | 'Pacific/Gambier'
+  | 'America/Los_Angeles'
+  | 'America/Tijuana'
+  | 'America/Denver'
+  | 'America/Phoenix'
+  | 'America/Chicago'
+  | 'America/Guatemala'
+  | 'America/New_York'
+  | 'America/Bogota'
+  | 'America/Caracas'
+  | 'America/Santiago'
+  | 'America/Buenos_Aires'
+  | 'America/Sao_Paulo'
+  | 'Atlantic/South_Georgia'
+  | 'Atlantic/Azores'
+  | 'Atlantic/Cape_Verde'
+  | 'Europe/London'
+  | 'Europe/Berlin'
+  | 'Africa/Lagos'
+  | 'Europe/Athens'
+  | 'Africa/Cairo'
+  | 'Europe/Moscow'
+  | 'Asia/Riyadh'
+  | 'Asia/Dubai'
+  | 'Asia/Baku'
+  | 'Asia/Karachi'
+  | 'Asia/Tashkent'
+  | 'Asia/Calcutta'
+  | 'Asia/Dhaka'
+  | 'Asia/Almaty'
+  | 'Asia/Jakarta'
+  | 'Asia/Bangkok'
+  | 'Asia/Shanghai'
+  | 'Asia/Singapore'
+  | 'Asia/Tokyo'
+  | 'Asia/Seoul'
+  | 'Australia/Brisbane'
+  | 'Australia/Sydney'
+  | 'Pacific/Guam'
+  | 'Pacific/Noumea'
+  | 'Pacific/Auckland'
+  | 'Pacific/Fiji';
+
 export interface Config {
   auth: {
     users: UserAuthOperations;
   };
+  blocks: {};
   collections: {
-    posts: Post;
     media: Media;
-    'plugin-collection': PluginCollection;
+    forms: Form;
+    'form-submissions': FormSubmission;
+    'payload-kv': PayloadKv;
     users: User;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -21,9 +78,10 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
-    posts: PostsSelect<false> | PostsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
-    'plugin-collection': PluginCollectionSelect<false> | PluginCollectionSelect<true>;
+    forms: FormsSelect<false> | FormsSelect<true>;
+    'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -32,12 +90,14 @@ export interface Config {
   db: {
     defaultIDType: string;
   };
+  fallbackLocale: null;
   globals: {};
   globalsSelect: {};
   locale: null;
-  user: User & {
-    collection: 'users';
+  widgets: {
+    collections: CollectionsWidget;
   };
+  user: User;
   jobs: {
     tasks: unknown;
     workflows: unknown;
@@ -63,16 +123,6 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "posts".
- */
-export interface Post {
-  id: string;
-  addedByPlugin?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
@@ -91,12 +141,3327 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plugin-collection".
+ * via the `definition` "forms".
  */
-export interface PluginCollection {
+export interface Form {
   id: string;
+  /**
+   * The name of this form, shown in the admin list and used as the document title.
+   */
+  title: string;
+  /**
+   * Auto-generated from title. Must be unique, e.g. "contact-form".
+   */
+  slug: string;
+  slugLock?: boolean | null;
+  /**
+   * Split this form into multiple stages with their own progress indicator and Back/Next navigation. Leave off for a simple single-page form.
+   */
+  multiStep?: boolean | null;
+  /**
+   * The fields shown on this form, in order.
+   */
+  fields?:
+    | (
+        | {
+            /**
+             * Shown to the visitor above this field.
+             */
+            label: string;
+            /**
+             * Unique key for this field. Used as the submission data key.
+             */
+            name: string;
+            nameLock?: boolean | null;
+            /**
+             * Visitors must complete this field before the form can be submitted.
+             */
+            required?: boolean | null;
+            /**
+             * Show a small help icon next to the field label with extra guidance on hover.
+             */
+            tooltip?: {
+              /**
+               * Show a help tooltip for this field.
+               */
+              enabled?: boolean | null;
+              /**
+               * The text shown inside the tooltip.
+               */
+              text?: string | null;
+            };
+            /**
+             * Reveal extra settings like placeholder, width, and validation rules.
+             */
+            showAdvanced?: boolean | null;
+            /**
+             * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+             */
+            validation?: {
+              /**
+               * Override "<Label> is required".
+               */
+              requiredMessage?: string | null;
+              minLength?: number | null;
+              maxLength?: number | null;
+              /**
+               * JS regex source, e.g. ^[A-Z]{2,}$
+               */
+              pattern?: string | null;
+              patternMessage?: string | null;
+              min?: number | null;
+              max?: number | null;
+              minMessage?: string | null;
+              maxMessage?: string | null;
+            };
+            /**
+             * Conditionally show or require this based on other fields.
+             */
+            visibility?: {
+              /**
+               * Only show this based on answers to other fields.
+               */
+              enabled?: boolean | null;
+              action?: ('show' | 'require') | null;
+              match?: ('all' | 'any') | null;
+              conditions?:
+                | (
+                    | {
+                        /**
+                         * The field whose answer this condition tests.
+                         */
+                        source: string;
+                        operator:
+                          | 'equals'
+                          | 'notEquals'
+                          | 'gt'
+                          | 'gte'
+                          | 'lt'
+                          | 'lte'
+                          | 'isChecked'
+                          | 'isNotChecked'
+                          | 'contains'
+                          | 'isEmpty'
+                          | 'isNotEmpty';
+                        /**
+                         * The value to compare against.
+                         */
+                        value?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'condition';
+                      }
+                    | {
+                        match?: ('all' | 'any') | null;
+                        conditions?:
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }[]
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'group';
+                      }
+                  )[]
+                | null;
+            };
+            placeholder?: string | null;
+            width?: ('full' | 'half' | 'third') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'text';
+          }
+        | {
+            /**
+             * Shown to the visitor above this field.
+             */
+            label: string;
+            /**
+             * Unique key for this field. Used as the submission data key.
+             */
+            name: string;
+            nameLock?: boolean | null;
+            /**
+             * Visitors must complete this field before the form can be submitted.
+             */
+            required?: boolean | null;
+            /**
+             * Show a small help icon next to the field label with extra guidance on hover.
+             */
+            tooltip?: {
+              /**
+               * Show a help tooltip for this field.
+               */
+              enabled?: boolean | null;
+              /**
+               * The text shown inside the tooltip.
+               */
+              text?: string | null;
+            };
+            /**
+             * Reveal extra settings like placeholder, width, and validation rules.
+             */
+            showAdvanced?: boolean | null;
+            /**
+             * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+             */
+            validation?: {
+              /**
+               * Override "<Label> is required".
+               */
+              requiredMessage?: string | null;
+              minLength?: number | null;
+              maxLength?: number | null;
+              /**
+               * JS regex source, e.g. ^[A-Z]{2,}$
+               */
+              pattern?: string | null;
+              patternMessage?: string | null;
+              min?: number | null;
+              max?: number | null;
+              minMessage?: string | null;
+              maxMessage?: string | null;
+            };
+            /**
+             * Conditionally show or require this based on other fields.
+             */
+            visibility?: {
+              /**
+               * Only show this based on answers to other fields.
+               */
+              enabled?: boolean | null;
+              action?: ('show' | 'require') | null;
+              match?: ('all' | 'any') | null;
+              conditions?:
+                | (
+                    | {
+                        /**
+                         * The field whose answer this condition tests.
+                         */
+                        source: string;
+                        operator:
+                          | 'equals'
+                          | 'notEquals'
+                          | 'gt'
+                          | 'gte'
+                          | 'lt'
+                          | 'lte'
+                          | 'isChecked'
+                          | 'isNotChecked'
+                          | 'contains'
+                          | 'isEmpty'
+                          | 'isNotEmpty';
+                        /**
+                         * The value to compare against.
+                         */
+                        value?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'condition';
+                      }
+                    | {
+                        match?: ('all' | 'any') | null;
+                        conditions?:
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }[]
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'group';
+                      }
+                  )[]
+                | null;
+            };
+            placeholder?: string | null;
+            width?: ('full' | 'half' | 'third') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'email';
+          }
+        | {
+            /**
+             * Shown to the visitor above this field.
+             */
+            label: string;
+            /**
+             * Unique key for this field. Used as the submission data key.
+             */
+            name: string;
+            nameLock?: boolean | null;
+            /**
+             * Visitors must complete this field before the form can be submitted.
+             */
+            required?: boolean | null;
+            /**
+             * Show a small help icon next to the field label with extra guidance on hover.
+             */
+            tooltip?: {
+              /**
+               * Show a help tooltip for this field.
+               */
+              enabled?: boolean | null;
+              /**
+               * The text shown inside the tooltip.
+               */
+              text?: string | null;
+            };
+            /**
+             * Reveal extra settings like placeholder, width, and validation rules.
+             */
+            showAdvanced?: boolean | null;
+            /**
+             * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+             */
+            validation?: {
+              /**
+               * Override "<Label> is required".
+               */
+              requiredMessage?: string | null;
+              minLength?: number | null;
+              maxLength?: number | null;
+              /**
+               * JS regex source, e.g. ^[A-Z]{2,}$
+               */
+              pattern?: string | null;
+              patternMessage?: string | null;
+              min?: number | null;
+              max?: number | null;
+              minMessage?: string | null;
+              maxMessage?: string | null;
+            };
+            /**
+             * Conditionally show or require this based on other fields.
+             */
+            visibility?: {
+              /**
+               * Only show this based on answers to other fields.
+               */
+              enabled?: boolean | null;
+              action?: ('show' | 'require') | null;
+              match?: ('all' | 'any') | null;
+              conditions?:
+                | (
+                    | {
+                        /**
+                         * The field whose answer this condition tests.
+                         */
+                        source: string;
+                        operator:
+                          | 'equals'
+                          | 'notEquals'
+                          | 'gt'
+                          | 'gte'
+                          | 'lt'
+                          | 'lte'
+                          | 'isChecked'
+                          | 'isNotChecked'
+                          | 'contains'
+                          | 'isEmpty'
+                          | 'isNotEmpty';
+                        /**
+                         * The value to compare against.
+                         */
+                        value?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'condition';
+                      }
+                    | {
+                        match?: ('all' | 'any') | null;
+                        conditions?:
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }[]
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'group';
+                      }
+                  )[]
+                | null;
+            };
+            placeholder?: string | null;
+            width?: ('full' | 'half' | 'third') | null;
+            /**
+             * Dial code of the default country, e.g. "+44". Must match one of the `countries` values.
+             */
+            defaultCountry?: string | null;
+            /**
+             * Country options for the picker. `value` is the dial code (e.g. "+44") used to build E.164. Leave empty to use the built-in default list.
+             */
+            countries?:
+              | {
+                  label: string;
+                  value: string;
+                  id?: string | null;
+                }[]
+              | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'phone';
+          }
+        | {
+            /**
+             * Shown to the visitor above this field.
+             */
+            label: string;
+            /**
+             * Unique key for this field. Used as the submission data key.
+             */
+            name: string;
+            nameLock?: boolean | null;
+            /**
+             * Visitors must complete this field before the form can be submitted.
+             */
+            required?: boolean | null;
+            /**
+             * Show a small help icon next to the field label with extra guidance on hover.
+             */
+            tooltip?: {
+              /**
+               * Show a help tooltip for this field.
+               */
+              enabled?: boolean | null;
+              /**
+               * The text shown inside the tooltip.
+               */
+              text?: string | null;
+            };
+            /**
+             * Reveal extra settings like placeholder, width, and validation rules.
+             */
+            showAdvanced?: boolean | null;
+            /**
+             * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+             */
+            validation?: {
+              /**
+               * Override "<Label> is required".
+               */
+              requiredMessage?: string | null;
+              minLength?: number | null;
+              maxLength?: number | null;
+              /**
+               * JS regex source, e.g. ^[A-Z]{2,}$
+               */
+              pattern?: string | null;
+              patternMessage?: string | null;
+              min?: number | null;
+              max?: number | null;
+              minMessage?: string | null;
+              maxMessage?: string | null;
+            };
+            /**
+             * Conditionally show or require this based on other fields.
+             */
+            visibility?: {
+              /**
+               * Only show this based on answers to other fields.
+               */
+              enabled?: boolean | null;
+              action?: ('show' | 'require') | null;
+              match?: ('all' | 'any') | null;
+              conditions?:
+                | (
+                    | {
+                        /**
+                         * The field whose answer this condition tests.
+                         */
+                        source: string;
+                        operator:
+                          | 'equals'
+                          | 'notEquals'
+                          | 'gt'
+                          | 'gte'
+                          | 'lt'
+                          | 'lte'
+                          | 'isChecked'
+                          | 'isNotChecked'
+                          | 'contains'
+                          | 'isEmpty'
+                          | 'isNotEmpty';
+                        /**
+                         * The value to compare against.
+                         */
+                        value?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'condition';
+                      }
+                    | {
+                        match?: ('all' | 'any') | null;
+                        conditions?:
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }[]
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'group';
+                      }
+                  )[]
+                | null;
+            };
+            placeholder?: string | null;
+            rows?: number | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'textarea';
+          }
+        | {
+            /**
+             * Shown to the visitor above this field.
+             */
+            label: string;
+            /**
+             * Unique key for this field. Used as the submission data key.
+             */
+            name: string;
+            nameLock?: boolean | null;
+            /**
+             * Visitors must complete this field before the form can be submitted.
+             */
+            required?: boolean | null;
+            /**
+             * Show a small help icon next to the field label with extra guidance on hover.
+             */
+            tooltip?: {
+              /**
+               * Show a help tooltip for this field.
+               */
+              enabled?: boolean | null;
+              /**
+               * The text shown inside the tooltip.
+               */
+              text?: string | null;
+            };
+            /**
+             * Reveal extra settings like placeholder, width, and validation rules.
+             */
+            showAdvanced?: boolean | null;
+            /**
+             * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+             */
+            validation?: {
+              /**
+               * Override "<Label> is required".
+               */
+              requiredMessage?: string | null;
+              minLength?: number | null;
+              maxLength?: number | null;
+              /**
+               * JS regex source, e.g. ^[A-Z]{2,}$
+               */
+              pattern?: string | null;
+              patternMessage?: string | null;
+              min?: number | null;
+              max?: number | null;
+              minMessage?: string | null;
+              maxMessage?: string | null;
+            };
+            /**
+             * Conditionally show or require this based on other fields.
+             */
+            visibility?: {
+              /**
+               * Only show this based on answers to other fields.
+               */
+              enabled?: boolean | null;
+              action?: ('show' | 'require') | null;
+              match?: ('all' | 'any') | null;
+              conditions?:
+                | (
+                    | {
+                        /**
+                         * The field whose answer this condition tests.
+                         */
+                        source: string;
+                        operator:
+                          | 'equals'
+                          | 'notEquals'
+                          | 'gt'
+                          | 'gte'
+                          | 'lt'
+                          | 'lte'
+                          | 'isChecked'
+                          | 'isNotChecked'
+                          | 'contains'
+                          | 'isEmpty'
+                          | 'isNotEmpty';
+                        /**
+                         * The value to compare against.
+                         */
+                        value?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'condition';
+                      }
+                    | {
+                        match?: ('all' | 'any') | null;
+                        conditions?:
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }[]
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'group';
+                      }
+                  )[]
+                | null;
+            };
+            /**
+             * Visual presentation. "Switch" renders a toggle-switch; data shape is unchanged.
+             */
+            appearance?: ('checkbox' | 'switch') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'checkbox';
+          }
+        | {
+            /**
+             * Shown to the visitor above this field.
+             */
+            label: string;
+            /**
+             * Unique key for this field. Used as the submission data key.
+             */
+            name: string;
+            nameLock?: boolean | null;
+            /**
+             * Visitors must complete this field before the form can be submitted.
+             */
+            required?: boolean | null;
+            /**
+             * Show a small help icon next to the field label with extra guidance on hover.
+             */
+            tooltip?: {
+              /**
+               * Show a help tooltip for this field.
+               */
+              enabled?: boolean | null;
+              /**
+               * The text shown inside the tooltip.
+               */
+              text?: string | null;
+            };
+            /**
+             * Reveal extra settings like placeholder, width, and validation rules.
+             */
+            showAdvanced?: boolean | null;
+            /**
+             * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+             */
+            validation?: {
+              /**
+               * Override "<Label> is required".
+               */
+              requiredMessage?: string | null;
+              minLength?: number | null;
+              maxLength?: number | null;
+              /**
+               * JS regex source, e.g. ^[A-Z]{2,}$
+               */
+              pattern?: string | null;
+              patternMessage?: string | null;
+              min?: number | null;
+              max?: number | null;
+              minMessage?: string | null;
+              maxMessage?: string | null;
+            };
+            /**
+             * Conditionally show or require this based on other fields.
+             */
+            visibility?: {
+              /**
+               * Only show this based on answers to other fields.
+               */
+              enabled?: boolean | null;
+              action?: ('show' | 'require') | null;
+              match?: ('all' | 'any') | null;
+              conditions?:
+                | (
+                    | {
+                        /**
+                         * The field whose answer this condition tests.
+                         */
+                        source: string;
+                        operator:
+                          | 'equals'
+                          | 'notEquals'
+                          | 'gt'
+                          | 'gte'
+                          | 'lt'
+                          | 'lte'
+                          | 'isChecked'
+                          | 'isNotChecked'
+                          | 'contains'
+                          | 'isEmpty'
+                          | 'isNotEmpty';
+                        /**
+                         * The value to compare against.
+                         */
+                        value?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'condition';
+                      }
+                    | {
+                        match?: ('all' | 'any') | null;
+                        conditions?:
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }[]
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'group';
+                      }
+                  )[]
+                | null;
+            };
+            options: {
+              label: string;
+              /**
+               * Auto-generated from the option label. Used as the submission value.
+               */
+              value: string;
+              valueLock?: boolean | null;
+              id?: string | null;
+            }[];
+            layout?: ('row' | 'grid') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'radioGroup';
+          }
+        | {
+            /**
+             * Shown to the visitor above this field.
+             */
+            label: string;
+            /**
+             * Unique key for this field. Used as the submission data key.
+             */
+            name: string;
+            nameLock?: boolean | null;
+            /**
+             * Visitors must complete this field before the form can be submitted.
+             */
+            required?: boolean | null;
+            /**
+             * Show a small help icon next to the field label with extra guidance on hover.
+             */
+            tooltip?: {
+              /**
+               * Show a help tooltip for this field.
+               */
+              enabled?: boolean | null;
+              /**
+               * The text shown inside the tooltip.
+               */
+              text?: string | null;
+            };
+            /**
+             * Reveal extra settings like placeholder, width, and validation rules.
+             */
+            showAdvanced?: boolean | null;
+            /**
+             * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+             */
+            validation?: {
+              /**
+               * Override "<Label> is required".
+               */
+              requiredMessage?: string | null;
+              minLength?: number | null;
+              maxLength?: number | null;
+              /**
+               * JS regex source, e.g. ^[A-Z]{2,}$
+               */
+              pattern?: string | null;
+              patternMessage?: string | null;
+              min?: number | null;
+              max?: number | null;
+              minMessage?: string | null;
+              maxMessage?: string | null;
+            };
+            /**
+             * Conditionally show or require this based on other fields.
+             */
+            visibility?: {
+              /**
+               * Only show this based on answers to other fields.
+               */
+              enabled?: boolean | null;
+              action?: ('show' | 'require') | null;
+              match?: ('all' | 'any') | null;
+              conditions?:
+                | (
+                    | {
+                        /**
+                         * The field whose answer this condition tests.
+                         */
+                        source: string;
+                        operator:
+                          | 'equals'
+                          | 'notEquals'
+                          | 'gt'
+                          | 'gte'
+                          | 'lt'
+                          | 'lte'
+                          | 'isChecked'
+                          | 'isNotChecked'
+                          | 'contains'
+                          | 'isEmpty'
+                          | 'isNotEmpty';
+                        /**
+                         * The value to compare against.
+                         */
+                        value?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'condition';
+                      }
+                    | {
+                        match?: ('all' | 'any') | null;
+                        conditions?:
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }[]
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'group';
+                      }
+                  )[]
+                | null;
+            };
+            options: {
+              label: string;
+              /**
+               * Auto-generated from the option label. Used as the submission value.
+               */
+              value: string;
+              valueLock?: boolean | null;
+              id?: string | null;
+            }[];
+            layout?: ('row' | 'grid') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'checkboxGroup';
+          }
+        | {
+            /**
+             * Shown to the visitor above this field.
+             */
+            label: string;
+            /**
+             * Unique key for this field. Used as the submission data key.
+             */
+            name: string;
+            nameLock?: boolean | null;
+            /**
+             * Visitors must complete this field before the form can be submitted.
+             */
+            required?: boolean | null;
+            /**
+             * Show a small help icon next to the field label with extra guidance on hover.
+             */
+            tooltip?: {
+              /**
+               * Show a help tooltip for this field.
+               */
+              enabled?: boolean | null;
+              /**
+               * The text shown inside the tooltip.
+               */
+              text?: string | null;
+            };
+            /**
+             * Reveal extra settings like placeholder, width, and validation rules.
+             */
+            showAdvanced?: boolean | null;
+            /**
+             * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+             */
+            validation?: {
+              /**
+               * Override "<Label> is required".
+               */
+              requiredMessage?: string | null;
+              minLength?: number | null;
+              maxLength?: number | null;
+              /**
+               * JS regex source, e.g. ^[A-Z]{2,}$
+               */
+              pattern?: string | null;
+              patternMessage?: string | null;
+              min?: number | null;
+              max?: number | null;
+              minMessage?: string | null;
+              maxMessage?: string | null;
+            };
+            /**
+             * Conditionally show or require this based on other fields.
+             */
+            visibility?: {
+              /**
+               * Only show this based on answers to other fields.
+               */
+              enabled?: boolean | null;
+              action?: ('show' | 'require') | null;
+              match?: ('all' | 'any') | null;
+              conditions?:
+                | (
+                    | {
+                        /**
+                         * The field whose answer this condition tests.
+                         */
+                        source: string;
+                        operator:
+                          | 'equals'
+                          | 'notEquals'
+                          | 'gt'
+                          | 'gte'
+                          | 'lt'
+                          | 'lte'
+                          | 'isChecked'
+                          | 'isNotChecked'
+                          | 'contains'
+                          | 'isEmpty'
+                          | 'isNotEmpty';
+                        /**
+                         * The value to compare against.
+                         */
+                        value?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'condition';
+                      }
+                    | {
+                        match?: ('all' | 'any') | null;
+                        conditions?:
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }[]
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'group';
+                      }
+                  )[]
+                | null;
+            };
+            placeholder?: string | null;
+            options: {
+              label: string;
+              /**
+               * Auto-generated from the option label. Used as the submission value.
+               */
+              value: string;
+              valueLock?: boolean | null;
+              id?: string | null;
+            }[];
+            width?: ('full' | 'half' | 'third') | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'select';
+          }
+        | {
+            /**
+             * Shown to the visitor above this field.
+             */
+            label: string;
+            /**
+             * Unique key for this field. Used as the submission data key.
+             */
+            name: string;
+            nameLock?: boolean | null;
+            /**
+             * Visitors must complete this field before the form can be submitted.
+             */
+            required?: boolean | null;
+            /**
+             * Show a small help icon next to the field label with extra guidance on hover.
+             */
+            tooltip?: {
+              /**
+               * Show a help tooltip for this field.
+               */
+              enabled?: boolean | null;
+              /**
+               * The text shown inside the tooltip.
+               */
+              text?: string | null;
+            };
+            /**
+             * Reveal extra settings like placeholder, width, and validation rules.
+             */
+            showAdvanced?: boolean | null;
+            /**
+             * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+             */
+            validation?: {
+              /**
+               * Override "<Label> is required".
+               */
+              requiredMessage?: string | null;
+              minLength?: number | null;
+              maxLength?: number | null;
+              /**
+               * JS regex source, e.g. ^[A-Z]{2,}$
+               */
+              pattern?: string | null;
+              patternMessage?: string | null;
+              min?: number | null;
+              max?: number | null;
+              minMessage?: string | null;
+              maxMessage?: string | null;
+            };
+            /**
+             * Conditionally show or require this based on other fields.
+             */
+            visibility?: {
+              /**
+               * Only show this based on answers to other fields.
+               */
+              enabled?: boolean | null;
+              action?: ('show' | 'require') | null;
+              match?: ('all' | 'any') | null;
+              conditions?:
+                | (
+                    | {
+                        /**
+                         * The field whose answer this condition tests.
+                         */
+                        source: string;
+                        operator:
+                          | 'equals'
+                          | 'notEquals'
+                          | 'gt'
+                          | 'gte'
+                          | 'lt'
+                          | 'lte'
+                          | 'isChecked'
+                          | 'isNotChecked'
+                          | 'contains'
+                          | 'isEmpty'
+                          | 'isNotEmpty';
+                        /**
+                         * The value to compare against.
+                         */
+                        value?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'condition';
+                      }
+                    | {
+                        match?: ('all' | 'any') | null;
+                        conditions?:
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }[]
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'group';
+                      }
+                  )[]
+                | null;
+            };
+            placeholder?: string | null;
+            defaultValue?: number | null;
+            min?: number | null;
+            max?: number | null;
+            step?: number | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'number';
+          }
+        | {
+            /**
+             * Shown to the visitor above this field.
+             */
+            label: string;
+            /**
+             * Unique key for this field. Used as the submission data key.
+             */
+            name: string;
+            nameLock?: boolean | null;
+            /**
+             * Visitors must complete this field before the form can be submitted.
+             */
+            required?: boolean | null;
+            /**
+             * Show a small help icon next to the field label with extra guidance on hover.
+             */
+            tooltip?: {
+              /**
+               * Show a help tooltip for this field.
+               */
+              enabled?: boolean | null;
+              /**
+               * The text shown inside the tooltip.
+               */
+              text?: string | null;
+            };
+            /**
+             * Reveal extra settings like placeholder, width, and validation rules.
+             */
+            showAdvanced?: boolean | null;
+            /**
+             * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+             */
+            validation?: {
+              /**
+               * Override "<Label> is required".
+               */
+              requiredMessage?: string | null;
+              minLength?: number | null;
+              maxLength?: number | null;
+              /**
+               * JS regex source, e.g. ^[A-Z]{2,}$
+               */
+              pattern?: string | null;
+              patternMessage?: string | null;
+              min?: number | null;
+              max?: number | null;
+              minMessage?: string | null;
+              maxMessage?: string | null;
+            };
+            /**
+             * Conditionally show or require this based on other fields.
+             */
+            visibility?: {
+              /**
+               * Only show this based on answers to other fields.
+               */
+              enabled?: boolean | null;
+              action?: ('show' | 'require') | null;
+              match?: ('all' | 'any') | null;
+              conditions?:
+                | (
+                    | {
+                        /**
+                         * The field whose answer this condition tests.
+                         */
+                        source: string;
+                        operator:
+                          | 'equals'
+                          | 'notEquals'
+                          | 'gt'
+                          | 'gte'
+                          | 'lt'
+                          | 'lte'
+                          | 'isChecked'
+                          | 'isNotChecked'
+                          | 'contains'
+                          | 'isEmpty'
+                          | 'isNotEmpty';
+                        /**
+                         * The value to compare against.
+                         */
+                        value?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'condition';
+                      }
+                    | {
+                        match?: ('all' | 'any') | null;
+                        conditions?:
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }[]
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'group';
+                      }
+                  )[]
+                | null;
+            };
+            placeholder?: string | null;
+            /**
+             * Min date as ISO string, e.g. 2024-01-01
+             */
+            min?: string | null;
+            /**
+             * Max date as ISO string, e.g. 2024-12-31
+             */
+            max?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'date';
+          }
+        | {
+            /**
+             * Shown to the visitor above this field.
+             */
+            label: string;
+            /**
+             * Unique key for this field. Used as the submission data key.
+             */
+            name: string;
+            nameLock?: boolean | null;
+            /**
+             * Visitors must complete this field before the form can be submitted.
+             */
+            required?: boolean | null;
+            /**
+             * Show a small help icon next to the field label with extra guidance on hover.
+             */
+            tooltip?: {
+              /**
+               * Show a help tooltip for this field.
+               */
+              enabled?: boolean | null;
+              /**
+               * The text shown inside the tooltip.
+               */
+              text?: string | null;
+            };
+            /**
+             * Reveal extra settings like placeholder, width, and validation rules.
+             */
+            showAdvanced?: boolean | null;
+            /**
+             * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+             */
+            validation?: {
+              /**
+               * Override "<Label> is required".
+               */
+              requiredMessage?: string | null;
+              minLength?: number | null;
+              maxLength?: number | null;
+              /**
+               * JS regex source, e.g. ^[A-Z]{2,}$
+               */
+              pattern?: string | null;
+              patternMessage?: string | null;
+              min?: number | null;
+              max?: number | null;
+              minMessage?: string | null;
+              maxMessage?: string | null;
+            };
+            /**
+             * Conditionally show or require this based on other fields.
+             */
+            visibility?: {
+              /**
+               * Only show this based on answers to other fields.
+               */
+              enabled?: boolean | null;
+              action?: ('show' | 'require') | null;
+              match?: ('all' | 'any') | null;
+              conditions?:
+                | (
+                    | {
+                        /**
+                         * The field whose answer this condition tests.
+                         */
+                        source: string;
+                        operator:
+                          | 'equals'
+                          | 'notEquals'
+                          | 'gt'
+                          | 'gte'
+                          | 'lt'
+                          | 'lte'
+                          | 'isChecked'
+                          | 'isNotChecked'
+                          | 'contains'
+                          | 'isEmpty'
+                          | 'isNotEmpty';
+                        /**
+                         * The value to compare against.
+                         */
+                        value?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'condition';
+                      }
+                    | {
+                        match?: ('all' | 'any') | null;
+                        conditions?:
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }[]
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'group';
+                      }
+                  )[]
+                | null;
+            };
+            /**
+             * Comma-separated MIME types or extensions, e.g. "image/*,.pdf"
+             */
+            accept?: string | null;
+            /**
+             * Maximum file size in MB.
+             */
+            maxSizeMB?: number | null;
+            /**
+             * Payload media collection slug to upload to. Leave blank for consumer-handled upload.
+             */
+            collection?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'file';
+          }
+      )[]
+    | null;
+  /**
+   * Each stage is shown on its own page with Back/Next navigation between them.
+   */
+  steps?:
+    | {
+        /**
+         * Shown in the step progress indicator.
+         */
+        title: string;
+        /**
+         * Optional icon shown in the step indicator.
+         */
+        icon?: (string | null) | Media;
+        /**
+         * Optional icon shown in the step indicator when this step is complete. Falls back to a built-in tick icon.
+         */
+        completedIcon?: (string | null) | Media;
+        /**
+         * Optional content shown above the form fields for this step.
+         */
+        introContent?: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        } | null;
+        fields?:
+          | (
+              | {
+                  /**
+                   * Shown to the visitor above this field.
+                   */
+                  label: string;
+                  /**
+                   * Unique key for this field. Used as the submission data key.
+                   */
+                  name: string;
+                  nameLock?: boolean | null;
+                  /**
+                   * Visitors must complete this field before the form can be submitted.
+                   */
+                  required?: boolean | null;
+                  /**
+                   * Show a small help icon next to the field label with extra guidance on hover.
+                   */
+                  tooltip?: {
+                    /**
+                     * Show a help tooltip for this field.
+                     */
+                    enabled?: boolean | null;
+                    /**
+                     * The text shown inside the tooltip.
+                     */
+                    text?: string | null;
+                  };
+                  /**
+                   * Reveal extra settings like placeholder, width, and validation rules.
+                   */
+                  showAdvanced?: boolean | null;
+                  /**
+                   * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+                   */
+                  validation?: {
+                    /**
+                     * Override "<Label> is required".
+                     */
+                    requiredMessage?: string | null;
+                    minLength?: number | null;
+                    maxLength?: number | null;
+                    /**
+                     * JS regex source, e.g. ^[A-Z]{2,}$
+                     */
+                    pattern?: string | null;
+                    patternMessage?: string | null;
+                    min?: number | null;
+                    max?: number | null;
+                    minMessage?: string | null;
+                    maxMessage?: string | null;
+                  };
+                  /**
+                   * Conditionally show or require this based on other fields.
+                   */
+                  visibility?: {
+                    /**
+                     * Only show this based on answers to other fields.
+                     */
+                    enabled?: boolean | null;
+                    action?: ('show' | 'require') | null;
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | (
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }
+                          | {
+                              match?: ('all' | 'any') | null;
+                              conditions?:
+                                | {
+                                    /**
+                                     * The field whose answer this condition tests.
+                                     */
+                                    source: string;
+                                    operator:
+                                      | 'equals'
+                                      | 'notEquals'
+                                      | 'gt'
+                                      | 'gte'
+                                      | 'lt'
+                                      | 'lte'
+                                      | 'isChecked'
+                                      | 'isNotChecked'
+                                      | 'contains'
+                                      | 'isEmpty'
+                                      | 'isNotEmpty';
+                                    /**
+                                     * The value to compare against.
+                                     */
+                                    value?: string | null;
+                                    id?: string | null;
+                                    blockName?: string | null;
+                                    blockType: 'condition';
+                                  }[]
+                                | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'group';
+                            }
+                        )[]
+                      | null;
+                  };
+                  placeholder?: string | null;
+                  width?: ('full' | 'half' | 'third') | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'text';
+                }
+              | {
+                  /**
+                   * Shown to the visitor above this field.
+                   */
+                  label: string;
+                  /**
+                   * Unique key for this field. Used as the submission data key.
+                   */
+                  name: string;
+                  nameLock?: boolean | null;
+                  /**
+                   * Visitors must complete this field before the form can be submitted.
+                   */
+                  required?: boolean | null;
+                  /**
+                   * Show a small help icon next to the field label with extra guidance on hover.
+                   */
+                  tooltip?: {
+                    /**
+                     * Show a help tooltip for this field.
+                     */
+                    enabled?: boolean | null;
+                    /**
+                     * The text shown inside the tooltip.
+                     */
+                    text?: string | null;
+                  };
+                  /**
+                   * Reveal extra settings like placeholder, width, and validation rules.
+                   */
+                  showAdvanced?: boolean | null;
+                  /**
+                   * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+                   */
+                  validation?: {
+                    /**
+                     * Override "<Label> is required".
+                     */
+                    requiredMessage?: string | null;
+                    minLength?: number | null;
+                    maxLength?: number | null;
+                    /**
+                     * JS regex source, e.g. ^[A-Z]{2,}$
+                     */
+                    pattern?: string | null;
+                    patternMessage?: string | null;
+                    min?: number | null;
+                    max?: number | null;
+                    minMessage?: string | null;
+                    maxMessage?: string | null;
+                  };
+                  /**
+                   * Conditionally show or require this based on other fields.
+                   */
+                  visibility?: {
+                    /**
+                     * Only show this based on answers to other fields.
+                     */
+                    enabled?: boolean | null;
+                    action?: ('show' | 'require') | null;
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | (
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }
+                          | {
+                              match?: ('all' | 'any') | null;
+                              conditions?:
+                                | {
+                                    /**
+                                     * The field whose answer this condition tests.
+                                     */
+                                    source: string;
+                                    operator:
+                                      | 'equals'
+                                      | 'notEquals'
+                                      | 'gt'
+                                      | 'gte'
+                                      | 'lt'
+                                      | 'lte'
+                                      | 'isChecked'
+                                      | 'isNotChecked'
+                                      | 'contains'
+                                      | 'isEmpty'
+                                      | 'isNotEmpty';
+                                    /**
+                                     * The value to compare against.
+                                     */
+                                    value?: string | null;
+                                    id?: string | null;
+                                    blockName?: string | null;
+                                    blockType: 'condition';
+                                  }[]
+                                | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'group';
+                            }
+                        )[]
+                      | null;
+                  };
+                  placeholder?: string | null;
+                  width?: ('full' | 'half' | 'third') | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'email';
+                }
+              | {
+                  /**
+                   * Shown to the visitor above this field.
+                   */
+                  label: string;
+                  /**
+                   * Unique key for this field. Used as the submission data key.
+                   */
+                  name: string;
+                  nameLock?: boolean | null;
+                  /**
+                   * Visitors must complete this field before the form can be submitted.
+                   */
+                  required?: boolean | null;
+                  /**
+                   * Show a small help icon next to the field label with extra guidance on hover.
+                   */
+                  tooltip?: {
+                    /**
+                     * Show a help tooltip for this field.
+                     */
+                    enabled?: boolean | null;
+                    /**
+                     * The text shown inside the tooltip.
+                     */
+                    text?: string | null;
+                  };
+                  /**
+                   * Reveal extra settings like placeholder, width, and validation rules.
+                   */
+                  showAdvanced?: boolean | null;
+                  /**
+                   * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+                   */
+                  validation?: {
+                    /**
+                     * Override "<Label> is required".
+                     */
+                    requiredMessage?: string | null;
+                    minLength?: number | null;
+                    maxLength?: number | null;
+                    /**
+                     * JS regex source, e.g. ^[A-Z]{2,}$
+                     */
+                    pattern?: string | null;
+                    patternMessage?: string | null;
+                    min?: number | null;
+                    max?: number | null;
+                    minMessage?: string | null;
+                    maxMessage?: string | null;
+                  };
+                  /**
+                   * Conditionally show or require this based on other fields.
+                   */
+                  visibility?: {
+                    /**
+                     * Only show this based on answers to other fields.
+                     */
+                    enabled?: boolean | null;
+                    action?: ('show' | 'require') | null;
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | (
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }
+                          | {
+                              match?: ('all' | 'any') | null;
+                              conditions?:
+                                | {
+                                    /**
+                                     * The field whose answer this condition tests.
+                                     */
+                                    source: string;
+                                    operator:
+                                      | 'equals'
+                                      | 'notEquals'
+                                      | 'gt'
+                                      | 'gte'
+                                      | 'lt'
+                                      | 'lte'
+                                      | 'isChecked'
+                                      | 'isNotChecked'
+                                      | 'contains'
+                                      | 'isEmpty'
+                                      | 'isNotEmpty';
+                                    /**
+                                     * The value to compare against.
+                                     */
+                                    value?: string | null;
+                                    id?: string | null;
+                                    blockName?: string | null;
+                                    blockType: 'condition';
+                                  }[]
+                                | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'group';
+                            }
+                        )[]
+                      | null;
+                  };
+                  placeholder?: string | null;
+                  width?: ('full' | 'half' | 'third') | null;
+                  /**
+                   * Dial code of the default country, e.g. "+44". Must match one of the `countries` values.
+                   */
+                  defaultCountry?: string | null;
+                  /**
+                   * Country options for the picker. `value` is the dial code (e.g. "+44") used to build E.164. Leave empty to use the built-in default list.
+                   */
+                  countries?:
+                    | {
+                        label: string;
+                        value: string;
+                        id?: string | null;
+                      }[]
+                    | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'phone';
+                }
+              | {
+                  /**
+                   * Shown to the visitor above this field.
+                   */
+                  label: string;
+                  /**
+                   * Unique key for this field. Used as the submission data key.
+                   */
+                  name: string;
+                  nameLock?: boolean | null;
+                  /**
+                   * Visitors must complete this field before the form can be submitted.
+                   */
+                  required?: boolean | null;
+                  /**
+                   * Show a small help icon next to the field label with extra guidance on hover.
+                   */
+                  tooltip?: {
+                    /**
+                     * Show a help tooltip for this field.
+                     */
+                    enabled?: boolean | null;
+                    /**
+                     * The text shown inside the tooltip.
+                     */
+                    text?: string | null;
+                  };
+                  /**
+                   * Reveal extra settings like placeholder, width, and validation rules.
+                   */
+                  showAdvanced?: boolean | null;
+                  /**
+                   * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+                   */
+                  validation?: {
+                    /**
+                     * Override "<Label> is required".
+                     */
+                    requiredMessage?: string | null;
+                    minLength?: number | null;
+                    maxLength?: number | null;
+                    /**
+                     * JS regex source, e.g. ^[A-Z]{2,}$
+                     */
+                    pattern?: string | null;
+                    patternMessage?: string | null;
+                    min?: number | null;
+                    max?: number | null;
+                    minMessage?: string | null;
+                    maxMessage?: string | null;
+                  };
+                  /**
+                   * Conditionally show or require this based on other fields.
+                   */
+                  visibility?: {
+                    /**
+                     * Only show this based on answers to other fields.
+                     */
+                    enabled?: boolean | null;
+                    action?: ('show' | 'require') | null;
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | (
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }
+                          | {
+                              match?: ('all' | 'any') | null;
+                              conditions?:
+                                | {
+                                    /**
+                                     * The field whose answer this condition tests.
+                                     */
+                                    source: string;
+                                    operator:
+                                      | 'equals'
+                                      | 'notEquals'
+                                      | 'gt'
+                                      | 'gte'
+                                      | 'lt'
+                                      | 'lte'
+                                      | 'isChecked'
+                                      | 'isNotChecked'
+                                      | 'contains'
+                                      | 'isEmpty'
+                                      | 'isNotEmpty';
+                                    /**
+                                     * The value to compare against.
+                                     */
+                                    value?: string | null;
+                                    id?: string | null;
+                                    blockName?: string | null;
+                                    blockType: 'condition';
+                                  }[]
+                                | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'group';
+                            }
+                        )[]
+                      | null;
+                  };
+                  placeholder?: string | null;
+                  rows?: number | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'textarea';
+                }
+              | {
+                  /**
+                   * Shown to the visitor above this field.
+                   */
+                  label: string;
+                  /**
+                   * Unique key for this field. Used as the submission data key.
+                   */
+                  name: string;
+                  nameLock?: boolean | null;
+                  /**
+                   * Visitors must complete this field before the form can be submitted.
+                   */
+                  required?: boolean | null;
+                  /**
+                   * Show a small help icon next to the field label with extra guidance on hover.
+                   */
+                  tooltip?: {
+                    /**
+                     * Show a help tooltip for this field.
+                     */
+                    enabled?: boolean | null;
+                    /**
+                     * The text shown inside the tooltip.
+                     */
+                    text?: string | null;
+                  };
+                  /**
+                   * Reveal extra settings like placeholder, width, and validation rules.
+                   */
+                  showAdvanced?: boolean | null;
+                  /**
+                   * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+                   */
+                  validation?: {
+                    /**
+                     * Override "<Label> is required".
+                     */
+                    requiredMessage?: string | null;
+                    minLength?: number | null;
+                    maxLength?: number | null;
+                    /**
+                     * JS regex source, e.g. ^[A-Z]{2,}$
+                     */
+                    pattern?: string | null;
+                    patternMessage?: string | null;
+                    min?: number | null;
+                    max?: number | null;
+                    minMessage?: string | null;
+                    maxMessage?: string | null;
+                  };
+                  /**
+                   * Conditionally show or require this based on other fields.
+                   */
+                  visibility?: {
+                    /**
+                     * Only show this based on answers to other fields.
+                     */
+                    enabled?: boolean | null;
+                    action?: ('show' | 'require') | null;
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | (
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }
+                          | {
+                              match?: ('all' | 'any') | null;
+                              conditions?:
+                                | {
+                                    /**
+                                     * The field whose answer this condition tests.
+                                     */
+                                    source: string;
+                                    operator:
+                                      | 'equals'
+                                      | 'notEquals'
+                                      | 'gt'
+                                      | 'gte'
+                                      | 'lt'
+                                      | 'lte'
+                                      | 'isChecked'
+                                      | 'isNotChecked'
+                                      | 'contains'
+                                      | 'isEmpty'
+                                      | 'isNotEmpty';
+                                    /**
+                                     * The value to compare against.
+                                     */
+                                    value?: string | null;
+                                    id?: string | null;
+                                    blockName?: string | null;
+                                    blockType: 'condition';
+                                  }[]
+                                | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'group';
+                            }
+                        )[]
+                      | null;
+                  };
+                  /**
+                   * Visual presentation. "Switch" renders a toggle-switch; data shape is unchanged.
+                   */
+                  appearance?: ('checkbox' | 'switch') | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'checkbox';
+                }
+              | {
+                  /**
+                   * Shown to the visitor above this field.
+                   */
+                  label: string;
+                  /**
+                   * Unique key for this field. Used as the submission data key.
+                   */
+                  name: string;
+                  nameLock?: boolean | null;
+                  /**
+                   * Visitors must complete this field before the form can be submitted.
+                   */
+                  required?: boolean | null;
+                  /**
+                   * Show a small help icon next to the field label with extra guidance on hover.
+                   */
+                  tooltip?: {
+                    /**
+                     * Show a help tooltip for this field.
+                     */
+                    enabled?: boolean | null;
+                    /**
+                     * The text shown inside the tooltip.
+                     */
+                    text?: string | null;
+                  };
+                  /**
+                   * Reveal extra settings like placeholder, width, and validation rules.
+                   */
+                  showAdvanced?: boolean | null;
+                  /**
+                   * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+                   */
+                  validation?: {
+                    /**
+                     * Override "<Label> is required".
+                     */
+                    requiredMessage?: string | null;
+                    minLength?: number | null;
+                    maxLength?: number | null;
+                    /**
+                     * JS regex source, e.g. ^[A-Z]{2,}$
+                     */
+                    pattern?: string | null;
+                    patternMessage?: string | null;
+                    min?: number | null;
+                    max?: number | null;
+                    minMessage?: string | null;
+                    maxMessage?: string | null;
+                  };
+                  /**
+                   * Conditionally show or require this based on other fields.
+                   */
+                  visibility?: {
+                    /**
+                     * Only show this based on answers to other fields.
+                     */
+                    enabled?: boolean | null;
+                    action?: ('show' | 'require') | null;
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | (
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }
+                          | {
+                              match?: ('all' | 'any') | null;
+                              conditions?:
+                                | {
+                                    /**
+                                     * The field whose answer this condition tests.
+                                     */
+                                    source: string;
+                                    operator:
+                                      | 'equals'
+                                      | 'notEquals'
+                                      | 'gt'
+                                      | 'gte'
+                                      | 'lt'
+                                      | 'lte'
+                                      | 'isChecked'
+                                      | 'isNotChecked'
+                                      | 'contains'
+                                      | 'isEmpty'
+                                      | 'isNotEmpty';
+                                    /**
+                                     * The value to compare against.
+                                     */
+                                    value?: string | null;
+                                    id?: string | null;
+                                    blockName?: string | null;
+                                    blockType: 'condition';
+                                  }[]
+                                | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'group';
+                            }
+                        )[]
+                      | null;
+                  };
+                  options: {
+                    label: string;
+                    /**
+                     * Auto-generated from the option label. Used as the submission value.
+                     */
+                    value: string;
+                    valueLock?: boolean | null;
+                    id?: string | null;
+                  }[];
+                  layout?: ('row' | 'grid') | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'radioGroup';
+                }
+              | {
+                  /**
+                   * Shown to the visitor above this field.
+                   */
+                  label: string;
+                  /**
+                   * Unique key for this field. Used as the submission data key.
+                   */
+                  name: string;
+                  nameLock?: boolean | null;
+                  /**
+                   * Visitors must complete this field before the form can be submitted.
+                   */
+                  required?: boolean | null;
+                  /**
+                   * Show a small help icon next to the field label with extra guidance on hover.
+                   */
+                  tooltip?: {
+                    /**
+                     * Show a help tooltip for this field.
+                     */
+                    enabled?: boolean | null;
+                    /**
+                     * The text shown inside the tooltip.
+                     */
+                    text?: string | null;
+                  };
+                  /**
+                   * Reveal extra settings like placeholder, width, and validation rules.
+                   */
+                  showAdvanced?: boolean | null;
+                  /**
+                   * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+                   */
+                  validation?: {
+                    /**
+                     * Override "<Label> is required".
+                     */
+                    requiredMessage?: string | null;
+                    minLength?: number | null;
+                    maxLength?: number | null;
+                    /**
+                     * JS regex source, e.g. ^[A-Z]{2,}$
+                     */
+                    pattern?: string | null;
+                    patternMessage?: string | null;
+                    min?: number | null;
+                    max?: number | null;
+                    minMessage?: string | null;
+                    maxMessage?: string | null;
+                  };
+                  /**
+                   * Conditionally show or require this based on other fields.
+                   */
+                  visibility?: {
+                    /**
+                     * Only show this based on answers to other fields.
+                     */
+                    enabled?: boolean | null;
+                    action?: ('show' | 'require') | null;
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | (
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }
+                          | {
+                              match?: ('all' | 'any') | null;
+                              conditions?:
+                                | {
+                                    /**
+                                     * The field whose answer this condition tests.
+                                     */
+                                    source: string;
+                                    operator:
+                                      | 'equals'
+                                      | 'notEquals'
+                                      | 'gt'
+                                      | 'gte'
+                                      | 'lt'
+                                      | 'lte'
+                                      | 'isChecked'
+                                      | 'isNotChecked'
+                                      | 'contains'
+                                      | 'isEmpty'
+                                      | 'isNotEmpty';
+                                    /**
+                                     * The value to compare against.
+                                     */
+                                    value?: string | null;
+                                    id?: string | null;
+                                    blockName?: string | null;
+                                    blockType: 'condition';
+                                  }[]
+                                | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'group';
+                            }
+                        )[]
+                      | null;
+                  };
+                  options: {
+                    label: string;
+                    /**
+                     * Auto-generated from the option label. Used as the submission value.
+                     */
+                    value: string;
+                    valueLock?: boolean | null;
+                    id?: string | null;
+                  }[];
+                  layout?: ('row' | 'grid') | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'checkboxGroup';
+                }
+              | {
+                  /**
+                   * Shown to the visitor above this field.
+                   */
+                  label: string;
+                  /**
+                   * Unique key for this field. Used as the submission data key.
+                   */
+                  name: string;
+                  nameLock?: boolean | null;
+                  /**
+                   * Visitors must complete this field before the form can be submitted.
+                   */
+                  required?: boolean | null;
+                  /**
+                   * Show a small help icon next to the field label with extra guidance on hover.
+                   */
+                  tooltip?: {
+                    /**
+                     * Show a help tooltip for this field.
+                     */
+                    enabled?: boolean | null;
+                    /**
+                     * The text shown inside the tooltip.
+                     */
+                    text?: string | null;
+                  };
+                  /**
+                   * Reveal extra settings like placeholder, width, and validation rules.
+                   */
+                  showAdvanced?: boolean | null;
+                  /**
+                   * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+                   */
+                  validation?: {
+                    /**
+                     * Override "<Label> is required".
+                     */
+                    requiredMessage?: string | null;
+                    minLength?: number | null;
+                    maxLength?: number | null;
+                    /**
+                     * JS regex source, e.g. ^[A-Z]{2,}$
+                     */
+                    pattern?: string | null;
+                    patternMessage?: string | null;
+                    min?: number | null;
+                    max?: number | null;
+                    minMessage?: string | null;
+                    maxMessage?: string | null;
+                  };
+                  /**
+                   * Conditionally show or require this based on other fields.
+                   */
+                  visibility?: {
+                    /**
+                     * Only show this based on answers to other fields.
+                     */
+                    enabled?: boolean | null;
+                    action?: ('show' | 'require') | null;
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | (
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }
+                          | {
+                              match?: ('all' | 'any') | null;
+                              conditions?:
+                                | {
+                                    /**
+                                     * The field whose answer this condition tests.
+                                     */
+                                    source: string;
+                                    operator:
+                                      | 'equals'
+                                      | 'notEquals'
+                                      | 'gt'
+                                      | 'gte'
+                                      | 'lt'
+                                      | 'lte'
+                                      | 'isChecked'
+                                      | 'isNotChecked'
+                                      | 'contains'
+                                      | 'isEmpty'
+                                      | 'isNotEmpty';
+                                    /**
+                                     * The value to compare against.
+                                     */
+                                    value?: string | null;
+                                    id?: string | null;
+                                    blockName?: string | null;
+                                    blockType: 'condition';
+                                  }[]
+                                | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'group';
+                            }
+                        )[]
+                      | null;
+                  };
+                  placeholder?: string | null;
+                  options: {
+                    label: string;
+                    /**
+                     * Auto-generated from the option label. Used as the submission value.
+                     */
+                    value: string;
+                    valueLock?: boolean | null;
+                    id?: string | null;
+                  }[];
+                  width?: ('full' | 'half' | 'third') | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'select';
+                }
+              | {
+                  /**
+                   * Shown to the visitor above this field.
+                   */
+                  label: string;
+                  /**
+                   * Unique key for this field. Used as the submission data key.
+                   */
+                  name: string;
+                  nameLock?: boolean | null;
+                  /**
+                   * Visitors must complete this field before the form can be submitted.
+                   */
+                  required?: boolean | null;
+                  /**
+                   * Show a small help icon next to the field label with extra guidance on hover.
+                   */
+                  tooltip?: {
+                    /**
+                     * Show a help tooltip for this field.
+                     */
+                    enabled?: boolean | null;
+                    /**
+                     * The text shown inside the tooltip.
+                     */
+                    text?: string | null;
+                  };
+                  /**
+                   * Reveal extra settings like placeholder, width, and validation rules.
+                   */
+                  showAdvanced?: boolean | null;
+                  /**
+                   * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+                   */
+                  validation?: {
+                    /**
+                     * Override "<Label> is required".
+                     */
+                    requiredMessage?: string | null;
+                    minLength?: number | null;
+                    maxLength?: number | null;
+                    /**
+                     * JS regex source, e.g. ^[A-Z]{2,}$
+                     */
+                    pattern?: string | null;
+                    patternMessage?: string | null;
+                    min?: number | null;
+                    max?: number | null;
+                    minMessage?: string | null;
+                    maxMessage?: string | null;
+                  };
+                  /**
+                   * Conditionally show or require this based on other fields.
+                   */
+                  visibility?: {
+                    /**
+                     * Only show this based on answers to other fields.
+                     */
+                    enabled?: boolean | null;
+                    action?: ('show' | 'require') | null;
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | (
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }
+                          | {
+                              match?: ('all' | 'any') | null;
+                              conditions?:
+                                | {
+                                    /**
+                                     * The field whose answer this condition tests.
+                                     */
+                                    source: string;
+                                    operator:
+                                      | 'equals'
+                                      | 'notEquals'
+                                      | 'gt'
+                                      | 'gte'
+                                      | 'lt'
+                                      | 'lte'
+                                      | 'isChecked'
+                                      | 'isNotChecked'
+                                      | 'contains'
+                                      | 'isEmpty'
+                                      | 'isNotEmpty';
+                                    /**
+                                     * The value to compare against.
+                                     */
+                                    value?: string | null;
+                                    id?: string | null;
+                                    blockName?: string | null;
+                                    blockType: 'condition';
+                                  }[]
+                                | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'group';
+                            }
+                        )[]
+                      | null;
+                  };
+                  placeholder?: string | null;
+                  defaultValue?: number | null;
+                  min?: number | null;
+                  max?: number | null;
+                  step?: number | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'number';
+                }
+              | {
+                  /**
+                   * Shown to the visitor above this field.
+                   */
+                  label: string;
+                  /**
+                   * Unique key for this field. Used as the submission data key.
+                   */
+                  name: string;
+                  nameLock?: boolean | null;
+                  /**
+                   * Visitors must complete this field before the form can be submitted.
+                   */
+                  required?: boolean | null;
+                  /**
+                   * Show a small help icon next to the field label with extra guidance on hover.
+                   */
+                  tooltip?: {
+                    /**
+                     * Show a help tooltip for this field.
+                     */
+                    enabled?: boolean | null;
+                    /**
+                     * The text shown inside the tooltip.
+                     */
+                    text?: string | null;
+                  };
+                  /**
+                   * Reveal extra settings like placeholder, width, and validation rules.
+                   */
+                  showAdvanced?: boolean | null;
+                  /**
+                   * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+                   */
+                  validation?: {
+                    /**
+                     * Override "<Label> is required".
+                     */
+                    requiredMessage?: string | null;
+                    minLength?: number | null;
+                    maxLength?: number | null;
+                    /**
+                     * JS regex source, e.g. ^[A-Z]{2,}$
+                     */
+                    pattern?: string | null;
+                    patternMessage?: string | null;
+                    min?: number | null;
+                    max?: number | null;
+                    minMessage?: string | null;
+                    maxMessage?: string | null;
+                  };
+                  /**
+                   * Conditionally show or require this based on other fields.
+                   */
+                  visibility?: {
+                    /**
+                     * Only show this based on answers to other fields.
+                     */
+                    enabled?: boolean | null;
+                    action?: ('show' | 'require') | null;
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | (
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }
+                          | {
+                              match?: ('all' | 'any') | null;
+                              conditions?:
+                                | {
+                                    /**
+                                     * The field whose answer this condition tests.
+                                     */
+                                    source: string;
+                                    operator:
+                                      | 'equals'
+                                      | 'notEquals'
+                                      | 'gt'
+                                      | 'gte'
+                                      | 'lt'
+                                      | 'lte'
+                                      | 'isChecked'
+                                      | 'isNotChecked'
+                                      | 'contains'
+                                      | 'isEmpty'
+                                      | 'isNotEmpty';
+                                    /**
+                                     * The value to compare against.
+                                     */
+                                    value?: string | null;
+                                    id?: string | null;
+                                    blockName?: string | null;
+                                    blockType: 'condition';
+                                  }[]
+                                | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'group';
+                            }
+                        )[]
+                      | null;
+                  };
+                  placeholder?: string | null;
+                  /**
+                   * Min date as ISO string, e.g. 2024-01-01
+                   */
+                  min?: string | null;
+                  /**
+                   * Max date as ISO string, e.g. 2024-12-31
+                   */
+                  max?: string | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'date';
+                }
+              | {
+                  /**
+                   * Shown to the visitor above this field.
+                   */
+                  label: string;
+                  /**
+                   * Unique key for this field. Used as the submission data key.
+                   */
+                  name: string;
+                  nameLock?: boolean | null;
+                  /**
+                   * Visitors must complete this field before the form can be submitted.
+                   */
+                  required?: boolean | null;
+                  /**
+                   * Show a small help icon next to the field label with extra guidance on hover.
+                   */
+                  tooltip?: {
+                    /**
+                     * Show a help tooltip for this field.
+                     */
+                    enabled?: boolean | null;
+                    /**
+                     * The text shown inside the tooltip.
+                     */
+                    text?: string | null;
+                  };
+                  /**
+                   * Reveal extra settings like placeholder, width, and validation rules.
+                   */
+                  showAdvanced?: boolean | null;
+                  /**
+                   * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+                   */
+                  validation?: {
+                    /**
+                     * Override "<Label> is required".
+                     */
+                    requiredMessage?: string | null;
+                    minLength?: number | null;
+                    maxLength?: number | null;
+                    /**
+                     * JS regex source, e.g. ^[A-Z]{2,}$
+                     */
+                    pattern?: string | null;
+                    patternMessage?: string | null;
+                    min?: number | null;
+                    max?: number | null;
+                    minMessage?: string | null;
+                    maxMessage?: string | null;
+                  };
+                  /**
+                   * Conditionally show or require this based on other fields.
+                   */
+                  visibility?: {
+                    /**
+                     * Only show this based on answers to other fields.
+                     */
+                    enabled?: boolean | null;
+                    action?: ('show' | 'require') | null;
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | (
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }
+                          | {
+                              match?: ('all' | 'any') | null;
+                              conditions?:
+                                | {
+                                    /**
+                                     * The field whose answer this condition tests.
+                                     */
+                                    source: string;
+                                    operator:
+                                      | 'equals'
+                                      | 'notEquals'
+                                      | 'gt'
+                                      | 'gte'
+                                      | 'lt'
+                                      | 'lte'
+                                      | 'isChecked'
+                                      | 'isNotChecked'
+                                      | 'contains'
+                                      | 'isEmpty'
+                                      | 'isNotEmpty';
+                                    /**
+                                     * The value to compare against.
+                                     */
+                                    value?: string | null;
+                                    id?: string | null;
+                                    blockName?: string | null;
+                                    blockType: 'condition';
+                                  }[]
+                                | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'group';
+                            }
+                        )[]
+                      | null;
+                  };
+                  /**
+                   * Comma-separated MIME types or extensions, e.g. "image/*,.pdf"
+                   */
+                  accept?: string | null;
+                  /**
+                   * Maximum file size in MB.
+                   */
+                  maxSizeMB?: number | null;
+                  /**
+                   * Payload media collection slug to upload to. Leave blank for consumer-handled upload.
+                   */
+                  collection?: string | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'file';
+                }
+            )[]
+          | null;
+        /**
+         * Conditionally show or require this based on other fields.
+         */
+        visibility?: {
+          /**
+           * Only show this based on answers to other fields.
+           */
+          enabled?: boolean | null;
+          match?: ('all' | 'any') | null;
+          conditions?:
+            | (
+                | {
+                    /**
+                     * The field whose answer this condition tests.
+                     */
+                    source: string;
+                    operator:
+                      | 'equals'
+                      | 'notEquals'
+                      | 'gt'
+                      | 'gte'
+                      | 'lt'
+                      | 'lte'
+                      | 'isChecked'
+                      | 'isNotChecked'
+                      | 'contains'
+                      | 'isEmpty'
+                      | 'isNotEmpty';
+                    /**
+                     * The value to compare against.
+                     */
+                    value?: string | null;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: 'condition';
+                  }
+                | {
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | {
+                          /**
+                           * The field whose answer this condition tests.
+                           */
+                          source: string;
+                          operator:
+                            | 'equals'
+                            | 'notEquals'
+                            | 'gt'
+                            | 'gte'
+                            | 'lt'
+                            | 'lte'
+                            | 'isChecked'
+                            | 'isNotChecked'
+                            | 'contains'
+                            | 'isEmpty'
+                            | 'isNotEmpty';
+                          /**
+                           * The value to compare against.
+                           */
+                          value?: string | null;
+                          id?: string | null;
+                          blockName?: string | null;
+                          blockType: 'condition';
+                        }[]
+                      | null;
+                    id?: string | null;
+                    blockName?: string | null;
+                    blockType: 'group';
+                  }
+              )[]
+            | null;
+        };
+        /**
+         * Optional override for the "Back" button label on this step.
+         */
+        backLabel?: string | null;
+        /**
+         * Optional override for the "Next" (or "Submit" on the final step) button label on this step.
+         */
+        nextLabel?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Show a final "Confirmation" stage in the progress indicator, representing the thank-you screen after submission. This is indicator-only — it does not add an extra page or field step.
+   */
+  confirmationStage?: {
+    /**
+     * Append a confirmation stage to the step indicator.
+     */
+    enabled?: boolean | null;
+    /**
+     * Label shown under the confirmation dot. Defaults to "Confirmation".
+     */
+    label?: string | null;
+    /**
+     * Optional icon shown for the confirmation stage in the indicator.
+     */
+    icon?: (string | null) | Media;
+  };
+  /**
+   * Override the text on the form navigation buttons. Leave blank to use the defaults ("Back", "Next", "Submit").
+   */
+  buttonLabels?: {
+    /**
+     * Label for the button that submits the form. Defaults to "Submit".
+     */
+    submit?: string | null;
+    /**
+     * Label for the "Back" button. Defaults to "Back".
+     */
+    back?: string | null;
+    /**
+     * Label for the "Next" button between stages. Defaults to "Next".
+     */
+    next?: string | null;
+    /**
+     * Label for the "Back" button on the final stage. Falls back to "Back".
+     */
+    backLast?: string | null;
+  };
+  /**
+   * Optional rich-text content rendered above or below the form (e.g. intro copy or a privacy notice).
+   */
+  additionalContent?: {
+    /**
+     * Show the additional content alongside this form.
+     */
+    enabled?: boolean | null;
+    /**
+     * Where the content appears relative to the form.
+     */
+    position?: ('above' | 'below') | null;
+    content?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+  };
+  /**
+   * At least one action is required. Actions execute in order.
+   */
+  submissionActions: (SendEmailBlock | ConfirmationMessageBlock | RedirectBlock)[];
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SendEmailBlock".
+ */
+export interface SendEmailBlock {
+  /**
+   * Recipient email address.
+   */
+  to: string;
+  /**
+   * Reply-to address. Defaults to the submitter's email field if left blank.
+   */
+  replyTo?: string | null;
+  /**
+   * Supports {{field_name}} interpolation, e.g. "Enquiry from {{full_name}}".
+   */
+  subject: string;
+  /**
+   * Append all submitted field values to the email body.
+   */
+  includeSubmissionData?: boolean | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'sendEmail';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ConfirmationMessageBlock".
+ */
+export interface ConfirmationMessageBlock {
+  /**
+   * Shown to the user after a successful submission.
+   */
+  message: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'confirmationMessage';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "RedirectBlock".
+ */
+export interface RedirectBlock {
+  /**
+   * Full URL or relative path, e.g. /thank-you.
+   */
+  url: string;
+  /**
+   * Milliseconds before redirect fires. 0 = immediate.
+   */
+  delay?: number | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'redirect';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-submissions".
+ */
+export interface FormSubmission {
+  id: string;
+  form: string | Form;
+  submittedAt: string;
+  data?:
+    | {
+        fieldName: string;
+        value?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  metadata?: {
+    userAgent?: string | null;
+    ip?: string | null;
+    referrer?: string | null;
+  };
+  /**
+   * Context the enquiry was submitted with (e.g. hotel/itinerary/offer reference).
+   */
+  context?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv".
+ */
+export interface PayloadKv {
+  id: string;
+  key: string;
+  data:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -113,7 +3478,15 @@ export interface User {
   hash?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
   password?: string | null;
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -123,16 +3496,16 @@ export interface PayloadLockedDocument {
   id: string;
   document?:
     | ({
-        relationTo: 'posts';
-        value: string | Post;
-      } | null)
-    | ({
         relationTo: 'media';
         value: string | Media;
       } | null)
     | ({
-        relationTo: 'plugin-collection';
-        value: string | PluginCollection;
+        relationTo: 'forms';
+        value: string | Form;
+      } | null)
+    | ({
+        relationTo: 'form-submissions';
+        value: string | FormSubmission;
       } | null)
     | ({
         relationTo: 'users';
@@ -182,15 +3555,6 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "posts_select".
- */
-export interface PostsSelect<T extends boolean = true> {
-  addedByPlugin?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
@@ -208,12 +3572,1818 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plugin-collection_select".
+ * via the `definition` "forms_select".
  */
-export interface PluginCollectionSelect<T extends boolean = true> {
-  id?: T;
+export interface FormsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  slugLock?: T;
+  multiStep?: T;
+  fields?:
+    | T
+    | {
+        text?:
+          | T
+          | {
+              label?: T;
+              name?: T;
+              nameLock?: T;
+              required?: T;
+              tooltip?:
+                | T
+                | {
+                    enabled?: T;
+                    text?: T;
+                  };
+              showAdvanced?: T;
+              validation?:
+                | T
+                | {
+                    requiredMessage?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    pattern?: T;
+                    patternMessage?: T;
+                    min?: T;
+                    max?: T;
+                    minMessage?: T;
+                    maxMessage?: T;
+                  };
+              visibility?:
+                | T
+                | {
+                    enabled?: T;
+                    action?: T;
+                    match?: T;
+                    conditions?:
+                      | T
+                      | {
+                          condition?:
+                            | T
+                            | {
+                                source?: T;
+                                operator?: T;
+                                value?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          group?:
+                            | T
+                            | {
+                                match?: T;
+                                conditions?:
+                                  | T
+                                  | {
+                                      condition?:
+                                        | T
+                                        | {
+                                            source?: T;
+                                            operator?: T;
+                                            value?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                  };
+              placeholder?: T;
+              width?: T;
+              id?: T;
+              blockName?: T;
+            };
+        email?:
+          | T
+          | {
+              label?: T;
+              name?: T;
+              nameLock?: T;
+              required?: T;
+              tooltip?:
+                | T
+                | {
+                    enabled?: T;
+                    text?: T;
+                  };
+              showAdvanced?: T;
+              validation?:
+                | T
+                | {
+                    requiredMessage?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    pattern?: T;
+                    patternMessage?: T;
+                    min?: T;
+                    max?: T;
+                    minMessage?: T;
+                    maxMessage?: T;
+                  };
+              visibility?:
+                | T
+                | {
+                    enabled?: T;
+                    action?: T;
+                    match?: T;
+                    conditions?:
+                      | T
+                      | {
+                          condition?:
+                            | T
+                            | {
+                                source?: T;
+                                operator?: T;
+                                value?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          group?:
+                            | T
+                            | {
+                                match?: T;
+                                conditions?:
+                                  | T
+                                  | {
+                                      condition?:
+                                        | T
+                                        | {
+                                            source?: T;
+                                            operator?: T;
+                                            value?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                  };
+              placeholder?: T;
+              width?: T;
+              id?: T;
+              blockName?: T;
+            };
+        phone?:
+          | T
+          | {
+              label?: T;
+              name?: T;
+              nameLock?: T;
+              required?: T;
+              tooltip?:
+                | T
+                | {
+                    enabled?: T;
+                    text?: T;
+                  };
+              showAdvanced?: T;
+              validation?:
+                | T
+                | {
+                    requiredMessage?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    pattern?: T;
+                    patternMessage?: T;
+                    min?: T;
+                    max?: T;
+                    minMessage?: T;
+                    maxMessage?: T;
+                  };
+              visibility?:
+                | T
+                | {
+                    enabled?: T;
+                    action?: T;
+                    match?: T;
+                    conditions?:
+                      | T
+                      | {
+                          condition?:
+                            | T
+                            | {
+                                source?: T;
+                                operator?: T;
+                                value?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          group?:
+                            | T
+                            | {
+                                match?: T;
+                                conditions?:
+                                  | T
+                                  | {
+                                      condition?:
+                                        | T
+                                        | {
+                                            source?: T;
+                                            operator?: T;
+                                            value?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                  };
+              placeholder?: T;
+              width?: T;
+              defaultCountry?: T;
+              countries?:
+                | T
+                | {
+                    label?: T;
+                    value?: T;
+                    id?: T;
+                  };
+              id?: T;
+              blockName?: T;
+            };
+        textarea?:
+          | T
+          | {
+              label?: T;
+              name?: T;
+              nameLock?: T;
+              required?: T;
+              tooltip?:
+                | T
+                | {
+                    enabled?: T;
+                    text?: T;
+                  };
+              showAdvanced?: T;
+              validation?:
+                | T
+                | {
+                    requiredMessage?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    pattern?: T;
+                    patternMessage?: T;
+                    min?: T;
+                    max?: T;
+                    minMessage?: T;
+                    maxMessage?: T;
+                  };
+              visibility?:
+                | T
+                | {
+                    enabled?: T;
+                    action?: T;
+                    match?: T;
+                    conditions?:
+                      | T
+                      | {
+                          condition?:
+                            | T
+                            | {
+                                source?: T;
+                                operator?: T;
+                                value?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          group?:
+                            | T
+                            | {
+                                match?: T;
+                                conditions?:
+                                  | T
+                                  | {
+                                      condition?:
+                                        | T
+                                        | {
+                                            source?: T;
+                                            operator?: T;
+                                            value?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                  };
+              placeholder?: T;
+              rows?: T;
+              id?: T;
+              blockName?: T;
+            };
+        checkbox?:
+          | T
+          | {
+              label?: T;
+              name?: T;
+              nameLock?: T;
+              required?: T;
+              tooltip?:
+                | T
+                | {
+                    enabled?: T;
+                    text?: T;
+                  };
+              showAdvanced?: T;
+              validation?:
+                | T
+                | {
+                    requiredMessage?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    pattern?: T;
+                    patternMessage?: T;
+                    min?: T;
+                    max?: T;
+                    minMessage?: T;
+                    maxMessage?: T;
+                  };
+              visibility?:
+                | T
+                | {
+                    enabled?: T;
+                    action?: T;
+                    match?: T;
+                    conditions?:
+                      | T
+                      | {
+                          condition?:
+                            | T
+                            | {
+                                source?: T;
+                                operator?: T;
+                                value?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          group?:
+                            | T
+                            | {
+                                match?: T;
+                                conditions?:
+                                  | T
+                                  | {
+                                      condition?:
+                                        | T
+                                        | {
+                                            source?: T;
+                                            operator?: T;
+                                            value?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                  };
+              appearance?: T;
+              id?: T;
+              blockName?: T;
+            };
+        radioGroup?:
+          | T
+          | {
+              label?: T;
+              name?: T;
+              nameLock?: T;
+              required?: T;
+              tooltip?:
+                | T
+                | {
+                    enabled?: T;
+                    text?: T;
+                  };
+              showAdvanced?: T;
+              validation?:
+                | T
+                | {
+                    requiredMessage?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    pattern?: T;
+                    patternMessage?: T;
+                    min?: T;
+                    max?: T;
+                    minMessage?: T;
+                    maxMessage?: T;
+                  };
+              visibility?:
+                | T
+                | {
+                    enabled?: T;
+                    action?: T;
+                    match?: T;
+                    conditions?:
+                      | T
+                      | {
+                          condition?:
+                            | T
+                            | {
+                                source?: T;
+                                operator?: T;
+                                value?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          group?:
+                            | T
+                            | {
+                                match?: T;
+                                conditions?:
+                                  | T
+                                  | {
+                                      condition?:
+                                        | T
+                                        | {
+                                            source?: T;
+                                            operator?: T;
+                                            value?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                  };
+              options?:
+                | T
+                | {
+                    label?: T;
+                    value?: T;
+                    valueLock?: T;
+                    id?: T;
+                  };
+              layout?: T;
+              id?: T;
+              blockName?: T;
+            };
+        checkboxGroup?:
+          | T
+          | {
+              label?: T;
+              name?: T;
+              nameLock?: T;
+              required?: T;
+              tooltip?:
+                | T
+                | {
+                    enabled?: T;
+                    text?: T;
+                  };
+              showAdvanced?: T;
+              validation?:
+                | T
+                | {
+                    requiredMessage?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    pattern?: T;
+                    patternMessage?: T;
+                    min?: T;
+                    max?: T;
+                    minMessage?: T;
+                    maxMessage?: T;
+                  };
+              visibility?:
+                | T
+                | {
+                    enabled?: T;
+                    action?: T;
+                    match?: T;
+                    conditions?:
+                      | T
+                      | {
+                          condition?:
+                            | T
+                            | {
+                                source?: T;
+                                operator?: T;
+                                value?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          group?:
+                            | T
+                            | {
+                                match?: T;
+                                conditions?:
+                                  | T
+                                  | {
+                                      condition?:
+                                        | T
+                                        | {
+                                            source?: T;
+                                            operator?: T;
+                                            value?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                  };
+              options?:
+                | T
+                | {
+                    label?: T;
+                    value?: T;
+                    valueLock?: T;
+                    id?: T;
+                  };
+              layout?: T;
+              id?: T;
+              blockName?: T;
+            };
+        select?:
+          | T
+          | {
+              label?: T;
+              name?: T;
+              nameLock?: T;
+              required?: T;
+              tooltip?:
+                | T
+                | {
+                    enabled?: T;
+                    text?: T;
+                  };
+              showAdvanced?: T;
+              validation?:
+                | T
+                | {
+                    requiredMessage?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    pattern?: T;
+                    patternMessage?: T;
+                    min?: T;
+                    max?: T;
+                    minMessage?: T;
+                    maxMessage?: T;
+                  };
+              visibility?:
+                | T
+                | {
+                    enabled?: T;
+                    action?: T;
+                    match?: T;
+                    conditions?:
+                      | T
+                      | {
+                          condition?:
+                            | T
+                            | {
+                                source?: T;
+                                operator?: T;
+                                value?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          group?:
+                            | T
+                            | {
+                                match?: T;
+                                conditions?:
+                                  | T
+                                  | {
+                                      condition?:
+                                        | T
+                                        | {
+                                            source?: T;
+                                            operator?: T;
+                                            value?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                  };
+              placeholder?: T;
+              options?:
+                | T
+                | {
+                    label?: T;
+                    value?: T;
+                    valueLock?: T;
+                    id?: T;
+                  };
+              width?: T;
+              id?: T;
+              blockName?: T;
+            };
+        number?:
+          | T
+          | {
+              label?: T;
+              name?: T;
+              nameLock?: T;
+              required?: T;
+              tooltip?:
+                | T
+                | {
+                    enabled?: T;
+                    text?: T;
+                  };
+              showAdvanced?: T;
+              validation?:
+                | T
+                | {
+                    requiredMessage?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    pattern?: T;
+                    patternMessage?: T;
+                    min?: T;
+                    max?: T;
+                    minMessage?: T;
+                    maxMessage?: T;
+                  };
+              visibility?:
+                | T
+                | {
+                    enabled?: T;
+                    action?: T;
+                    match?: T;
+                    conditions?:
+                      | T
+                      | {
+                          condition?:
+                            | T
+                            | {
+                                source?: T;
+                                operator?: T;
+                                value?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          group?:
+                            | T
+                            | {
+                                match?: T;
+                                conditions?:
+                                  | T
+                                  | {
+                                      condition?:
+                                        | T
+                                        | {
+                                            source?: T;
+                                            operator?: T;
+                                            value?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                  };
+              placeholder?: T;
+              defaultValue?: T;
+              min?: T;
+              max?: T;
+              step?: T;
+              id?: T;
+              blockName?: T;
+            };
+        date?:
+          | T
+          | {
+              label?: T;
+              name?: T;
+              nameLock?: T;
+              required?: T;
+              tooltip?:
+                | T
+                | {
+                    enabled?: T;
+                    text?: T;
+                  };
+              showAdvanced?: T;
+              validation?:
+                | T
+                | {
+                    requiredMessage?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    pattern?: T;
+                    patternMessage?: T;
+                    min?: T;
+                    max?: T;
+                    minMessage?: T;
+                    maxMessage?: T;
+                  };
+              visibility?:
+                | T
+                | {
+                    enabled?: T;
+                    action?: T;
+                    match?: T;
+                    conditions?:
+                      | T
+                      | {
+                          condition?:
+                            | T
+                            | {
+                                source?: T;
+                                operator?: T;
+                                value?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          group?:
+                            | T
+                            | {
+                                match?: T;
+                                conditions?:
+                                  | T
+                                  | {
+                                      condition?:
+                                        | T
+                                        | {
+                                            source?: T;
+                                            operator?: T;
+                                            value?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                  };
+              placeholder?: T;
+              min?: T;
+              max?: T;
+              id?: T;
+              blockName?: T;
+            };
+        file?:
+          | T
+          | {
+              label?: T;
+              name?: T;
+              nameLock?: T;
+              required?: T;
+              tooltip?:
+                | T
+                | {
+                    enabled?: T;
+                    text?: T;
+                  };
+              showAdvanced?: T;
+              validation?:
+                | T
+                | {
+                    requiredMessage?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    pattern?: T;
+                    patternMessage?: T;
+                    min?: T;
+                    max?: T;
+                    minMessage?: T;
+                    maxMessage?: T;
+                  };
+              visibility?:
+                | T
+                | {
+                    enabled?: T;
+                    action?: T;
+                    match?: T;
+                    conditions?:
+                      | T
+                      | {
+                          condition?:
+                            | T
+                            | {
+                                source?: T;
+                                operator?: T;
+                                value?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          group?:
+                            | T
+                            | {
+                                match?: T;
+                                conditions?:
+                                  | T
+                                  | {
+                                      condition?:
+                                        | T
+                                        | {
+                                            source?: T;
+                                            operator?: T;
+                                            value?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                  };
+              accept?: T;
+              maxSizeMB?: T;
+              collection?: T;
+              id?: T;
+              blockName?: T;
+            };
+      };
+  steps?:
+    | T
+    | {
+        title?: T;
+        icon?: T;
+        completedIcon?: T;
+        introContent?: T;
+        fields?:
+          | T
+          | {
+              text?:
+                | T
+                | {
+                    label?: T;
+                    name?: T;
+                    nameLock?: T;
+                    required?: T;
+                    tooltip?:
+                      | T
+                      | {
+                          enabled?: T;
+                          text?: T;
+                        };
+                    showAdvanced?: T;
+                    validation?:
+                      | T
+                      | {
+                          requiredMessage?: T;
+                          minLength?: T;
+                          maxLength?: T;
+                          pattern?: T;
+                          patternMessage?: T;
+                          min?: T;
+                          max?: T;
+                          minMessage?: T;
+                          maxMessage?: T;
+                        };
+                    visibility?:
+                      | T
+                      | {
+                          enabled?: T;
+                          action?: T;
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                                group?:
+                                  | T
+                                  | {
+                                      match?: T;
+                                      conditions?:
+                                        | T
+                                        | {
+                                            condition?:
+                                              | T
+                                              | {
+                                                  source?: T;
+                                                  operator?: T;
+                                                  value?: T;
+                                                  id?: T;
+                                                  blockName?: T;
+                                                };
+                                          };
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                        };
+                    placeholder?: T;
+                    width?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              email?:
+                | T
+                | {
+                    label?: T;
+                    name?: T;
+                    nameLock?: T;
+                    required?: T;
+                    tooltip?:
+                      | T
+                      | {
+                          enabled?: T;
+                          text?: T;
+                        };
+                    showAdvanced?: T;
+                    validation?:
+                      | T
+                      | {
+                          requiredMessage?: T;
+                          minLength?: T;
+                          maxLength?: T;
+                          pattern?: T;
+                          patternMessage?: T;
+                          min?: T;
+                          max?: T;
+                          minMessage?: T;
+                          maxMessage?: T;
+                        };
+                    visibility?:
+                      | T
+                      | {
+                          enabled?: T;
+                          action?: T;
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                                group?:
+                                  | T
+                                  | {
+                                      match?: T;
+                                      conditions?:
+                                        | T
+                                        | {
+                                            condition?:
+                                              | T
+                                              | {
+                                                  source?: T;
+                                                  operator?: T;
+                                                  value?: T;
+                                                  id?: T;
+                                                  blockName?: T;
+                                                };
+                                          };
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                        };
+                    placeholder?: T;
+                    width?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              phone?:
+                | T
+                | {
+                    label?: T;
+                    name?: T;
+                    nameLock?: T;
+                    required?: T;
+                    tooltip?:
+                      | T
+                      | {
+                          enabled?: T;
+                          text?: T;
+                        };
+                    showAdvanced?: T;
+                    validation?:
+                      | T
+                      | {
+                          requiredMessage?: T;
+                          minLength?: T;
+                          maxLength?: T;
+                          pattern?: T;
+                          patternMessage?: T;
+                          min?: T;
+                          max?: T;
+                          minMessage?: T;
+                          maxMessage?: T;
+                        };
+                    visibility?:
+                      | T
+                      | {
+                          enabled?: T;
+                          action?: T;
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                                group?:
+                                  | T
+                                  | {
+                                      match?: T;
+                                      conditions?:
+                                        | T
+                                        | {
+                                            condition?:
+                                              | T
+                                              | {
+                                                  source?: T;
+                                                  operator?: T;
+                                                  value?: T;
+                                                  id?: T;
+                                                  blockName?: T;
+                                                };
+                                          };
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                        };
+                    placeholder?: T;
+                    width?: T;
+                    defaultCountry?: T;
+                    countries?:
+                      | T
+                      | {
+                          label?: T;
+                          value?: T;
+                          id?: T;
+                        };
+                    id?: T;
+                    blockName?: T;
+                  };
+              textarea?:
+                | T
+                | {
+                    label?: T;
+                    name?: T;
+                    nameLock?: T;
+                    required?: T;
+                    tooltip?:
+                      | T
+                      | {
+                          enabled?: T;
+                          text?: T;
+                        };
+                    showAdvanced?: T;
+                    validation?:
+                      | T
+                      | {
+                          requiredMessage?: T;
+                          minLength?: T;
+                          maxLength?: T;
+                          pattern?: T;
+                          patternMessage?: T;
+                          min?: T;
+                          max?: T;
+                          minMessage?: T;
+                          maxMessage?: T;
+                        };
+                    visibility?:
+                      | T
+                      | {
+                          enabled?: T;
+                          action?: T;
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                                group?:
+                                  | T
+                                  | {
+                                      match?: T;
+                                      conditions?:
+                                        | T
+                                        | {
+                                            condition?:
+                                              | T
+                                              | {
+                                                  source?: T;
+                                                  operator?: T;
+                                                  value?: T;
+                                                  id?: T;
+                                                  blockName?: T;
+                                                };
+                                          };
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                        };
+                    placeholder?: T;
+                    rows?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              checkbox?:
+                | T
+                | {
+                    label?: T;
+                    name?: T;
+                    nameLock?: T;
+                    required?: T;
+                    tooltip?:
+                      | T
+                      | {
+                          enabled?: T;
+                          text?: T;
+                        };
+                    showAdvanced?: T;
+                    validation?:
+                      | T
+                      | {
+                          requiredMessage?: T;
+                          minLength?: T;
+                          maxLength?: T;
+                          pattern?: T;
+                          patternMessage?: T;
+                          min?: T;
+                          max?: T;
+                          minMessage?: T;
+                          maxMessage?: T;
+                        };
+                    visibility?:
+                      | T
+                      | {
+                          enabled?: T;
+                          action?: T;
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                                group?:
+                                  | T
+                                  | {
+                                      match?: T;
+                                      conditions?:
+                                        | T
+                                        | {
+                                            condition?:
+                                              | T
+                                              | {
+                                                  source?: T;
+                                                  operator?: T;
+                                                  value?: T;
+                                                  id?: T;
+                                                  blockName?: T;
+                                                };
+                                          };
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                        };
+                    appearance?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              radioGroup?:
+                | T
+                | {
+                    label?: T;
+                    name?: T;
+                    nameLock?: T;
+                    required?: T;
+                    tooltip?:
+                      | T
+                      | {
+                          enabled?: T;
+                          text?: T;
+                        };
+                    showAdvanced?: T;
+                    validation?:
+                      | T
+                      | {
+                          requiredMessage?: T;
+                          minLength?: T;
+                          maxLength?: T;
+                          pattern?: T;
+                          patternMessage?: T;
+                          min?: T;
+                          max?: T;
+                          minMessage?: T;
+                          maxMessage?: T;
+                        };
+                    visibility?:
+                      | T
+                      | {
+                          enabled?: T;
+                          action?: T;
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                                group?:
+                                  | T
+                                  | {
+                                      match?: T;
+                                      conditions?:
+                                        | T
+                                        | {
+                                            condition?:
+                                              | T
+                                              | {
+                                                  source?: T;
+                                                  operator?: T;
+                                                  value?: T;
+                                                  id?: T;
+                                                  blockName?: T;
+                                                };
+                                          };
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                        };
+                    options?:
+                      | T
+                      | {
+                          label?: T;
+                          value?: T;
+                          valueLock?: T;
+                          id?: T;
+                        };
+                    layout?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              checkboxGroup?:
+                | T
+                | {
+                    label?: T;
+                    name?: T;
+                    nameLock?: T;
+                    required?: T;
+                    tooltip?:
+                      | T
+                      | {
+                          enabled?: T;
+                          text?: T;
+                        };
+                    showAdvanced?: T;
+                    validation?:
+                      | T
+                      | {
+                          requiredMessage?: T;
+                          minLength?: T;
+                          maxLength?: T;
+                          pattern?: T;
+                          patternMessage?: T;
+                          min?: T;
+                          max?: T;
+                          minMessage?: T;
+                          maxMessage?: T;
+                        };
+                    visibility?:
+                      | T
+                      | {
+                          enabled?: T;
+                          action?: T;
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                                group?:
+                                  | T
+                                  | {
+                                      match?: T;
+                                      conditions?:
+                                        | T
+                                        | {
+                                            condition?:
+                                              | T
+                                              | {
+                                                  source?: T;
+                                                  operator?: T;
+                                                  value?: T;
+                                                  id?: T;
+                                                  blockName?: T;
+                                                };
+                                          };
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                        };
+                    options?:
+                      | T
+                      | {
+                          label?: T;
+                          value?: T;
+                          valueLock?: T;
+                          id?: T;
+                        };
+                    layout?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              select?:
+                | T
+                | {
+                    label?: T;
+                    name?: T;
+                    nameLock?: T;
+                    required?: T;
+                    tooltip?:
+                      | T
+                      | {
+                          enabled?: T;
+                          text?: T;
+                        };
+                    showAdvanced?: T;
+                    validation?:
+                      | T
+                      | {
+                          requiredMessage?: T;
+                          minLength?: T;
+                          maxLength?: T;
+                          pattern?: T;
+                          patternMessage?: T;
+                          min?: T;
+                          max?: T;
+                          minMessage?: T;
+                          maxMessage?: T;
+                        };
+                    visibility?:
+                      | T
+                      | {
+                          enabled?: T;
+                          action?: T;
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                                group?:
+                                  | T
+                                  | {
+                                      match?: T;
+                                      conditions?:
+                                        | T
+                                        | {
+                                            condition?:
+                                              | T
+                                              | {
+                                                  source?: T;
+                                                  operator?: T;
+                                                  value?: T;
+                                                  id?: T;
+                                                  blockName?: T;
+                                                };
+                                          };
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                        };
+                    placeholder?: T;
+                    options?:
+                      | T
+                      | {
+                          label?: T;
+                          value?: T;
+                          valueLock?: T;
+                          id?: T;
+                        };
+                    width?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              number?:
+                | T
+                | {
+                    label?: T;
+                    name?: T;
+                    nameLock?: T;
+                    required?: T;
+                    tooltip?:
+                      | T
+                      | {
+                          enabled?: T;
+                          text?: T;
+                        };
+                    showAdvanced?: T;
+                    validation?:
+                      | T
+                      | {
+                          requiredMessage?: T;
+                          minLength?: T;
+                          maxLength?: T;
+                          pattern?: T;
+                          patternMessage?: T;
+                          min?: T;
+                          max?: T;
+                          minMessage?: T;
+                          maxMessage?: T;
+                        };
+                    visibility?:
+                      | T
+                      | {
+                          enabled?: T;
+                          action?: T;
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                                group?:
+                                  | T
+                                  | {
+                                      match?: T;
+                                      conditions?:
+                                        | T
+                                        | {
+                                            condition?:
+                                              | T
+                                              | {
+                                                  source?: T;
+                                                  operator?: T;
+                                                  value?: T;
+                                                  id?: T;
+                                                  blockName?: T;
+                                                };
+                                          };
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                        };
+                    placeholder?: T;
+                    defaultValue?: T;
+                    min?: T;
+                    max?: T;
+                    step?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              date?:
+                | T
+                | {
+                    label?: T;
+                    name?: T;
+                    nameLock?: T;
+                    required?: T;
+                    tooltip?:
+                      | T
+                      | {
+                          enabled?: T;
+                          text?: T;
+                        };
+                    showAdvanced?: T;
+                    validation?:
+                      | T
+                      | {
+                          requiredMessage?: T;
+                          minLength?: T;
+                          maxLength?: T;
+                          pattern?: T;
+                          patternMessage?: T;
+                          min?: T;
+                          max?: T;
+                          minMessage?: T;
+                          maxMessage?: T;
+                        };
+                    visibility?:
+                      | T
+                      | {
+                          enabled?: T;
+                          action?: T;
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                                group?:
+                                  | T
+                                  | {
+                                      match?: T;
+                                      conditions?:
+                                        | T
+                                        | {
+                                            condition?:
+                                              | T
+                                              | {
+                                                  source?: T;
+                                                  operator?: T;
+                                                  value?: T;
+                                                  id?: T;
+                                                  blockName?: T;
+                                                };
+                                          };
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                        };
+                    placeholder?: T;
+                    min?: T;
+                    max?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              file?:
+                | T
+                | {
+                    label?: T;
+                    name?: T;
+                    nameLock?: T;
+                    required?: T;
+                    tooltip?:
+                      | T
+                      | {
+                          enabled?: T;
+                          text?: T;
+                        };
+                    showAdvanced?: T;
+                    validation?:
+                      | T
+                      | {
+                          requiredMessage?: T;
+                          minLength?: T;
+                          maxLength?: T;
+                          pattern?: T;
+                          patternMessage?: T;
+                          min?: T;
+                          max?: T;
+                          minMessage?: T;
+                          maxMessage?: T;
+                        };
+                    visibility?:
+                      | T
+                      | {
+                          enabled?: T;
+                          action?: T;
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                                group?:
+                                  | T
+                                  | {
+                                      match?: T;
+                                      conditions?:
+                                        | T
+                                        | {
+                                            condition?:
+                                              | T
+                                              | {
+                                                  source?: T;
+                                                  operator?: T;
+                                                  value?: T;
+                                                  id?: T;
+                                                  blockName?: T;
+                                                };
+                                          };
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                        };
+                    accept?: T;
+                    maxSizeMB?: T;
+                    collection?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+            };
+        visibility?:
+          | T
+          | {
+              enabled?: T;
+              match?: T;
+              conditions?:
+                | T
+                | {
+                    condition?:
+                      | T
+                      | {
+                          source?: T;
+                          operator?: T;
+                          value?: T;
+                          id?: T;
+                          blockName?: T;
+                        };
+                    group?:
+                      | T
+                      | {
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                          id?: T;
+                          blockName?: T;
+                        };
+                  };
+            };
+        backLabel?: T;
+        nextLabel?: T;
+        id?: T;
+      };
+  confirmationStage?:
+    | T
+    | {
+        enabled?: T;
+        label?: T;
+        icon?: T;
+      };
+  buttonLabels?:
+    | T
+    | {
+        submit?: T;
+        back?: T;
+        next?: T;
+        backLast?: T;
+      };
+  additionalContent?:
+    | T
+    | {
+        enabled?: T;
+        position?: T;
+        content?: T;
+      };
+  submissionActions?:
+    | T
+    | {
+        sendEmail?: T | SendEmailBlockSelect<T>;
+        confirmationMessage?: T | ConfirmationMessageBlockSelect<T>;
+        redirect?: T | RedirectBlockSelect<T>;
+      };
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "SendEmailBlock_select".
+ */
+export interface SendEmailBlockSelect<T extends boolean = true> {
+  to?: T;
+  replyTo?: T;
+  subject?: T;
+  includeSubmissionData?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ConfirmationMessageBlock_select".
+ */
+export interface ConfirmationMessageBlockSelect<T extends boolean = true> {
+  message?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "RedirectBlock_select".
+ */
+export interface RedirectBlockSelect<T extends boolean = true> {
+  url?: T;
+  delay?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "form-submissions_select".
+ */
+export interface FormSubmissionsSelect<T extends boolean = true> {
+  form?: T;
+  submittedAt?: T;
+  data?:
+    | T
+    | {
+        fieldName?: T;
+        value?: T;
+        id?: T;
+      };
+  metadata?:
+    | T
+    | {
+        userAgent?: T;
+        ip?: T;
+        referrer?: T;
+      };
+  context?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv_select".
+ */
+export interface PayloadKvSelect<T extends boolean = true> {
+  key?: T;
+  data?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -229,6 +5399,13 @@ export interface UsersSelect<T extends boolean = true> {
   hash?: T;
   loginAttempts?: T;
   lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -261,6 +5438,16 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collections_widget".
+ */
+export interface CollectionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
