@@ -67,7 +67,7 @@ export function EnquiryForm({
   // appended after the field steps. It is indicator-only — navigation, the
   // Submit button and `totalSteps` are unaffected (they come from
   // `useEnquiryForm` / `normalizeFormSteps`).
-  const indicatorSteps = buildIndicatorSteps(form)
+  const indicatorSteps = buildIndicatorSteps(form, rhfForm.watch())
   const hasConfirmationStage = indicatorSteps.length > form.steps.length
 
   const showAbove =

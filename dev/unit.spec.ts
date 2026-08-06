@@ -243,7 +243,9 @@ describe('FileBlock', () => {
 })
 
 import { SendEmailBlock } from '../src/blocks/submissionActions/SendEmail.js'
-import { ConfirmationMessageBlock } from '../src/blocks/submissionActions/ConfirmationMessage.js'
+import { createConfirmationMessageBlock } from '../src/blocks/submissionActions/ConfirmationMessage.js'
+
+const ConfirmationMessageBlock = createConfirmationMessageBlock()
 import { RedirectBlock } from '../src/blocks/submissionActions/Redirect.js'
 
 describe('SendEmailBlock', () => {
@@ -671,5 +673,529 @@ describe('normalizeSubmitError', () => {
     expect(out.success).toBe(false)
     expect(out.errors).toHaveLength(1)
     expect(out.errors[0].message).toMatch(/try again/i)
+  })
+})
+
+describe('Forms collection richTextEditor option', () => {
+  const sentinel = { sentinel: 'editor' } as any
+  const coll = createFormsCollection({
+    fieldBlocks: [TextBlock],
+    formsSlug: 'forms',
+    mediaCollection: 'media',
+    pluralLabel: 'Forms',
+    singularLabel: 'Form',
+    richTextEditor: sentinel,
+  })
+
+  const getConfirmationMessageField = (c: any) => {
+    const actions = c.fields.find((f: any) => f.name === 'submissionActions')
+    const block = actions.blocks.find((b: any) => b.slug === 'confirmationMessage')
+    return block.fields.find((f: any) => f.name === 'message')
+  }
+  const getAdditionalContentField = (c: any) => {
+    const group = flatFields(c.fields).find((f: any) => f.name === 'additionalContent')
+    return group.fields.find((f: any) => f.name === 'content')
+  }
+  const getIntroContentField = (c: any) => {
+    const steps = c.fields.find((f: any) => f.name === 'steps')
+    return steps.fields.find((f: any) => f.name === 'introContent')
+  }
+
+  test('applies the editor to the confirmation message field', () => {
+    expect(getConfirmationMessageField(coll).editor).toBe(sentinel)
+  })
+
+  test('applies the editor to the additional content field', () => {
+    expect(getAdditionalContentField(coll).editor).toBe(sentinel)
+  })
+
+  test('does NOT apply the editor to step intro content', () => {
+    const intro = getIntroContentField(coll)
+    expect(intro.editor).not.toBe(sentinel)
+    expect(intro.editor).toBeDefined()
+  })
+
+  test('omits the editor (root fallback) when not provided', () => {
+    expect(getConfirmationMessageField(formsCollection).editor).toBeUndefined()
+    expect(getAdditionalContentField(formsCollection).editor).toBeUndefined()
+  })
+})
+
+import {
+  resolveValue,
+  evaluateCondition,
+  evaluateNodes,
+  ruleMatches,
+} from '../src/utilities/conditions/evaluateRule.js'
+import type { Condition, VisibilityRule } from '../src/types.js'
+
+const c = (source: string, operator: any, value?: string): Condition => ({
+  source,
+  operator,
+  value,
+})
+
+describe('conditions/evaluateRule', () => {
+  test('resolveValue reads top-level and dot-path values', () => {
+    const values = { country: 'UK', guests: { adults: 3 } }
+    expect(resolveValue('country', values)).toBe('UK')
+    expect(resolveValue('guests.adults', values)).toBe(3)
+    expect(resolveValue('missing', values)).toBeUndefined()
+    expect(resolveValue('guests.kids', values)).toBeUndefined()
+  })
+
+  test('equals / notEquals coerce to string', () => {
+    expect(evaluateCondition(c('n', 'equals', '5'), { n: 5 })).toBe(true)
+    expect(evaluateCondition(c('n', 'equals', '5'), { n: '5' })).toBe(true)
+    expect(evaluateCondition(c('n', 'notEquals', '5'), { n: 6 })).toBe(true)
+  })
+
+  test('numeric comparisons', () => {
+    expect(evaluateCondition(c('n', 'gt', '10'), { n: 12 })).toBe(true)
+    expect(evaluateCondition(c('n', 'gte', '10'), { n: 10 })).toBe(true)
+    expect(evaluateCondition(c('n', 'lt', '10'), { n: 3 })).toBe(true)
+    expect(evaluateCondition(c('n', 'lte', '10'), { n: 10 })).toBe(true)
+    expect(evaluateCondition(c('n', 'gt', '10'), { n: 'abc' })).toBe(false)
+  })
+
+  test('isChecked / isNotChecked treat true and "true" as checked', () => {
+    expect(evaluateCondition(c('agree', 'isChecked'), { agree: true })).toBe(true)
+    expect(evaluateCondition(c('agree', 'isChecked'), { agree: 'true' })).toBe(true)
+    expect(evaluateCondition(c('agree', 'isChecked'), { agree: false })).toBe(false)
+    expect(evaluateCondition(c('agree', 'isNotChecked'), { agree: false })).toBe(true)
+  })
+
+  test('contains works on arrays and strings', () => {
+    expect(evaluateCondition(c('tags', 'contains', 'a'), { tags: ['a', 'b'] })).toBe(true)
+    expect(evaluateCondition(c('tags', 'contains', 'x'), { tags: ['a', 'b'] })).toBe(false)
+    expect(evaluateCondition(c('name', 'contains', 'oh'), { name: 'John' })).toBe(true)
+  })
+
+  test('isEmpty / isNotEmpty', () => {
+    expect(evaluateCondition(c('x', 'isEmpty'), { x: '' })).toBe(true)
+    expect(evaluateCondition(c('x', 'isEmpty'), { x: [] })).toBe(true)
+    expect(evaluateCondition(c('x', 'isEmpty'), {})).toBe(true)
+    expect(evaluateCondition(c('x', 'isNotEmpty'), { x: 'hi' })).toBe(true)
+  })
+
+  test('unknown source fails closed (false), never throws', () => {
+    expect(evaluateCondition(c('nope', 'equals', '1'), {})).toBe(false)
+  })
+
+  test('evaluateNodes ALL vs ANY', () => {
+    const values = { a: 1, b: 2 }
+    const nodes = [c('a', 'equals', '1'), c('b', 'equals', '99')]
+    expect(evaluateNodes('all', nodes, values)).toBe(false)
+    expect(evaluateNodes('any', nodes, values)).toBe(true)
+  })
+
+  test('evaluateNodes supports one level of grouping (A AND (B OR C))', () => {
+    const values = { a: 1, b: 5, cc: 9 }
+    const nodes = [
+      c('a', 'equals', '1'),
+      {
+        blockType: 'group' as const,
+        match: 'any' as const,
+        conditions: [c('b', 'equals', '999'), c('cc', 'equals', '9')],
+      },
+    ]
+    expect(evaluateNodes('all', nodes, values)).toBe(true)
+  })
+
+  test('ruleMatches: empty/undefined rule matches (true)', () => {
+    expect(ruleMatches(undefined, {})).toBe(true)
+    expect(ruleMatches({ enabled: true, conditions: [] }, {})).toBe(true)
+  })
+
+  test('ruleMatches evaluates conditions with default match=all', () => {
+    const rule: VisibilityRule = {
+      enabled: true,
+      conditions: [c('country', 'equals', 'UK')],
+    }
+    expect(ruleMatches(rule, { country: 'UK' })).toBe(true)
+    expect(ruleMatches(rule, { country: 'FR' })).toBe(false)
+  })
+
+  test('ruleMatches: disabled rule always returns true', () => {
+    const rule: VisibilityRule = {
+      enabled: false,
+      conditions: [c('country', 'equals', 'UK')],
+    }
+    expect(ruleMatches(rule, { country: 'FR' })).toBe(true)
+  })
+
+  test('equals on a missing source fails closed, not "undefined"-matches', () => {
+    expect(evaluateCondition(c('ghost', 'equals', 'undefined'), {})).toBe(false)
+    expect(evaluateCondition(c('ghost', 'notEquals', 'undefined'), {})).toBe(false)
+  })
+})
+
+import { buildVisibilityField } from '../src/blocks/fields/visibility.js'
+
+describe('buildVisibilityField', () => {
+  const vis = buildVisibilityField({ includeAction: true }) as any
+
+  test('is a group named visibility', () => {
+    expect(vis.type).toBe('group')
+    expect(vis.name).toBe('visibility')
+  })
+
+  test('has enabled, action, match, conditions', () => {
+    const names = vis.fields.map((f: any) => f.name)
+    expect(names).toContain('enabled')
+    expect(names).toContain('action')
+    expect(names).toContain('match')
+    expect(names).toContain('conditions')
+  })
+
+  test('action select offers show and require', () => {
+    const action = vis.fields.find((f: any) => f.name === 'action')
+    const values = action.options.map((o: any) => o.value)
+    expect(values).toContain('show')
+    expect(values).toContain('require')
+  })
+
+  test('conditions is a blocks field with condition and group blocks', () => {
+    const conditions = vis.fields.find((f: any) => f.name === 'conditions')
+    expect(conditions.type).toBe('blocks')
+    const slugs = conditions.blocks.map((b: any) => b.slug)
+    expect(slugs).toContain('condition')
+    expect(slugs).toContain('group')
+  })
+
+  test('the group block nests only plain conditions (one level)', () => {
+    const conditions = vis.fields.find((f: any) => f.name === 'conditions')
+    const groupBlock = conditions.blocks.find((b: any) => b.slug === 'group')
+    const nested = groupBlock.fields.find((f: any) => f.name === 'conditions')
+    expect(nested.type).toBe('blocks')
+    expect(nested.blocks.map((b: any) => b.slug)).toEqual(['condition'])
+  })
+
+  test('condition source uses the custom picker component', () => {
+    const conditions = vis.fields.find((f: any) => f.name === 'conditions')
+    const cond = conditions.blocks.find((b: any) => b.slug === 'condition')
+    const source = cond.fields.find((f: any) => f.name === 'source')
+    expect(source.admin.components.Field.path).toContain('ConditionSourceField')
+  })
+
+  test('omits action when includeAction is false (steps)', () => {
+    const stepVis = buildVisibilityField({ includeAction: false }) as any
+    const names = stepVis.fields.map((f: any) => f.name)
+    expect(names).not.toContain('action')
+  })
+})
+
+describe('visibility wiring', () => {
+  test('baseFieldBlockFields includes a visibility group', () => {
+    const names = flatFields(baseFieldBlockFields).map((f: any) =>
+      'name' in f ? f.name : null,
+    )
+    expect(names).toContain('visibility')
+    const vis = flatFields(baseFieldBlockFields).find(
+      (f: any) => f.name === 'visibility',
+    ) as any
+    expect(vis.type).toBe('group')
+  })
+
+  test('every field block exposes visibility (via base fields)', () => {
+    const names = flatFields(TextBlock.fields).map((f: any) =>
+      'name' in f ? f.name : null,
+    )
+    expect(names).toContain('visibility')
+  })
+
+  test('step config includes a visibility group without an action select', () => {
+    const steps = formsCollection.fields.find(
+      (f: any) => 'name' in f && f.name === 'steps',
+    ) as any
+    const vis = steps.fields.find((f: any) => f.name === 'visibility')
+    expect(vis?.type).toBe('group')
+    const subNames = vis.fields.map((f: any) => f.name)
+    expect(subNames).not.toContain('action')
+    expect(subNames).toContain('conditions')
+  })
+})
+
+import {
+  isFieldVisible,
+  isFieldRequired,
+  isStepVisible,
+  getVisibleFields,
+  getVisibleSteps,
+  stripHiddenValues,
+} from '../src/utilities/conditions/index.js'
+import type { FormFieldBlock, FormStep } from '../src/types.js'
+
+const field = (over: Partial<FormFieldBlock>): FormFieldBlock =>
+  ({ name: 'f', label: 'F', blockType: 'text', ...over }) as FormFieldBlock
+
+describe('buildFieldRules requiredOverride', () => {
+  test('requiredOverride=true forces required even if field.required is false', () => {
+    const rules = buildFieldRules({ label: 'Explain', required: false } as any, true)
+    expect(rules.required).toBe('Explain is required')
+  })
+
+  test('requiredOverride=false suppresses required even if field.required is true', () => {
+    const rules = buildFieldRules({ label: 'X', required: true } as any, false)
+    expect(rules.required).toBeUndefined()
+  })
+
+  test('omitting requiredOverride keeps existing behavior', () => {
+    expect(buildFieldRules({ label: 'X', required: true } as any).required).toBe('X is required')
+  })
+})
+
+describe('conditions/visibility', () => {
+  test('non-conditional field is always visible', () => {
+    expect(isFieldVisible(field({ name: 'a' }), {})).toBe(true)
+  })
+
+  test('show-action field is hidden until its rule matches', () => {
+    const f = field({
+      name: 'why',
+      visibility: {
+        enabled: true,
+        action: 'show',
+        conditions: [{ source: 'other', operator: 'equals', value: 'yes' }],
+      },
+    })
+    expect(isFieldVisible(f, { other: 'no' })).toBe(false)
+    expect(isFieldVisible(f, { other: 'yes' })).toBe(true)
+  })
+
+  test('require-action field stays visible but toggles required', () => {
+    const f = field({
+      name: 'explain',
+      required: false,
+      visibility: {
+        enabled: true,
+        action: 'require',
+        conditions: [{ source: 'reason', operator: 'equals', value: 'other' }],
+      },
+    })
+    expect(isFieldVisible(f, { reason: 'x' })).toBe(true)
+    expect(isFieldRequired(f, { reason: 'x' })).toBe(false)
+    expect(isFieldRequired(f, { reason: 'other' })).toBe(true)
+  })
+
+  test('base required is respected when no rule', () => {
+    expect(isFieldRequired(field({ required: true }), {})).toBe(true)
+  })
+
+  test('step visibility + getVisibleSteps skips hidden steps', () => {
+    const steps: FormStep[] = [
+      { title: 'One', fields: [] },
+      {
+        title: 'Two',
+        fields: [],
+        visibility: {
+          enabled: true,
+          conditions: [{ source: 'wantsTwo', operator: 'isChecked' }],
+        },
+      },
+    ]
+    expect(isStepVisible(steps[1]!, { wantsTwo: false })).toBe(false)
+    expect(getVisibleSteps(steps, { wantsTwo: false }).map((s) => s.title)).toEqual(['One'])
+    expect(getVisibleSteps(steps, { wantsTwo: true }).map((s) => s.title)).toEqual(['One', 'Two'])
+  })
+
+  test('getVisibleFields filters hidden fields', () => {
+    const step: FormStep = {
+      title: 'S',
+      fields: [
+        field({ name: 'always' }),
+        field({
+          name: 'maybe',
+          visibility: {
+            enabled: true,
+            action: 'show',
+            conditions: [{ source: 'always', operator: 'equals', value: 'go' }],
+          },
+        }),
+      ],
+    }
+    expect(getVisibleFields(step, { always: 'no' }).map((f) => f.name)).toEqual(['always'])
+    expect(getVisibleFields(step, { always: 'go' }).map((f) => f.name)).toEqual(['always', 'maybe'])
+  })
+
+  test('stripHiddenValues removes values for hidden fields only', () => {
+    const steps: FormStep[] = [
+      {
+        title: 'S',
+        fields: [
+          field({ name: 'always' }),
+          field({
+            name: 'maybe',
+            visibility: {
+              enabled: true,
+              action: 'show',
+              conditions: [{ source: 'always', operator: 'equals', value: 'go' }],
+            },
+          }),
+        ],
+      },
+    ]
+    const out = stripHiddenValues(steps, { always: 'no', maybe: 'leaked' })
+    expect(out).toEqual({ always: 'no' })
+  })
+})
+
+describe('buildIndicatorSteps with conditional steps', () => {
+  test('drops steps hidden by their visibility rule', () => {
+    const form = makeForm({
+      steps: [
+        { title: 'One', fields: [] },
+        {
+          title: 'Two',
+          fields: [],
+          visibility: {
+            enabled: true,
+            conditions: [{ source: 'go', operator: 'isChecked' }],
+          },
+        },
+      ],
+    })
+    expect(buildIndicatorSteps(form, { go: false }).map((s) => s.title)).toEqual(['One'])
+    expect(buildIndicatorSteps(form, { go: true }).map((s) => s.title)).toEqual(['One', 'Two'])
+  })
+
+  test('defaults to all steps visible when no values passed', () => {
+    expect(buildIndicatorSteps(makeForm()).map((s) => s.title)).toEqual([
+      'Your Trip',
+      'Your Details',
+    ])
+  })
+})
+
+import { validateVisibleSubmission } from '../src/utilities/validateVisibleSubmission.js'
+
+describe('validateVisibleSubmission', () => {
+  const form = {
+    multiStep: false,
+    title: 'T',
+    fields: [
+      { name: 'reason', label: 'Reason', blockType: 'text', required: true },
+      {
+        name: 'detail',
+        label: 'Detail',
+        blockType: 'text',
+        required: true,
+        visibility: {
+          enabled: true,
+          action: 'show',
+          conditions: [{ source: 'reason', operator: 'equals', value: 'other' }],
+        },
+      },
+    ],
+  } as any
+
+  test('hidden required field does not error and is stripped', () => {
+    const res = validateVisibleSubmission(form, { reason: 'simple', detail: 'sneaky' })
+    expect(res.errors).toEqual([])
+    expect(res.data).toEqual({ reason: 'simple' })
+  })
+
+  test('visible required field left blank errors', () => {
+    const res = validateVisibleSubmission(form, { reason: 'other', detail: '' })
+    expect(res.errors).toEqual([{ field: 'detail', message: 'Detail is required' }])
+  })
+
+  test('require-action field enforced only when rule matches', () => {
+    const f = {
+      multiStep: false,
+      title: 'T',
+      fields: [
+        { name: 'kind', label: 'Kind', blockType: 'text' },
+        {
+          name: 'note',
+          label: 'Note',
+          blockType: 'text',
+          visibility: {
+            enabled: true,
+            action: 'require',
+            conditions: [{ source: 'kind', operator: 'equals', value: 'x' }],
+          },
+        },
+      ],
+    } as any
+    expect(validateVisibleSubmission(f, { kind: 'y', note: '' }).errors).toEqual([])
+    expect(validateVisibleSubmission(f, { kind: 'x', note: '' }).errors).toEqual([
+      { field: 'note', message: 'Note is required' },
+    ])
+  })
+
+  test('required field inside a hidden step is not enforced and is stripped', () => {
+    const form = {
+      multiStep: true,
+      title: 'T',
+      steps: [
+        { title: 'One', fields: [{ name: 'wantsMore', label: 'More?', blockType: 'checkbox' }] },
+        {
+          title: 'Two',
+          visibility: {
+            enabled: true,
+            conditions: [{ source: 'wantsMore', operator: 'isChecked' }],
+          },
+          fields: [{ name: 'detail', label: 'Detail', blockType: 'text', required: true }],
+        },
+      ],
+    } as any
+    // step two hidden (wantsMore not checked): no error, detail stripped
+    const hidden = validateVisibleSubmission(form, { wantsMore: false, detail: '' })
+    expect(hidden.errors).toEqual([])
+    expect(hidden.data).toEqual({ wantsMore: false })
+    // step two visible (wantsMore checked) with blank required: errors
+    const shown = validateVisibleSubmission(form, { wantsMore: true, detail: '' })
+    expect(shown.errors).toEqual([{ field: 'detail', message: 'Detail is required' }])
+  })
+})
+
+import {
+  collectSourceFields,
+  collectSourceNames,
+} from '../src/fields/conditions/collectSourceFields.js'
+
+describe('collectSourceFields', () => {
+  const state = {
+    'fields.0.name': { value: 'travel' },
+    'fields.0.blockType': { value: 'yesNo' },
+    'fields.1.name': { value: 'colour' },
+    'fields.1.blockType': { value: 'select' },
+    'fields.1.options.0.label': { value: 'Red' },
+    'fields.1.options.0.value': { value: 'red' },
+    'fields.1.options.1.label': { value: 'Blue' },
+    'fields.1.options.1.value': { value: 'blue' },
+    'fields.2.name': { value: 'guests' },
+    'fields.2.blockType': { value: 'multiCounter' },
+    'fields.2.counters.0.name': { value: 'adults' },
+    'fields.3.name': { value: '' }, // unnamed / stub block — excluded
+  } as any
+
+  test('collectSourceNames returns sorted names including counter dot-paths', () => {
+    expect(collectSourceNames(state)).toEqual(['colour', 'guests.adults', 'travel'])
+  })
+
+  test('captures blockType per field', () => {
+    const map = collectSourceFields(state)
+    expect(map.get('travel')?.blockType).toBe('yesNo')
+    expect(map.get('colour')?.blockType).toBe('select')
+  })
+
+  test('captures a choice field’s options in order with label fallback', () => {
+    const map = collectSourceFields(state)
+    expect(map.get('colour')?.options).toEqual([
+      { label: 'Red', value: 'red' },
+      { label: 'Blue', value: 'blue' },
+    ])
+  })
+
+  test('exposes multiCounter counters as numeric dot-path sources', () => {
+    const map = collectSourceFields(state)
+    expect(map.get('guests.adults')).toEqual({ blockType: 'number', options: [] })
+  })
+
+  test('defaults blockType to text when none is present', () => {
+    const map = collectSourceFields({ 'fields.0.name': { value: 'note' } } as any)
+    expect(map.get('note')?.blockType).toBe('text')
   })
 })

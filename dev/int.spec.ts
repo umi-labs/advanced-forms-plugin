@@ -468,3 +468,332 @@ describe('submitFormHandler', () => {
     expect(body.actions.redirectUrl).toBe('/thank-you')
   })
 })
+
+// ---------------------------------------------------------------------------
+// Conditional logic — server-side enforcement via validateVisibleSubmission
+//
+// A client can post anything, so the handler must re-evaluate every visibility
+// rule against the submitted values: hidden fields must not be required, hidden
+// values must not be stored, and `action: 'require'` rules must be enforced.
+// ---------------------------------------------------------------------------
+describe('submitFormHandler conditional logic', () => {
+  let formSlug: string
+  let formId: string | number
+
+  type ConditionOperator =
+    | 'equals'
+    | 'notEquals'
+    | 'gt'
+    | 'gte'
+    | 'lt'
+    | 'lte'
+    | 'isChecked'
+    | 'isNotChecked'
+    | 'contains'
+    | 'isEmpty'
+    | 'isNotEmpty'
+
+  const cond = (source: string, operator: ConditionOperator, value?: string) => ({
+    blockType: 'condition' as const,
+    source,
+    operator,
+    ...(value === undefined ? {} : { value }),
+  })
+
+  beforeAll(async () => {
+    formSlug = 'conditional-test-' + Date.now()
+    const form = await payload.create({
+      collection: 'forms',
+      data: {
+        title: 'Conditional Test Form',
+        slug: formSlug,
+        steps: [
+          {
+            title: 'Contact',
+            fields: [
+              {
+                blockType: 'select',
+                name: 'contact_method',
+                label: 'How should we reach you?',
+                required: true,
+                options: [
+                  { label: 'Email', value: 'email' },
+                  { label: 'Phone', value: 'phone' },
+                ],
+              },
+              // show-rule: only required when it is actually on screen
+              {
+                blockType: 'email',
+                name: 'email',
+                label: 'Email',
+                required: true,
+                visibility: {
+                  enabled: true,
+                  action: 'show',
+                  match: 'all',
+                  conditions: [cond('contact_method', 'equals', 'email')],
+                },
+              },
+              {
+                blockType: 'phone',
+                name: 'phone',
+                label: 'Phone',
+                required: true,
+                visibility: {
+                  enabled: true,
+                  action: 'show',
+                  match: 'all',
+                  conditions: [cond('contact_method', 'equals', 'phone')],
+                },
+              },
+              {
+                blockType: 'select',
+                name: 'reason',
+                label: 'Reason',
+                required: true,
+                options: [
+                  { label: 'New booking', value: 'booking' },
+                  { label: 'Other', value: 'other' },
+                ],
+              },
+              // require-rule: always visible, required only when reason = other
+              {
+                blockType: 'text',
+                name: 'reason_other',
+                label: 'Please explain',
+                required: false,
+                visibility: {
+                  enabled: true,
+                  action: 'require',
+                  match: 'all',
+                  conditions: [cond('reason', 'equals', 'other')],
+                },
+              },
+              // OR group: shown for either branch
+              {
+                blockType: 'checkbox',
+                name: 'marketing_optin',
+                label: 'Keep me posted',
+                required: true,
+                visibility: {
+                  enabled: true,
+                  action: 'show',
+                  match: 'any',
+                  conditions: [
+                    cond('contact_method', 'equals', 'email'),
+                    cond('reason', 'equals', 'booking'),
+                  ],
+                },
+              },
+            ],
+          },
+          {
+            // whole-step rule: step (and its required field) only applies to bookings
+            title: 'Booking',
+            visibility: {
+              enabled: true,
+              match: 'all',
+              conditions: [cond('reason', 'equals', 'booking')],
+            },
+            fields: [
+              {
+                blockType: 'text',
+                name: 'booking_ref',
+                label: 'Booking reference',
+                required: true,
+              },
+            ],
+          },
+        ],
+        submissionActions: [{ blockType: 'redirect', url: '/thanks', delay: 0 }],
+      },
+    })
+    formId = form.id
+  })
+
+  const makeRequest = async (slug: string, body: object) => {
+    const handler = createSubmitFormHandler({
+      collections: { forms: 'forms', submissions: 'form-submissions' },
+    })
+    const request = new Request(`http://localhost:3000/api/form-submit/${slug}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const payloadRequest = await createPayloadRequest({
+      config: await config,
+      request,
+      params: { formSlug: slug },
+    })
+    return handler(payloadRequest)
+  }
+
+  const submissionFor = async (submissionId: string | number) =>
+    payload.findByID({ collection: 'form-submissions', id: submissionId })
+
+  const storedFields = (submission: { data?: unknown }) =>
+    Object.fromEntries(
+      ((submission.data ?? []) as Array<{ fieldName: string; value: unknown }>).map((d) => [
+        d.fieldName,
+        d.value,
+      ]),
+    )
+
+  // -- show rules ----------------------------------------------------------
+  test('a required field hidden by its show rule is not enforced', async () => {
+    // contact_method=phone hides `email`, so omitting it must still pass
+    const response = await makeRequest(formSlug, {
+      data: {
+        contact_method: 'phone',
+        phone: '01234 567890',
+        reason: 'booking',
+        booking_ref: 'ABC123',
+        marketing_optin: true,
+      },
+    })
+    expect(response.status).toBe(200)
+  })
+
+  test('a required field revealed by its show rule IS enforced', async () => {
+    const response = await makeRequest(formSlug, {
+      data: { contact_method: 'email', reason: 'booking', booking_ref: 'ABC123', marketing_optin: true },
+    })
+    expect(response.status).toBe(422)
+    const body = await response.json()
+    expect(body.errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'email' })]),
+    )
+    // the hidden counterpart must NOT be reported
+    expect(body.errors.map((e: { field: string }) => e.field)).not.toContain('phone')
+  })
+
+  test('values posted for hidden fields are stripped before storage', async () => {
+    // client posts a stale `phone` even though contact_method=email hides it
+    const response = await makeRequest(formSlug, {
+      data: {
+        contact_method: 'email',
+        email: 'alice@example.com',
+        phone: '07999 000000',
+        reason: 'booking',
+        booking_ref: 'ABC123',
+        marketing_optin: true,
+      },
+    })
+    expect(response.status).toBe(200)
+    const { submissionId } = await response.json()
+    const stored = storedFields(await submissionFor(submissionId))
+    expect(stored.email).toBe('alice@example.com')
+    expect(stored).not.toHaveProperty('phone')
+  })
+
+  // -- require rules -------------------------------------------------------
+  test('action:require makes an optional field required when the rule matches', async () => {
+    const response = await makeRequest(formSlug, {
+      data: { contact_method: 'email', email: 'a@b.com', reason: 'other' },
+    })
+    expect(response.status).toBe(422)
+    const body = await response.json()
+    expect(body.errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'reason_other' })]),
+    )
+  })
+
+  test('action:require leaves the field optional when the rule does not match', async () => {
+    const response = await makeRequest(formSlug, {
+      data: {
+        contact_method: 'email',
+        email: 'a@b.com',
+        reason: 'booking',
+        booking_ref: 'ABC123',
+        marketing_optin: true,
+      },
+    })
+    expect(response.status).toBe(200)
+  })
+
+  test('a require-rule field stays visible and is stored, not stripped', async () => {
+    const response = await makeRequest(formSlug, {
+      data: {
+        contact_method: 'email',
+        email: 'a@b.com',
+        reason: 'other',
+        reason_other: 'Just a question',
+        marketing_optin: true,
+      },
+    })
+    expect(response.status).toBe(200)
+    const { submissionId } = await response.json()
+    expect(storedFields(await submissionFor(submissionId)).reason_other).toBe('Just a question')
+  })
+
+  // -- match: any ----------------------------------------------------------
+  test('match:any shows the field when only the second condition holds', async () => {
+    // contact_method=phone fails condition 1, reason=booking satisfies condition 2
+    const response = await makeRequest(formSlug, {
+      data: { contact_method: 'phone', phone: '01234', reason: 'booking', booking_ref: 'X' },
+    })
+    expect(response.status).toBe(422)
+    const body = await response.json()
+    expect(body.errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'marketing_optin' })]),
+    )
+  })
+
+  test('match:any hides the field when neither condition holds', async () => {
+    const response = await makeRequest(formSlug, {
+      data: { contact_method: 'phone', phone: '01234', reason: 'other', reason_other: 'hi' },
+    })
+    expect(response.status).toBe(200)
+  })
+
+  // -- step rules ----------------------------------------------------------
+  test('a required field on a hidden step is not enforced', async () => {
+    const response = await makeRequest(formSlug, {
+      data: {
+        contact_method: 'email',
+        email: 'a@b.com',
+        reason: 'other',
+        reason_other: 'Just asking',
+        marketing_optin: true,
+        // booking_ref omitted — step 2 is hidden because reason !== booking
+      },
+    })
+    expect(response.status).toBe(200)
+  })
+
+  test('a required field on a visible step IS enforced', async () => {
+    const response = await makeRequest(formSlug, {
+      data: { contact_method: 'email', email: 'a@b.com', reason: 'booking', marketing_optin: true },
+    })
+    expect(response.status).toBe(422)
+    const body = await response.json()
+    expect(body.errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'booking_ref' })]),
+    )
+  })
+
+  test('values posted for fields on a hidden step are stripped', async () => {
+    const response = await makeRequest(formSlug, {
+      data: {
+        contact_method: 'email',
+        email: 'a@b.com',
+        reason: 'other',
+        reason_other: 'Just asking',
+        marketing_optin: true,
+        booking_ref: 'SHOULD-NOT-PERSIST',
+      },
+    })
+    expect(response.status).toBe(200)
+    const { submissionId } = await response.json()
+    expect(storedFields(await submissionFor(submissionId))).not.toHaveProperty('booking_ref')
+  })
+
+  test('the conditional form is reachable through fetchFormHandler with rules intact', async () => {
+    const doc = await payload.findByID({ collection: 'forms', id: formId })
+    const emailField = (doc.steps as any)[0].fields.find((f: any) => f.name === 'email')
+    expect(emailField.visibility.enabled).toBe(true)
+    expect(emailField.visibility.action).toBe('show')
+    expect(emailField.visibility.conditions[0].source).toBe('contact_method')
+    expect(emailField.visibility.conditions[0].blockType).toBe('condition')
+  })
+})

@@ -3,6 +3,7 @@
 import type { UseFormReturn } from 'react-hook-form'
 import type { NumberStepperBlock } from '../../../types.js'
 import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
+import { isFieldRequired } from '../../../utilities/conditions/index.js'
 import { FieldTooltip } from '../FieldTooltip.js'
 
 type Props = { field: NumberStepperBlock; form: UseFormReturn<Record<string, unknown>> }
@@ -38,7 +39,7 @@ export function NumberStepperField({ field, form }: Props) {
         type="hidden"
         {...register(field.name, {
           value: field.defaultValue ?? 0,
-          ...buildFieldRules(field),
+          ...buildFieldRules(field, isFieldRequired(field, form.getValues())),
         })}
       />
       <div className="enquiry-field__stepper-controls">

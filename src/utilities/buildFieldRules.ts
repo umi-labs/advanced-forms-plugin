@@ -23,11 +23,13 @@ export type FieldRules = Pick<
  */
 export function buildFieldRules(
   field: Pick<BaseFieldBlock, 'label' | 'required' | 'validation'>,
+  requiredOverride?: boolean,
 ): FieldRules {
   const v = field.validation ?? {}
   const rules: FieldRules = {}
 
-  if (field.required) {
+  const required = requiredOverride ?? field.required
+  if (required) {
     rules.required = v.requiredMessage ?? `${field.label} is required`
   }
 

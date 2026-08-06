@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { EnquiryFormStep, FormFieldBlock } from '../../types.js'
+import { getVisibleFields } from '../../utilities/conditions/index.js'
 import { BudgetRangeField } from './fields/BudgetRangeField.js'
 import { CheckboxField } from './fields/CheckboxField.js'
 import { EmailInputField } from './fields/EmailInputField.js'
@@ -93,7 +94,9 @@ function groupRows(fields: FormFieldBlock[]): FormFieldBlock[][] {
 }
 
 export function Step({ step, form }: Props) {
-  const rows = groupRows(step.fields)
+  const values = form.watch()
+  const visibleFields = getVisibleFields(step, values)
+  const rows = groupRows(visibleFields)
   return (
     <div className="enquiry-form__step">
       {rows.map((rowFields, i) => {

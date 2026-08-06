@@ -3,6 +3,7 @@
 import type { RegisterOptions, UseFormReturn } from 'react-hook-form'
 import type { EmailInputBlock } from '../../../types.js'
 import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
+import { isFieldRequired } from '../../../utilities/conditions/index.js'
 import { FieldTooltip } from '../FieldTooltip.js'
 
 const DEFAULT_EMAIL_PATTERN: RegisterOptions['pattern'] = {
@@ -18,7 +19,7 @@ export function EmailInputField({ field, form }: Props) {
 
   // Built-in email pattern as a fallback — overridden if the editor configures
   // a `validation.pattern` via the admin UI.
-  const rules: RegisterOptions = { pattern: DEFAULT_EMAIL_PATTERN, ...buildFieldRules(field) }
+  const rules: RegisterOptions = { pattern: DEFAULT_EMAIL_PATTERN, ...buildFieldRules(field, isFieldRequired(field, form.getValues())) }
 
   return (
     <div className="enquiry-field enquiry-field--email">

@@ -5,11 +5,13 @@ import { type Resolver, useForm } from 'react-hook-form'
 import type {
   EnquiryForm,
   EnquirySubmissionContext,
+  FormStep,
   SubmitError,
   SubmitResult,
   UseEnquiryFormReturn,
 } from '../../types.js'
 import { buildSubmitURL } from '../../utilities/buildSubmitURL.js'
+import { getVisibleSteps, isFieldVisible, stripHiddenValues } from '../../utilities/conditions/index.js'
 import { normalizeFormSteps } from '../../utilities/normalizeFormSteps.js'
 import { normalizeSubmitError } from '../../utilities/normalizeSubmitError.js'
 
@@ -58,18 +60,24 @@ export function useEnquiryForm({
   const [result, setResult] = useState<SubmitResult | null>(null)
   const [error, setError] = useState<SubmitError | null>(null)
 
-  const steps = normalizeFormSteps(form)
+  const allSteps = normalizeFormSteps(form)
 
   const rhfForm = useForm<Record<string, unknown>>({
     mode: 'onSubmit',
-    defaultValues: buildDefaultValues(steps),
+    defaultValues: buildDefaultValues(allSteps),
     resolver,
   })
+
+  const watchedValues = rhfForm.watch()
+  const steps = getVisibleSteps(allSteps, watchedValues)
   const totalSteps = steps.length
-  const stepData = steps[currentStep]!
+  const safeStep = steps.length > 0 ? Math.min(currentStep, steps.length - 1) : 0
+  const stepData: FormStep = steps[safeStep] ?? { title: '', fields: [] }
 
   const getCurrentStepFieldNames = () =>
-    (stepData.fields ?? []).map((f) => f.name)
+    (stepData.fields ?? [])
+      .filter((f) => isFieldVisible(f, rhfForm.getValues()))
+      .map((f) => f.name)
 
   const goNext = async (): Promise<boolean> => {
     const valid = await rhfForm.trigger(getCurrentStepFieldNames())
@@ -91,7 +99,7 @@ export function useEnquiryForm({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          data: rhfForm.getValues(),
+          data: stripHiddenValues(allSteps, rhfForm.getValues()),
           metadata: { referrer: typeof window !== 'undefined' ? document.referrer : '' },
           ...(context ? { context } : {}),
         }),

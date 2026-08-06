@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.9.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.8.1...v1.9.0) (2026-07-06)
+
+### Features
+
+* add richTextEditor plugin option for consumer rich-text fields ([177da87](https://github.com/umi-labs/advanced-forms-plugin/commit/177da87e2cf3ec059f73dddcdfea13d35b0d3b97))
+* **conditions:** add visibility to field blocks and steps ([790b04c](https://github.com/umi-labs/advanced-forms-plugin/commit/790b04c2ef1783719cb6b63637ca85eec57f7a93))
+* **conditions:** admin visibility field config ([e2eaf4e](https://github.com/umi-labs/advanced-forms-plugin/commit/e2eaf4e8dbd7938a1d9cedb5e7ad0157341f3f98))
+* **conditions:** export rule engine + visibility utilities ([e725aac](https://github.com/umi-labs/advanced-forms-plugin/commit/e725aac3fea5a6388039d653929a7d0eb2b5081f))
+* **conditions:** field/step visibility + required helpers ([2032ccf](https://github.com/umi-labs/advanced-forms-plugin/commit/2032ccf95ba67f57de48b98112ae97a32658ca93))
+* **conditions:** frontend visibility rendering, navigation, indicator ([41c1e80](https://github.com/umi-labs/advanced-forms-plugin/commit/41c1e80acdf255b2cbc0871cf68e9a4a1a506f35))
+* **conditions:** pure rule engine + condition types ([27aebbe](https://github.com/umi-labs/advanced-forms-plugin/commit/27aebbeb43ddb1ce905998f43a524183ac450283))
+* **conditions:** required-when override in buildFieldRules ([df18e52](https://github.com/umi-labs/advanced-forms-plugin/commit/df18e52b59964ab7c087607acd6c302e99b4dca7))
+* **conditions:** server-side visibility enforcement + strip hidden data ([4f3b56e](https://github.com/umi-labs/advanced-forms-plugin/commit/4f3b56eb527e3915bc646e2b7adca9469b1255c9))
+* **conditions:** source-field dropdown admin component ([fca29bf](https://github.com/umi-labs/advanced-forms-plugin/commit/fca29bf4292a673e2175c277c7c77feee3b958ee))
+
+### Bug Fixes
+
+* **conditions:** guard useEnquiryForm against all-steps-hidden empty state ([d9b3e3c](https://github.com/umi-labs/advanced-forms-plugin/commit/d9b3e3c66b47585ba966c47025bf855dce2e1727))
+* **conditions:** honor disabled rules and fail closed on missing source ([d82bf44](https://github.com/umi-labs/advanced-forms-plugin/commit/d82bf44a2be3f700d8da5b44be4e5070356ed7c4))
+* **conditions:** skip hidden steps in server validation and client strip ([d4ace48](https://github.com/umi-labs/advanced-forms-plugin/commit/d4ace488f274e11a4bbb017777fc2528395af814))
+* **conditions:** type visibility select fields concretely so spreads satisfy Field ([faaa7f4](https://github.com/umi-labs/advanced-forms-plugin/commit/faaa7f41fff4c69015d3c3e3c98315e9865ddbb2))
+
 ## [1.8.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.8.0...v1.8.1) (2026-06-23)
 
 ### Bug Fixes

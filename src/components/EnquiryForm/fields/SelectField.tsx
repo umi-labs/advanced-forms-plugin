@@ -3,6 +3,7 @@
 import type { UseFormReturn } from 'react-hook-form'
 import type { SelectInputBlock } from '../../../types.js'
 import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
+import { isFieldRequired } from '../../../utilities/conditions/index.js'
 import { FieldTooltip } from '../FieldTooltip.js'
 
 type Props = { field: SelectInputBlock; form: UseFormReturn<Record<string, unknown>> }
@@ -25,7 +26,7 @@ export function SelectField({ field, form }: Props) {
         className={['enquiry-field__select', error ? 'enquiry-field__select--error' : '']
           .filter(Boolean)
           .join(' ')}
-        {...register(field.name, buildFieldRules(field))}
+        {...register(field.name, buildFieldRules(field, isFieldRequired(field, form.getValues())))}
       >
         {field.placeholder && (
           <option value="" disabled>

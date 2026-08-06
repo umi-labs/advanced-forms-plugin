@@ -41,7 +41,9 @@ export default defineConfig({
   webServer: {
     command: 'pnpm dev',
     reuseExistingServer: true,
-    url: 'http://localhost:3000/api/enquiry-form-data/travel-enquiry',
+    // Must match the fetch endpoint registered in src/index.ts (`/form-data/:slug`)
+    // and the slug seeded by dev/seed.ts — a 404 here never reports "ready".
+    url: 'http://localhost:3000/api/form-data/travel-enquiry',
     timeout: 120000,
   },
 })
