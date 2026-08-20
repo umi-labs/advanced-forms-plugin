@@ -1318,6 +1318,22 @@ describe('isAddressAnswered', () => {
     ).toBe(false)
   })
 
+  test('a pre-filled country alone does not count as answered', () => {
+    // `defaultCountry` is populated before the visitor touches the field, so
+    // counting it would keep the address parts permanently expanded and would
+    // store a country for an address that was filled in and then cleared.
+    expect(
+      isAddressAnswered({
+        line1: '',
+        line2: '',
+        city: '',
+        county: '',
+        postcode: '',
+        country: 'United Kingdom',
+      }),
+    ).toBe(false)
+  })
+
   test('any filled part counts as answered', () => {
     expect(
       isAddressAnswered({

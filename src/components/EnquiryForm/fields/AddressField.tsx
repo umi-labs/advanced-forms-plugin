@@ -19,12 +19,21 @@ const EMPTY: AddressValue = {
   country: '',
 }
 
-/** An address with nothing typed into it is stored as `undefined`, not as an
- *  object of empty strings, so "answered?" checks — here, in the resolver and
- *  on the server — all agree. */
+/**
+ * An address with nothing typed into it is stored as `undefined`, not as an
+ * object of empty strings, so "answered?" checks — here, in the resolver and on
+ * the server — all agree.
+ *
+ * `country` is deliberately excluded: it is pre-filled from `defaultCountry`
+ * before the visitor touches anything, so counting it would make every
+ * untouched address look answered — which kept the address parts permanently
+ * expanded and would have stored `{ country: 'United Kingdom' }` for an address
+ * that was filled in and then cleared. A country on its own is not an address.
+ */
 export function isAddressAnswered(value: AddressValue | undefined): boolean {
   if (!value) return false
-  return Object.values(value).some((part) => (part ?? '').trim().length > 0)
+  const { country: _country, ...rest } = value
+  return Object.values(rest).some((part) => (part ?? '').trim().length > 0)
 }
 
 function asAddress(value: unknown, defaultCountry: string): AddressValue {
