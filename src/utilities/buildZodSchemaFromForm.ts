@@ -96,9 +96,46 @@ function buildFieldSchema(field: AnyFieldBlock): ZodTypeAny {
       return multiCounterSchema(field)
     case 'file':
       return fileSchema(field)
+    case 'address':
+      return addressSchema(field)
     default:
       return z.unknown()
   }
+}
+
+/**
+ * Address fields hold a composite `{ line1, line2, city, county, postcode,
+ * country }` value. A required address needs a street line and a postcode:
+ * the lookup can only supply town/county/country, so a postcode on its own is
+ * not a deliverable address. The issue is reported on the field itself rather
+ * than a part, matching how the field renders a single error message.
+ */
+function addressSchema(field: AnyFieldBlock): ZodTypeAny {
+  const part = z.string().optional()
+  const object = z.object({
+    line1: part,
+    line2: part,
+    city: part,
+    county: part,
+    postcode: part,
+    country: part,
+  })
+
+  if (!field.required) return object.optional()
+
+  // The field stores `undefined` while it is untouched, and an object schema
+  // marked `.optional()` lets a missing key skip the refinement entirely — so
+  // normalise absent to empty first, then refine. Otherwise a required address
+  // the visitor never opened would pass validation.
+  return z.preprocess(
+    (value) => (value === undefined || value === null ? {} : value),
+    object.superRefine((value, ctx) => {
+      const hasStreet = (value.line1 ?? '').trim().length > 0
+      const hasPostcode = (value.postcode ?? '').trim().length > 0
+      if (hasStreet && hasPostcode) return
+      ctx.addIssue({ code: 'custom', message: requiredMessage(field) })
+    }),
+  )
 }
 
 function requiredMessage(field: BaseFieldBlock): string {

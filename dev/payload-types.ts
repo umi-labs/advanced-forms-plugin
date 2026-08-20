@@ -1654,6 +1654,146 @@ export interface Form {
             blockName?: string | null;
             blockType: 'file';
           }
+        | {
+            /**
+             * Shown to the visitor above this field.
+             */
+            label: string;
+            /**
+             * Unique key for this field. Used as the submission data key.
+             */
+            name: string;
+            nameLock?: boolean | null;
+            /**
+             * Visitors must complete this field before the form can be submitted.
+             */
+            required?: boolean | null;
+            /**
+             * Show a small help icon next to the field label with extra guidance on hover.
+             */
+            tooltip?: {
+              /**
+               * Show a help tooltip for this field.
+               */
+              enabled?: boolean | null;
+              /**
+               * The text shown inside the tooltip.
+               */
+              text?: string | null;
+            };
+            /**
+             * Reveal extra settings like placeholder, width, and validation rules.
+             */
+            showAdvanced?: boolean | null;
+            /**
+             * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+             */
+            validation?: {
+              /**
+               * Override "<Label> is required".
+               */
+              requiredMessage?: string | null;
+              minLength?: number | null;
+              maxLength?: number | null;
+              /**
+               * JS regex source, e.g. ^[A-Z]{2,}$
+               */
+              pattern?: string | null;
+              patternMessage?: string | null;
+              min?: number | null;
+              max?: number | null;
+              minMessage?: string | null;
+              maxMessage?: string | null;
+            };
+            /**
+             * Conditionally show or require this based on other fields.
+             */
+            visibility?: {
+              /**
+               * Only show this based on answers to other fields.
+               */
+              enabled?: boolean | null;
+              action?: ('show' | 'require') | null;
+              match?: ('all' | 'any') | null;
+              conditions?:
+                | (
+                    | {
+                        /**
+                         * The field whose answer this condition tests.
+                         */
+                        source: string;
+                        operator:
+                          | 'equals'
+                          | 'notEquals'
+                          | 'gt'
+                          | 'gte'
+                          | 'lt'
+                          | 'lte'
+                          | 'isChecked'
+                          | 'isNotChecked'
+                          | 'contains'
+                          | 'isEmpty'
+                          | 'isNotEmpty';
+                        /**
+                         * The value to compare against.
+                         */
+                        value?: string | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'condition';
+                      }
+                    | {
+                        match?: ('all' | 'any') | null;
+                        conditions?:
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }[]
+                          | null;
+                        id?: string | null;
+                        blockName?: string | null;
+                        blockType: 'group';
+                      }
+                  )[]
+                | null;
+            };
+            /**
+             * Pre-filled country, used until a lookup overwrites it.
+             */
+            defaultCountry?: string | null;
+            /**
+             * Turn off for a shorter form when a single street line is enough.
+             */
+            showLine2?: boolean | null;
+            /**
+             * Label on the lookup button.
+             */
+            lookupLabel?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'address';
+          }
       )[]
     | null;
   /**
@@ -3184,6 +3324,146 @@ export interface Form {
                   blockName?: string | null;
                   blockType: 'file';
                 }
+              | {
+                  /**
+                   * Shown to the visitor above this field.
+                   */
+                  label: string;
+                  /**
+                   * Unique key for this field. Used as the submission data key.
+                   */
+                  name: string;
+                  nameLock?: boolean | null;
+                  /**
+                   * Visitors must complete this field before the form can be submitted.
+                   */
+                  required?: boolean | null;
+                  /**
+                   * Show a small help icon next to the field label with extra guidance on hover.
+                   */
+                  tooltip?: {
+                    /**
+                     * Show a help tooltip for this field.
+                     */
+                    enabled?: boolean | null;
+                    /**
+                     * The text shown inside the tooltip.
+                     */
+                    text?: string | null;
+                  };
+                  /**
+                   * Reveal extra settings like placeholder, width, and validation rules.
+                   */
+                  showAdvanced?: boolean | null;
+                  /**
+                   * Optional validation rules. Combine with the form-level Zod resolver for richer logic.
+                   */
+                  validation?: {
+                    /**
+                     * Override "<Label> is required".
+                     */
+                    requiredMessage?: string | null;
+                    minLength?: number | null;
+                    maxLength?: number | null;
+                    /**
+                     * JS regex source, e.g. ^[A-Z]{2,}$
+                     */
+                    pattern?: string | null;
+                    patternMessage?: string | null;
+                    min?: number | null;
+                    max?: number | null;
+                    minMessage?: string | null;
+                    maxMessage?: string | null;
+                  };
+                  /**
+                   * Conditionally show or require this based on other fields.
+                   */
+                  visibility?: {
+                    /**
+                     * Only show this based on answers to other fields.
+                     */
+                    enabled?: boolean | null;
+                    action?: ('show' | 'require') | null;
+                    match?: ('all' | 'any') | null;
+                    conditions?:
+                      | (
+                          | {
+                              /**
+                               * The field whose answer this condition tests.
+                               */
+                              source: string;
+                              operator:
+                                | 'equals'
+                                | 'notEquals'
+                                | 'gt'
+                                | 'gte'
+                                | 'lt'
+                                | 'lte'
+                                | 'isChecked'
+                                | 'isNotChecked'
+                                | 'contains'
+                                | 'isEmpty'
+                                | 'isNotEmpty';
+                              /**
+                               * The value to compare against.
+                               */
+                              value?: string | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'condition';
+                            }
+                          | {
+                              match?: ('all' | 'any') | null;
+                              conditions?:
+                                | {
+                                    /**
+                                     * The field whose answer this condition tests.
+                                     */
+                                    source: string;
+                                    operator:
+                                      | 'equals'
+                                      | 'notEquals'
+                                      | 'gt'
+                                      | 'gte'
+                                      | 'lt'
+                                      | 'lte'
+                                      | 'isChecked'
+                                      | 'isNotChecked'
+                                      | 'contains'
+                                      | 'isEmpty'
+                                      | 'isNotEmpty';
+                                    /**
+                                     * The value to compare against.
+                                     */
+                                    value?: string | null;
+                                    id?: string | null;
+                                    blockName?: string | null;
+                                    blockType: 'condition';
+                                  }[]
+                                | null;
+                              id?: string | null;
+                              blockName?: string | null;
+                              blockType: 'group';
+                            }
+                        )[]
+                      | null;
+                  };
+                  /**
+                   * Pre-filled country, used until a lookup overwrites it.
+                   */
+                  defaultCountry?: string | null;
+                  /**
+                   * Turn off for a shorter form when a single street line is enough.
+                   */
+                  showLine2?: boolean | null;
+                  /**
+                   * Label on the lookup button.
+                   */
+                  lookupLabel?: string | null;
+                  id?: string | null;
+                  blockName?: string | null;
+                  blockType: 'address';
+                }
             )[]
           | null;
         /**
@@ -4408,6 +4688,79 @@ export interface FormsSelect<T extends boolean = true> {
               id?: T;
               blockName?: T;
             };
+        address?:
+          | T
+          | {
+              label?: T;
+              name?: T;
+              nameLock?: T;
+              required?: T;
+              tooltip?:
+                | T
+                | {
+                    enabled?: T;
+                    text?: T;
+                  };
+              showAdvanced?: T;
+              validation?:
+                | T
+                | {
+                    requiredMessage?: T;
+                    minLength?: T;
+                    maxLength?: T;
+                    pattern?: T;
+                    patternMessage?: T;
+                    min?: T;
+                    max?: T;
+                    minMessage?: T;
+                    maxMessage?: T;
+                  };
+              visibility?:
+                | T
+                | {
+                    enabled?: T;
+                    action?: T;
+                    match?: T;
+                    conditions?:
+                      | T
+                      | {
+                          condition?:
+                            | T
+                            | {
+                                source?: T;
+                                operator?: T;
+                                value?: T;
+                                id?: T;
+                                blockName?: T;
+                              };
+                          group?:
+                            | T
+                            | {
+                                match?: T;
+                                conditions?:
+                                  | T
+                                  | {
+                                      condition?:
+                                        | T
+                                        | {
+                                            source?: T;
+                                            operator?: T;
+                                            value?: T;
+                                            id?: T;
+                                            blockName?: T;
+                                          };
+                                    };
+                                id?: T;
+                                blockName?: T;
+                              };
+                        };
+                  };
+              defaultCountry?: T;
+              showLine2?: T;
+              lookupLabel?: T;
+              id?: T;
+              blockName?: T;
+            };
       };
   steps?:
     | T
@@ -5242,6 +5595,79 @@ export interface FormsSelect<T extends boolean = true> {
                     accept?: T;
                     maxSizeMB?: T;
                     collection?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
+              address?:
+                | T
+                | {
+                    label?: T;
+                    name?: T;
+                    nameLock?: T;
+                    required?: T;
+                    tooltip?:
+                      | T
+                      | {
+                          enabled?: T;
+                          text?: T;
+                        };
+                    showAdvanced?: T;
+                    validation?:
+                      | T
+                      | {
+                          requiredMessage?: T;
+                          minLength?: T;
+                          maxLength?: T;
+                          pattern?: T;
+                          patternMessage?: T;
+                          min?: T;
+                          max?: T;
+                          minMessage?: T;
+                          maxMessage?: T;
+                        };
+                    visibility?:
+                      | T
+                      | {
+                          enabled?: T;
+                          action?: T;
+                          match?: T;
+                          conditions?:
+                            | T
+                            | {
+                                condition?:
+                                  | T
+                                  | {
+                                      source?: T;
+                                      operator?: T;
+                                      value?: T;
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                                group?:
+                                  | T
+                                  | {
+                                      match?: T;
+                                      conditions?:
+                                        | T
+                                        | {
+                                            condition?:
+                                              | T
+                                              | {
+                                                  source?: T;
+                                                  operator?: T;
+                                                  value?: T;
+                                                  id?: T;
+                                                  blockName?: T;
+                                                };
+                                          };
+                                      id?: T;
+                                      blockName?: T;
+                                    };
+                              };
+                        };
+                    defaultCountry?: T;
+                    showLine2?: T;
+                    lookupLabel?: T;
                     id?: T;
                     blockName?: T;
                   };

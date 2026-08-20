@@ -1199,3 +1199,186 @@ describe('collectSourceFields', () => {
     expect(map.get('note')?.blockType).toBe('text')
   })
 })
+
+import { AddressBlock } from '../src/blocks/fields/Address.js'
+import { isAddressAnswered } from '../src/components/EnquiryForm/fields/AddressField.js'
+import { lookupPostcode, toTitleCase } from '../src/utilities/lookupPostcode.js'
+
+/** Stand-in for `fetch` returning a canned postcodes.io body. */
+const fakeFetch = (body: unknown): typeof globalThis.fetch =>
+  (async () => ({ json: async () => body })) as any
+
+describe('lookupPostcode', () => {
+  test('maps a hit to a title-cased address', async () => {
+    const result = await lookupPostcode('sw1a1aa', {
+      fetchImpl: fakeFetch({
+        status: 200,
+        result: {
+          postcode: 'SW1A 1AA',
+          postal_town: 'LONDON',
+          admin_county: null,
+          admin_district: 'WESTMINSTER',
+          country: 'England',
+        },
+      }),
+    })
+    expect(result).toEqual({
+      status: 'ok',
+      address: {
+        postcode: 'SW1A 1AA',
+        city: 'London',
+        county: 'Westminster',
+        country: 'England',
+      },
+    })
+  })
+
+  test('falls back to admin_district when there is no postal town', async () => {
+    const result = await lookupPostcode('LL55 4UL', {
+      fetchImpl: fakeFetch({
+        status: 200,
+        result: { postcode: 'LL55 4UL', postal_town: null, admin_district: 'GWYNEDD' },
+      }),
+    })
+    expect(result).toMatchObject({ status: 'ok', address: { city: 'Gwynedd' } })
+  })
+
+  test('defaults country to United Kingdom when the API omits it', async () => {
+    const result = await lookupPostcode('SW1A 1AA', {
+      fetchImpl: fakeFetch({ status: 200, result: { postcode: 'SW1A 1AA' } }),
+    })
+    expect(result).toMatchObject({ address: { country: 'United Kingdom' } })
+  })
+
+  test('reports notFound for an unknown postcode', async () => {
+    const result = await lookupPostcode('ZZ1 1ZZ', {
+      fetchImpl: fakeFetch({ status: 404, result: null }),
+    })
+    expect(result).toEqual({ status: 'notFound' })
+  })
+
+  test('reports notFound for blank input without calling the API', async () => {
+    let called = false
+    const result = await lookupPostcode('   ', {
+      fetchImpl: (async () => {
+        called = true
+        return { json: async () => ({}) }
+      }) as any,
+    })
+    expect(result).toEqual({ status: 'notFound' })
+    expect(called).toBe(false)
+  })
+
+  test('reports error rather than throwing when the request fails', async () => {
+    const result = await lookupPostcode('SW1A 1AA', {
+      fetchImpl: (async () => {
+        throw new Error('offline')
+      }) as any,
+    })
+    expect(result).toEqual({ status: 'error' })
+  })
+
+  test('toTitleCase normalises shouty place names', () => {
+    expect(toTitleCase('NEWCASTLE UPON TYNE')).toBe('Newcastle Upon Tyne')
+  })
+})
+
+describe('AddressBlock', () => {
+  test('carries the shared base field fields, including visibility', () => {
+    const names = flatFields(AddressBlock.fields as any[]).map((f) =>
+      'name' in f ? f.name : null,
+    )
+    expect(names).toContain('name')
+    expect(names).toContain('label')
+    expect(names).toContain('visibility')
+  })
+
+  test('exposes its own lookup options', () => {
+    const names = flatFields(AddressBlock.fields as any[]).map((f) =>
+      'name' in f ? f.name : null,
+    )
+    expect(names).toContain('defaultCountry')
+    expect(names).toContain('showLine2')
+    expect(names).toContain('lookupLabel')
+  })
+})
+
+describe('isAddressAnswered', () => {
+  test('an undefined or all-blank address counts as unanswered', () => {
+    expect(isAddressAnswered(undefined)).toBe(false)
+    expect(
+      isAddressAnswered({
+        line1: '',
+        line2: '',
+        city: '  ',
+        county: '',
+        postcode: '',
+        country: '',
+      }),
+    ).toBe(false)
+  })
+
+  test('a pre-filled country alone does not count as answered', () => {
+    // `defaultCountry` is populated before the visitor touches the field, so
+    // counting it would keep the address parts permanently expanded and would
+    // store a country for an address that was filled in and then cleared.
+    expect(
+      isAddressAnswered({
+        line1: '',
+        line2: '',
+        city: '',
+        county: '',
+        postcode: '',
+        country: 'United Kingdom',
+      }),
+    ).toBe(false)
+  })
+
+  test('any filled part counts as answered', () => {
+    expect(
+      isAddressAnswered({
+        line1: '',
+        line2: '',
+        city: '',
+        county: '',
+        postcode: 'SW1A 1AA',
+        country: '',
+      }),
+    ).toBe(true)
+  })
+})
+
+describe('buildZodSchemaFromForm — address', () => {
+  const addressField = (required: boolean) =>
+    ({
+      blockType: 'address',
+      name: 'delivery',
+      label: 'Delivery address',
+      required,
+    }) as any
+
+  test('an optional address accepts being left out entirely', () => {
+    const schema = buildZodSchemaFromForm([addressField(false)])
+    expect(schema.safeParse({}).success).toBe(true)
+  })
+
+  test('a required address needs a street line and a postcode', () => {
+    const schema = buildZodSchemaFromForm([addressField(true)])
+    expect(schema.safeParse({ delivery: { postcode: 'SW1A 1AA' } }).success).toBe(false)
+    expect(schema.safeParse({ delivery: { line1: '10 Downing St' } }).success).toBe(false)
+    expect(
+      schema.safeParse({ delivery: { line1: '10 Downing St', postcode: 'SW1A 1AA' } }).success,
+    ).toBe(true)
+  })
+
+  test('a required address reports the admin-configured message', () => {
+    const schema = buildZodSchemaFromForm([
+      { ...addressField(true), validation: { requiredMessage: 'We need a delivery address' } },
+    ])
+    const result = schema.safeParse({})
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe('We need a delivery address')
+    }
+  })
+})

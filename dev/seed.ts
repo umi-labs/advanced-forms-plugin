@@ -149,6 +149,12 @@ const travelEnquiryForm = {
         { blockType: 'text', name: 'full_name', label: 'Full Name', required: true },
         { blockType: 'email', name: 'email', label: 'Email Address', required: true },
         { blockType: 'textarea', name: 'notes', label: 'Additional Notes', rows: 4 },
+        {
+          blockType: 'address',
+          name: 'billing_address',
+          label: 'Billing Address',
+          lookupLabel: 'Find address',
+        },
       ],
     },
   ],
