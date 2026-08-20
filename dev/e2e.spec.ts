@@ -245,3 +245,31 @@ test('shows submit button (not Next) on the final step', async ({ page }) => {
   await expect(page.getByTestId('btn-submit')).toBeVisible()
   await expect(page.getByTestId('btn-next')).not.toBeVisible()
 })
+
+// ---------------------------------------------------------------------------
+// Address field (postcode lookup)
+// ---------------------------------------------------------------------------
+test('address field accepts a manually entered address and submits it', async ({ page }) => {
+  await page.goto(FORM_URL)
+
+  await page.selectOption(field('destination'), 'kenya')
+  await page.getByTestId('btn-next').click()
+  await page.selectOption(field('budget'), 'mid')
+  await page.getByTestId('btn-next').click()
+
+  await page.fill(field('full_name'), 'Test User')
+  await page.fill(field('email'), 'test@example.com')
+
+  // The parts stay collapsed behind the postcode search until the visitor
+  // either runs a lookup or asks to type the address themselves. The lookup
+  // itself calls postcodes.io, so it is deliberately not exercised here.
+  await expect(page.locator(field('billing_address-line1'))).not.toBeVisible()
+  await page.getByRole('button', { name: 'Enter manually' }).click()
+
+  await page.fill(field('billing_address-line1'), '10 Downing Street')
+  await page.fill(field('billing_address-city'), 'London')
+  await page.fill(field('billing_address-postcode'), 'SW1A 2AA')
+
+  await page.getByTestId('btn-submit').click()
+  await expect(page.getByTestId('enquiry-form-confirmation')).toBeVisible({ timeout: 5000 })
+})

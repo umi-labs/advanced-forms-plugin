@@ -797,3 +797,124 @@ describe('submitFormHandler conditional logic', () => {
     expect(emailField.visibility.conditions[0].blockType).toBe('condition')
   })
 })
+
+describe('address field with postcode lookup', () => {
+  const formSlug = `address-form-${Date.now()}`
+
+  beforeAll(async () => {
+    await payload.create({
+      collection: 'forms',
+      data: {
+        title: 'Address Form',
+        slug: formSlug,
+        multiStep: true,
+        steps: [
+          {
+            title: 'Delivery',
+            fields: [
+              { blockType: 'text', name: 'full_name', label: 'Full name', required: true },
+              {
+                blockType: 'address',
+                name: 'delivery_address',
+                label: 'Delivery address',
+                required: true,
+              },
+              {
+                blockType: 'address',
+                name: 'billing_address',
+                label: 'Billing address',
+                visibility: {
+                  enabled: true,
+                  action: 'require',
+                  match: 'all',
+                  conditions: [
+                    {
+                      blockType: 'condition',
+                      source: 'full_name',
+                      operator: 'isNotEmpty',
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+        submissionActions: [{ blockType: 'redirect', url: '/thanks', delay: 0 }],
+      },
+    })
+  })
+
+  const makeRequest = async (body: object) => {
+    const handler = createSubmitFormHandler({
+      collections: { forms: 'forms', submissions: 'form-submissions' },
+    })
+    const request = new Request(`http://localhost:3000/api/form-submit/${formSlug}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const payloadRequest = await createPayloadRequest({
+      config: await config,
+      request,
+      params: { formSlug },
+    })
+    return handler(payloadRequest)
+  }
+
+  const address = {
+    line1: '10 Downing Street',
+    line2: '',
+    city: 'London',
+    county: 'Greater London',
+    postcode: 'SW1A 2AA',
+    country: 'England',
+  }
+
+  test('the address block is registered on the forms collection', async () => {
+    const doc = await payload.find({
+      collection: 'forms',
+      where: { slug: { equals: formSlug } },
+    })
+    const fields = (doc.docs[0] as { steps: Array<{ fields: Array<{ blockType: string }> }> })
+      .steps[0]?.fields
+    expect(fields?.map((f) => f.blockType)).toContain('address')
+  })
+
+  test('stores a composite address value as JSON', async () => {
+    const response = await makeRequest({
+      data: { full_name: 'Alice', delivery_address: address, billing_address: address },
+    })
+    expect(response.status).toBe(200)
+
+    const { submissionId } = await response.json()
+    const submission = await payload.findByID({
+      collection: 'form-submissions',
+      id: submissionId,
+    })
+    const stored = Object.fromEntries(
+      ((submission.data ?? []) as Array<{ fieldName: string; value: unknown }>).map((d) => [
+        d.fieldName,
+        d.value,
+      ]),
+    )
+    expect(JSON.parse(String(stored.delivery_address))).toEqual(address)
+  })
+
+  test('a required address must be supplied', async () => {
+    const response = await makeRequest({ data: { full_name: 'Alice', billing_address: address } })
+    expect(response.status).toBe(422)
+    const body = await response.json()
+    expect(body.errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'delivery_address' })]),
+    )
+  })
+
+  test('an address made required by a condition is enforced too', async () => {
+    const response = await makeRequest({ data: { full_name: 'Alice', delivery_address: address } })
+    expect(response.status).toBe(422)
+    const body = await response.json()
+    expect(body.errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'billing_address' })]),
+    )
+  })
+})
