@@ -325,6 +325,12 @@ export type FormDocument = {
   id: string
   title: string
   slug: string
+  /**
+   * Captcha details for this form, added by the fetch endpoint when the plugin
+   * has a complete captcha config. Absent when captcha is off, which is how
+   * the client decides whether to mint a token at all. Not a stored field.
+   */
+  captcha?: PublicCaptchaConfig | null
   /** Whether this form is authored as multiple stages. When false (the
    *  default), fields live on the top-level `fields` array instead of `steps`. */
   multiStep?: boolean | null
@@ -386,6 +392,34 @@ export type BuiltInFieldSlug =
 
 export type FieldsConfig = Record<string, boolean | { block: Block } | undefined>
 
+/**
+ * reCAPTCHA v3 settings. Both keys must be present for the captcha to be
+ * enforced — with either missing, forms behave exactly as they did before, so
+ * a site can ship this config before its keys exist.
+ *
+ * `siteKey` is public by design (it is served to the browser with the form);
+ * `secretKey` must come from the server environment and never be committed.
+ */
+export type CaptchaConfig = {
+  /** Only reCAPTCHA v3 is supported today; named so other providers can be added. */
+  provider?: 'recaptcha-v3'
+  /** Public site key, sent to the browser. */
+  siteKey?: string
+  /** Secret key, server-side only. */
+  secretKey?: string
+  /** Reject submissions scoring below this (0–1). Defaults to 0.5. */
+  minScore?: number
+  /** Action name minted into the token and asserted on verify. Defaults to 'form_submit'. */
+  action?: string
+}
+
+/** Captcha details safe to expose to the browser alongside a form. */
+export type PublicCaptchaConfig = {
+  provider: 'recaptcha-v3'
+  siteKey: string
+  action: string
+}
+
 export type FormPluginConfig = {
   disabled?: boolean
   baseUrl?: string
@@ -420,6 +454,12 @@ export type FormPluginConfig = {
    * content (which keeps its own headings-enabled editor).
    */
   richTextEditor?: RichTextField['editor']
+  /**
+   * Protect every form's submit endpoint with reCAPTCHA v3. Omit it, or leave
+   * either key unset, and nothing changes — no script is loaded and no token
+   * is required.
+   */
+  captcha?: CaptchaConfig
 }
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test } from 'vitest'
 import { baseFieldBlockFields } from '../src/blocks/fields/shared.js'
 
 /** Flatten row-type fields one level deep so tests can find named fields regardless of layout. */
@@ -1197,5 +1197,256 @@ describe('collectSourceFields', () => {
   test('defaults blockType to text when none is present', () => {
     const map = collectSourceFields({ 'fields.0.name': { value: 'note' } } as any)
     expect(map.get('note')?.blockType).toBe('text')
+  })
+})
+
+import {
+  DEFAULT_MIN_SCORE,
+  isCaptchaEnabled,
+  verifyCaptcha,
+} from '../src/utilities/verifyCaptcha.js'
+
+/** Stand-in for `fetch` returning a canned siteverify body. */
+const siteverify = (body: unknown): typeof globalThis.fetch =>
+  (async () => ({ json: async () => body })) as any
+
+const keys = { siteKey: 'site', secretKey: 'secret' }
+
+describe('isCaptchaEnabled', () => {
+  test('requires both keys', () => {
+    expect(isCaptchaEnabled(undefined)).toBe(false)
+    expect(isCaptchaEnabled({})).toBe(false)
+    expect(isCaptchaEnabled({ siteKey: 'site' })).toBe(false)
+    expect(isCaptchaEnabled({ secretKey: 'secret' })).toBe(false)
+    expect(isCaptchaEnabled(keys)).toBe(true)
+  })
+})
+
+describe('verifyCaptcha', () => {
+  test('skips entirely when no captcha is configured', async () => {
+    const result = await verifyCaptcha({
+      config: undefined,
+      token: undefined,
+      fetchImpl: siteverify({}),
+    })
+    expect(result).toEqual({ status: 'skipped' })
+  })
+
+  test('skips when only one key is set, so a half-configured site still works', async () => {
+    const result = await verifyCaptcha({
+      config: { siteKey: 'site' },
+      token: undefined,
+      fetchImpl: siteverify({}),
+    })
+    expect(result).toEqual({ status: 'skipped' })
+  })
+
+  test('reports a missing token without calling Google', async () => {
+    let called = false
+    const spy = (async () => {
+      called = true
+      return { json: async () => ({}) }
+    }) as any
+    expect(await verifyCaptcha({ config: keys, token: undefined, fetchImpl: spy })).toEqual({
+      status: 'missing-token',
+    })
+    expect(await verifyCaptcha({ config: keys, token: '   ', fetchImpl: spy })).toEqual({
+      status: 'missing-token',
+    })
+    expect(called).toBe(false)
+  })
+
+  test('accepts a good score', async () => {
+    const result = await verifyCaptcha({
+      config: keys,
+      token: 'tok',
+      fetchImpl: siteverify({ success: true, score: 0.9, action: 'form_submit' }),
+    })
+    expect(result).toEqual({ status: 'ok', score: 0.9 })
+  })
+
+  test('rejects a score below the default minimum', async () => {
+    const result = await verifyCaptcha({
+      config: keys,
+      token: 'tok',
+      fetchImpl: siteverify({ success: true, score: 0.1, action: 'form_submit' }),
+    })
+    expect(result.status).toBe('rejected')
+    expect((result as { score?: number }).score).toBe(0.1)
+  })
+
+  test('honours a custom minScore', async () => {
+    const strict = await verifyCaptcha({
+      config: { ...keys, minScore: 0.95 },
+      token: 'tok',
+      fetchImpl: siteverify({ success: true, score: 0.9 }),
+    })
+    expect(strict.status).toBe('rejected')
+
+    const lenient = await verifyCaptcha({
+      config: { ...keys, minScore: 0.1 },
+      token: 'tok',
+      fetchImpl: siteverify({ success: true, score: 0.2 }),
+    })
+    expect(lenient.status).toBe('ok')
+  })
+
+  test('the default minimum is Google’s suggested 0.5', () => {
+    expect(DEFAULT_MIN_SCORE).toBe(0.5)
+  })
+
+  test('rejects a token minted for a different action', async () => {
+    const result = await verifyCaptcha({
+      config: keys,
+      token: 'tok',
+      fetchImpl: siteverify({ success: true, score: 0.9, action: 'login' }),
+    })
+    expect(result.status).toBe('rejected')
+    expect((result as { reason: string }).reason).toContain('action mismatch')
+  })
+
+  test('accepts a matching custom action', async () => {
+    const result = await verifyCaptcha({
+      config: { ...keys, action: 'enquiry' },
+      token: 'tok',
+      fetchImpl: siteverify({ success: true, score: 0.9, action: 'enquiry' }),
+    })
+    expect(result.status).toBe('ok')
+  })
+
+  test('rejects an invalid or reused token', async () => {
+    const result = await verifyCaptcha({
+      config: keys,
+      token: 'tok',
+      fetchImpl: siteverify({ success: false, 'error-codes': ['timeout-or-duplicate'] }),
+    })
+    expect(result).toEqual({ status: 'rejected', reason: 'timeout-or-duplicate' })
+  })
+
+  test('treats a bad secret as unavailable, not as a bot', async () => {
+    // Reporting our own misconfiguration as a rejection would silently block
+    // every genuine submission on the site.
+    const result = await verifyCaptcha({
+      config: keys,
+      token: 'tok',
+      fetchImpl: siteverify({ success: false, 'error-codes': ['invalid-input-secret'] }),
+    })
+    expect(result.status).toBe('unavailable')
+  })
+
+  test('reports a network failure as unavailable rather than throwing', async () => {
+    const result = await verifyCaptcha({
+      config: keys,
+      token: 'tok',
+      fetchImpl: (async () => {
+        throw new Error('offline')
+      }) as any,
+    })
+    expect(result).toEqual({ status: 'unavailable', reason: 'offline' })
+  })
+
+  test('reports a non-JSON response as unavailable', async () => {
+    const result = await verifyCaptcha({
+      config: keys,
+      token: 'tok',
+      fetchImpl: (async () => ({
+        json: async () => {
+          throw new Error('not json')
+        },
+      })) as any,
+    })
+    expect(result.status).toBe('unavailable')
+  })
+
+  test('sends the secret, token and caller IP as form-encoded params', async () => {
+    let seen: { url?: string; body?: string } = {}
+    const capture = (async (url: string, init: RequestInit) => {
+      seen = { url, body: String(init.body) }
+      return { json: async () => ({ success: true, score: 0.9 }) }
+    }) as any
+
+    await verifyCaptcha({ config: keys, token: 'tok', remoteIp: '1.2.3.4', fetchImpl: capture })
+
+    expect(seen.url).toBe('https://www.google.com/recaptcha/api/siteverify')
+    const params = new URLSearchParams(seen.body)
+    expect(params.get('secret')).toBe('secret')
+    expect(params.get('response')).toBe('tok')
+    expect(params.get('remoteip')).toBe('1.2.3.4')
+  })
+
+  test('omits remoteip when the caller IP is unknown', async () => {
+    let body = ''
+    const capture = (async (_url: string, init: RequestInit) => {
+      body = String(init.body)
+      return { json: async () => ({ success: true, score: 0.9 }) }
+    }) as any
+    await verifyCaptcha({ config: keys, token: 'tok', fetchImpl: capture })
+    expect(new URLSearchParams(body).has('remoteip')).toBe(false)
+  })
+})
+
+import { getCaptchaToken, resetRecaptchaLoader } from '../src/utilities/recaptchaClient.js'
+
+describe('getCaptchaToken', () => {
+  const publicConfig = { provider: 'recaptcha-v3' as const, siteKey: 'site', action: 'form_submit' }
+
+  afterEach(() => {
+    resetRecaptchaLoader()
+    delete (globalThis as any).window
+    delete (globalThis as any).document
+  })
+
+  test('returns null when captcha is off, so nothing is loaded', async () => {
+    expect(await getCaptchaToken(undefined)).toBeNull()
+    expect(await getCaptchaToken(null)).toBeNull()
+  })
+
+  test('returns null outside a browser instead of throwing', async () => {
+    // An RSC or test-runner context must never be broken by a captcha config.
+    expect(await getCaptchaToken(publicConfig)).toBeNull()
+  })
+
+  test('executes with the configured site key and action', async () => {
+    const calls: Array<{ siteKey: string; action: string }> = []
+    ;(globalThis as any).document = {}
+    ;(globalThis as any).window = {
+      grecaptcha: {
+        ready: (cb: () => void) => cb(),
+        execute: async (siteKey: string, opts: { action: string }) => {
+          calls.push({ siteKey, action: opts.action })
+          return 'minted-token'
+        },
+      },
+    }
+
+    expect(await getCaptchaToken(publicConfig)).toBe('minted-token')
+    expect(calls).toEqual([{ siteKey: 'site', action: 'form_submit' }])
+  })
+
+  test('mints a fresh token per call — v3 tokens are single-use', async () => {
+    let n = 0
+    ;(globalThis as any).document = {}
+    ;(globalThis as any).window = {
+      grecaptcha: {
+        ready: (cb: () => void) => cb(),
+        execute: async () => `token-${++n}`,
+      },
+    }
+
+    expect(await getCaptchaToken(publicConfig)).toBe('token-1')
+    expect(await getCaptchaToken(publicConfig)).toBe('token-2')
+  })
+
+  test('returns null when execute fails, leaving the decision to the server', async () => {
+    ;(globalThis as any).document = {}
+    ;(globalThis as any).window = {
+      grecaptcha: {
+        ready: (cb: () => void) => cb(),
+        execute: async () => {
+          throw new Error('challenge failed')
+        },
+      },
+    }
+    expect(await getCaptchaToken(publicConfig)).toBeNull()
   })
 })

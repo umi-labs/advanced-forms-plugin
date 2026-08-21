@@ -5,6 +5,7 @@ A multi-step form plugin for [Payload CMS 3](https://payloadcms.com). Adds a for
 ## Features
 
 - **Multi-step forms** — organise fields into named steps with optional icons and a progress indicator
+- **reCAPTCHA v3** — optional, invisible spam protection on every form
 - **11 field types** — text, email, phone, textarea, checkbox, radio group, checkbox group, select, number, date, file upload
 - **Submission actions** — send email, show a confirmation message, or redirect after submission (multiple actions per form, executed in order)
 - **Two collections** — `forms` and `form-submissions` added to your Payload config automatically
@@ -66,6 +67,45 @@ formPlugin(options: FormPluginConfig)
 | `labels.forms` | `string` | `'Form'` | Singular admin label for forms |
 | `labels.submissions` | `string` | `'Form Submission'` | Singular admin label for submissions |
 | `fields` | `FieldsConfig` | all built-ins | Control which field block types are available in the form builder — see [Customising field blocks](#customising-field-blocks) |
+
+---
+
+## Spam protection (reCAPTCHA v3)
+
+Pass a `captcha` config and every form's submit endpoint requires a verified
+reCAPTCHA v3 token. Leave it out — or leave either key unset — and nothing
+changes: no script is loaded, no token is required.
+
+```ts
+formPlugin({
+  captcha: {
+    siteKey: process.env.RECAPTCHA_SITE_KEY,
+    secretKey: process.env.RECAPTCHA_SECRET_KEY,
+    minScore: 0.5,        // optional, default 0.5
+    action: 'form_submit' // optional, default 'form_submit'
+  },
+})
+```
+
+Nothing else to wire up. `GET /api/form-data/:slug` advertises the **site key**
+(public by design) to the browser, `EnquiryForm` mints a token per submission,
+and `POST /api/form-submit/:formSlug` verifies it before the form is even
+loaded. The **secret key never leaves the server** — an integration test
+asserts it is absent from the form response.
+
+**Score, not a challenge.** v3 is invisible: it returns 0.0–1.0 and you choose
+the cut-off. Tune `minScore` from the reCAPTCHA console once you can see real
+traffic; too high silently rejects real people.
+
+**It fails open, on purpose.** If Google is unreachable, or the secret is
+wrong, the submission is allowed and the reason is logged as an error. Blocking
+would throw away genuine enquiries for the length of an outage or a
+misconfiguration, which costs more than the spam it would stop. A missing or
+rejected token is still a hard `403` — only *infrastructure* failure is
+forgiven. Watch the logs for `[forms] captcha could not be verified`.
+
+Register the site key against every domain that serves forms, including
+`localhost` for development, or every local submit will fail verification.
 
 ---
 

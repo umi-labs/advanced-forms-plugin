@@ -14,6 +14,7 @@ import { buildSubmitURL } from '../../utilities/buildSubmitURL.js'
 import { getVisibleSteps, isFieldVisible, stripHiddenValues } from '../../utilities/conditions/index.js'
 import { normalizeFormSteps } from '../../utilities/normalizeFormSteps.js'
 import { normalizeSubmitError } from '../../utilities/normalizeSubmitError.js'
+import { getCaptchaToken } from '../../utilities/recaptchaClient.js'
 
 type Options = {
   form: EnquiryForm
@@ -95,12 +96,18 @@ export function useEnquiryForm({
     setError(null)
 
     try {
+      // Minted per submission — v3 tokens are single-use and short-lived, so
+      // this cannot be hoisted to mount time. Resolves to null when captcha is
+      // off or unreachable; the server decides how to treat a missing token.
+      const captchaToken = await getCaptchaToken(form.captcha)
+
       const res = await fetch(buildSubmitURL({ apiBase, formSlug: form.slug }), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: stripHiddenValues(allSteps, rhfForm.getValues()),
           metadata: { referrer: typeof window !== 'undefined' ? document.referrer : '' },
+          ...(captchaToken ? { captchaToken } : {}),
           ...(context ? { context } : {}),
         }),
       })

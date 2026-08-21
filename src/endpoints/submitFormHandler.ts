@@ -1,6 +1,7 @@
 import type { PayloadHandler } from 'payload'
 import type { FormDocument, FormPluginConfig } from '../types.js'
 import { sanitizeSubmission } from '../utilities/sanitizeSubmission.js'
+import { verifyCaptcha } from '../utilities/verifyCaptcha.js'
 import { validateVisibleSubmission } from '../utilities/validateVisibleSubmission.js'
 
 function interpolate(template: string, data: Record<string, unknown>): string {
@@ -33,6 +34,7 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
     let body: {
       data?: Record<string, unknown>
       metadata?: Record<string, unknown>
+      captchaToken?: unknown
       context?: unknown
     }
     try {
@@ -50,6 +52,38 @@ export const createSubmitFormHandler = (pluginOptions: FormPluginConfig): Payloa
     const isPlainObject = (value: unknown): value is Record<string, unknown> =>
       typeof value === 'object' && value !== null && !Array.isArray(value)
     const context = isPlainObject(body.context) ? body.context : undefined
+
+    // Checked before the form is even loaded: an unverified request should cost
+    // us as little as possible.
+    const captchaResult = await verifyCaptcha({
+      config: pluginOptions.captcha,
+      token: body.captchaToken,
+      remoteIp: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim(),
+    })
+
+    if (captchaResult.status === 'missing-token' || captchaResult.status === 'rejected') {
+      if (captchaResult.status === 'rejected') {
+        payload.logger.warn(`[forms] captcha rejected submission: ${captchaResult.reason}`)
+      }
+      return Response.json(
+        {
+          success: false,
+          errors: [
+            { field: '', message: 'We could not verify that you are human. Please try again.' },
+          ],
+        },
+        { status: 403 },
+      )
+    }
+
+    if (captchaResult.status === 'unavailable') {
+      // Google unreachable or our own keys misconfigured. Failing closed here
+      // would silently bin genuine enquiries, which costs the client more than
+      // the spam it would stop — so let it through, loudly.
+      payload.logger.error(
+        `[forms] captcha could not be verified, allowing submission: ${captchaResult.reason}`,
+      )
+    }
 
     const formsSlug = (pluginOptions.collections?.forms ?? 'forms') as Parameters<
       typeof payload.find
