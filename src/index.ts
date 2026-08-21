@@ -22,6 +22,14 @@ export { baseFieldBlockFields, optionsArrayField } from './blocks/fields/shared.
 export { lockableTextField } from './fields/lockable/index.js'
 export { buildVisibilityField } from './blocks/fields/visibility.js'
 export { validateVisibleSubmission } from './utilities/validateVisibleSubmission.js'
+export {
+  DEFAULT_ACTION,
+  DEFAULT_MIN_SCORE,
+  isCaptchaEnabled,
+  verifyCaptcha,
+  type CaptchaVerification,
+} from './utilities/verifyCaptcha.js'
+export type { CaptchaConfig, PublicCaptchaConfig } from './types.js'
 
 const DEFAULT_FIELD_BLOCKS: Block[] = [
   TextBlock,
