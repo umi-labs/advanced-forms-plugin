@@ -1,7 +1,7 @@
 import type { Payload } from 'payload'
 import config from '@payload-config'
 import { createPayloadRequest, getPayload } from 'payload'
-import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest'
 import { createFetchFormHandler } from '../src/endpoints/fetchFormHandler.js'
 import { createSubmitFormHandler } from '../src/endpoints/submitFormHandler.js'
 import { capturedEmails } from './helpers/testEmailAdapter.js'
@@ -795,5 +795,267 @@ describe('submitFormHandler conditional logic', () => {
     expect(emailField.visibility.action).toBe('show')
     expect(emailField.visibility.conditions[0].source).toBe('contact_method')
     expect(emailField.visibility.conditions[0].blockType).toBe('condition')
+  })
+})
+
+describe('address field with postcode lookup', () => {
+  const formSlug = `address-form-${Date.now()}`
+
+  beforeAll(async () => {
+    await payload.create({
+      collection: 'forms',
+      data: {
+        title: 'Address Form',
+        slug: formSlug,
+        multiStep: true,
+        steps: [
+          {
+            title: 'Delivery',
+            fields: [
+              { blockType: 'text', name: 'full_name', label: 'Full name', required: true },
+              {
+                blockType: 'address',
+                name: 'delivery_address',
+                label: 'Delivery address',
+                required: true,
+              },
+              {
+                blockType: 'address',
+                name: 'billing_address',
+                label: 'Billing address',
+                visibility: {
+                  enabled: true,
+                  action: 'require',
+                  match: 'all',
+                  conditions: [
+                    {
+                      blockType: 'condition',
+                      source: 'full_name',
+                      operator: 'isNotEmpty',
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+        submissionActions: [{ blockType: 'redirect', url: '/thanks', delay: 0 }],
+      },
+    })
+  })
+
+  const makeRequest = async (body: object) => {
+    const handler = createSubmitFormHandler({
+      collections: { forms: 'forms', submissions: 'form-submissions' },
+    })
+    const request = new Request(`http://localhost:3000/api/form-submit/${formSlug}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const payloadRequest = await createPayloadRequest({
+      config: await config,
+      request,
+      params: { formSlug },
+    })
+    return handler(payloadRequest)
+  }
+
+  const address = {
+    line1: '10 Downing Street',
+    line2: '',
+    city: 'London',
+    county: 'Greater London',
+    postcode: 'SW1A 2AA',
+    country: 'England',
+  }
+
+  test('the address block is registered on the forms collection', async () => {
+    const doc = await payload.find({
+      collection: 'forms',
+      where: { slug: { equals: formSlug } },
+    })
+    const fields = (doc.docs[0] as { steps: Array<{ fields: Array<{ blockType: string }> }> })
+      .steps[0]?.fields
+    expect(fields?.map((f) => f.blockType)).toContain('address')
+  })
+
+  test('stores a composite address value as JSON', async () => {
+    const response = await makeRequest({
+      data: { full_name: 'Alice', delivery_address: address, billing_address: address },
+    })
+    expect(response.status).toBe(200)
+
+    const { submissionId } = await response.json()
+    const submission = await payload.findByID({
+      collection: 'form-submissions',
+      id: submissionId,
+    })
+    const stored = Object.fromEntries(
+      ((submission.data ?? []) as Array<{ fieldName: string; value: unknown }>).map((d) => [
+        d.fieldName,
+        d.value,
+      ]),
+    )
+    expect(JSON.parse(String(stored.delivery_address))).toEqual(address)
+  })
+
+  test('a required address must be supplied', async () => {
+    const response = await makeRequest({ data: { full_name: 'Alice', billing_address: address } })
+    expect(response.status).toBe(422)
+    const body = await response.json()
+    expect(body.errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'delivery_address' })]),
+    )
+  })
+
+  test('an address made required by a condition is enforced too', async () => {
+    const response = await makeRequest({ data: { full_name: 'Alice', delivery_address: address } })
+    expect(response.status).toBe(422)
+    const body = await response.json()
+    expect(body.errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ field: 'billing_address' })]),
+    )
+  })
+})
+
+describe('reCAPTCHA v3 protection', () => {
+  const formSlug = `captcha-form-${Date.now()}`
+  const captcha = { siteKey: 'test-site-key', secretKey: 'test-secret-key' }
+  const collections = { forms: 'forms' as const, submissions: 'form-submissions' as const }
+
+  const realFetch = globalThis.fetch
+
+  afterEach(() => {
+    globalThis.fetch = realFetch
+  })
+
+  /** Make Google's siteverify answer with `body` for the next call. */
+  const stubSiteverify = (body: unknown) => {
+    globalThis.fetch = (async () => ({ json: async () => body })) as never
+  }
+
+  beforeAll(async () => {
+    await payload.create({
+      collection: 'forms',
+      data: {
+        title: 'Captcha Form',
+        slug: formSlug,
+        steps: [
+          {
+            title: 'Details',
+            fields: [{ blockType: 'text', name: 'full_name', label: 'Full name', required: true }],
+          },
+        ],
+        submissionActions: [{ blockType: 'redirect', url: '/thanks', delay: 0 }],
+      },
+    })
+  })
+
+  const submit = async (body: object, pluginOptions: object = { collections, captcha }) => {
+    const handler = createSubmitFormHandler(pluginOptions)
+    const request = new Request(`http://localhost:3000/api/form-submit/${formSlug}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const payloadRequest = await createPayloadRequest({
+      config: await config,
+      request,
+      params: { formSlug },
+    })
+    return handler(payloadRequest)
+  }
+
+  test('rejects a submission with no token when captcha is configured', async () => {
+    const response = await submit({ data: { full_name: 'Alice' } })
+    expect(response.status).toBe(403)
+    const body = await response.json()
+    expect(body.success).toBe(false)
+    expect(body.errors[0].message).toMatch(/could not verify/i)
+  })
+
+  test('rejects a low-scoring token', async () => {
+    stubSiteverify({ success: true, score: 0.1, action: 'form_submit' })
+    const response = await submit({ data: { full_name: 'Alice' }, captchaToken: 'tok' })
+    expect(response.status).toBe(403)
+  })
+
+  test('rejects an invalid token', async () => {
+    stubSiteverify({ success: false, 'error-codes': ['invalid-input-response'] })
+    const response = await submit({ data: { full_name: 'Alice' }, captchaToken: 'tok' })
+    expect(response.status).toBe(403)
+  })
+
+  test('accepts and stores a submission with a good token', async () => {
+    stubSiteverify({ success: true, score: 0.9, action: 'form_submit' })
+    const response = await submit({ data: { full_name: 'Alice' }, captchaToken: 'tok' })
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.success).toBe(true)
+    expect(body.submissionId).toBeTruthy()
+  })
+
+  test('lets a submission through when Google is unreachable', async () => {
+    // Failing closed here would bin genuine enquiries for the duration of an
+    // outage, which costs more than the spam it would stop.
+    globalThis.fetch = (async () => {
+      throw new Error('offline')
+    }) as never
+    const response = await submit({ data: { full_name: 'Alice' }, captchaToken: 'tok' })
+    expect(response.status).toBe(200)
+  })
+
+  test('lets a submission through when our own secret is wrong', async () => {
+    stubSiteverify({ success: false, 'error-codes': ['invalid-input-secret'] })
+    const response = await submit({ data: { full_name: 'Alice' }, captchaToken: 'tok' })
+    expect(response.status).toBe(200)
+  })
+
+  test('ignores tokens entirely when captcha is not configured', async () => {
+    const response = await submit({ data: { full_name: 'Alice' } }, { collections })
+    expect(response.status).toBe(200)
+  })
+
+  test('still enforces field validation on a captcha-verified submission', async () => {
+    stubSiteverify({ success: true, score: 0.9, action: 'form_submit' })
+    const response = await submit({ data: {}, captchaToken: 'tok' })
+    expect(response.status).toBe(422)
+  })
+
+  const fetchForm = async (pluginOptions: object) => {
+    const handler = createFetchFormHandler(pluginOptions)
+    const request = new Request(`http://localhost:3000/api/form-data/${formSlug}`)
+    const payloadRequest = await createPayloadRequest({
+      config: await config,
+      request,
+      params: { slug: formSlug },
+    })
+    return (await handler(payloadRequest)).json()
+  }
+
+  test('advertises the site key to the browser, never the secret', async () => {
+    const body = await fetchForm({ collections, captcha })
+    expect(body.captcha).toEqual({
+      provider: 'recaptcha-v3',
+      siteKey: 'test-site-key',
+      action: 'form_submit',
+    })
+    expect(JSON.stringify(body)).not.toContain('test-secret-key')
+  })
+
+  test('advertises a custom action', async () => {
+    const body = await fetchForm({ collections, captcha: { ...captcha, action: 'enquiry' } })
+    expect(body.captcha.action).toBe('enquiry')
+  })
+
+  test('omits the captcha key entirely when it is not configured', async () => {
+    const body = await fetchForm({ collections })
+    expect(body.captcha).toBeUndefined()
+  })
+
+  test('omits the captcha key when only the site key is set', async () => {
+    const body = await fetchForm({ collections, captcha: { siteKey: 'only-site' } })
+    expect(body.captcha).toBeUndefined()
   })
 })

@@ -5,11 +5,17 @@ export { LockableTextField } from '../fields/lockable/LockableTextField.js'
 export { ConditionValueField } from '../fields/conditions/ConditionValueField.js'
 export { buildFieldRules, type FieldRules } from '../utilities/buildFieldRules.js'
 export {
+  lookupPostcode,
+  type PostcodeAddress,
+  type PostcodeLookup,
+} from '../utilities/lookupPostcode.js'
+export {
   buildZodSchemaFromForm,
   type BuildZodSchemaOptions,
   type FieldSchemaBuilder,
 } from '../utilities/buildZodSchemaFromForm.js'
 export { normalizeFormSteps } from '../utilities/normalizeFormSteps.js'
+export { getCaptchaToken, resetRecaptchaLoader } from '../utilities/recaptchaClient.js'
 export type { EnquirySubmissionContext } from '../types.js'
 export { ConditionSourceField } from '../fields/conditions/ConditionSourceField.js'
 export {

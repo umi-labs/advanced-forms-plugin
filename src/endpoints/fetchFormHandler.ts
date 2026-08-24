@@ -1,6 +1,7 @@
 import type { PayloadHandler } from 'payload'
-import type { FormDocument, FormPluginConfig } from '../types.js'
+import type { FormDocument, FormPluginConfig, PublicCaptchaConfig } from '../types.js'
 
+import { DEFAULT_ACTION, isCaptchaEnabled } from '../utilities/verifyCaptcha.js'
 import { normalizeFormSteps } from '../utilities/normalizeFormSteps.js'
 
 export const createFetchFormHandler = (pluginOptions: FormPluginConfig): PayloadHandler =>
@@ -30,5 +31,20 @@ export const createFetchFormHandler = (pluginOptions: FormPluginConfig): Payload
     // Collapse single-stage / multi-stage authoring into the canonical `steps`
     // shape the runtime always consumes.
     const doc = result.docs[0] as FormDocument
-    return Response.json({ ...doc, steps: normalizeFormSteps(doc) })
+
+    // Advertise the captcha to the browser so the form knows to mint a token.
+    // Only the site key travels — it is public by design — never the secret.
+    const captcha: PublicCaptchaConfig | undefined = isCaptchaEnabled(pluginOptions.captcha)
+      ? {
+          provider: 'recaptcha-v3',
+          siteKey: pluginOptions.captcha?.siteKey as string,
+          action: pluginOptions.captcha?.action ?? DEFAULT_ACTION,
+        }
+      : undefined
+
+    return Response.json({
+      ...doc,
+      steps: normalizeFormSteps(doc),
+      ...(captcha ? { captcha } : {}),
+    })
   }

@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { EnquiryFormStep, FormFieldBlock } from '../../types.js'
 import { getVisibleFields } from '../../utilities/conditions/index.js'
+import { AddressField } from './fields/AddressField.js'
 import { BudgetRangeField } from './fields/BudgetRangeField.js'
 import { CheckboxField } from './fields/CheckboxField.js'
 import { EmailInputField } from './fields/EmailInputField.js'
@@ -55,6 +56,8 @@ function renderField(
       return <SelectField field={field} form={form} />
     case 'checkbox':
       return <CheckboxField field={field} form={form} />
+    case 'address':
+      return <AddressField field={field} form={form} />
     default:
       return null
   }

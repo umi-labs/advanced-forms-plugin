@@ -1,4 +1,5 @@
 import type { Block, Config } from 'payload'
+import { AddressBlock } from './blocks/fields/Address.js'
 import { CheckboxBlock } from './blocks/fields/Checkbox.js'
 import { CheckboxGroupBlock } from './blocks/fields/CheckboxGroup.js'
 import { DateBlock } from './blocks/fields/Date.js'
@@ -22,6 +23,14 @@ export { baseFieldBlockFields, optionsArrayField } from './blocks/fields/shared.
 export { lockableTextField } from './fields/lockable/index.js'
 export { buildVisibilityField } from './blocks/fields/visibility.js'
 export { validateVisibleSubmission } from './utilities/validateVisibleSubmission.js'
+export {
+  DEFAULT_ACTION,
+  DEFAULT_MIN_SCORE,
+  isCaptchaEnabled,
+  verifyCaptcha,
+  type CaptchaVerification,
+} from './utilities/verifyCaptcha.js'
+export type { CaptchaConfig, PublicCaptchaConfig } from './types.js'
 
 const DEFAULT_FIELD_BLOCKS: Block[] = [
   TextBlock,
@@ -35,6 +44,7 @@ const DEFAULT_FIELD_BLOCKS: Block[] = [
   NumberBlock,
   DateBlock,
   FileBlock,
+  AddressBlock,
 ]
 
 function buildFieldBlocks(fieldsConfig: FieldsConfig | undefined): Block[] {
