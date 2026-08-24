@@ -1633,3 +1633,88 @@ describe('getCaptchaToken', () => {
     expect(await getCaptchaToken(publicConfig)).toBeNull()
   })
 })
+
+describe('condition matching is case- and whitespace-insensitive', () => {
+  const cond = (source: string, operator: string, value?: string) =>
+    ({ source, operator, value }) as any
+
+  test('a rule typed as "Yes" matches a Yes/No answer of "yes"', () => {
+    // The exact failure seen on Turquoise: a Yes/No field emits lowercase
+    // `yes`, but "Yes" is what an editor types, and the rule silently never
+    // fired.
+    expect(evaluateCondition(cond('occasion', 'equals', 'Yes'), { occasion: 'yes' })).toBe(true)
+    expect(evaluateCondition(cond('occasion', 'equals', 'YES'), { occasion: 'yes' })).toBe(true)
+    expect(evaluateCondition(cond('occasion', 'equals', 'no'), { occasion: 'yes' })).toBe(false)
+  })
+
+  test('surrounding whitespace from a pasted value is ignored', () => {
+    expect(evaluateCondition(cond('occasion', 'equals', ' yes '), { occasion: 'yes' })).toBe(true)
+    expect(evaluateCondition(cond('occasion', 'equals', 'yes'), { occasion: ' yes' })).toBe(true)
+  })
+
+  test('notEquals follows the same rule', () => {
+    expect(evaluateCondition(cond('occasion', 'notEquals', 'Yes'), { occasion: 'yes' })).toBe(false)
+    expect(evaluateCondition(cond('occasion', 'notEquals', 'No'), { occasion: 'yes' })).toBe(true)
+  })
+
+  test('contains follows the same rule, for strings and for arrays', () => {
+    expect(evaluateCondition(cond('name', 'contains', 'OH'), { name: 'John' })).toBe(true)
+    expect(evaluateCondition(cond('tags', 'contains', 'Beach'), { tags: ['beach', 'spa'] })).toBe(
+      true,
+    )
+    expect(evaluateCondition(cond('tags', 'contains', 'ski'), { tags: ['beach', 'spa'] })).toBe(
+      false,
+    )
+  })
+
+  test('a slugged option value still matches exactly', () => {
+    expect(
+      evaluateCondition(cond('budget', 'equals', '5000-9999'), { budget: '5000-9999' }),
+    ).toBe(true)
+    expect(
+      evaluateCondition(cond('budget', 'equals', '5000-9999'), { budget: '2000-4999' }),
+    ).toBe(false)
+  })
+
+  test('numeric answers are unaffected', () => {
+    expect(evaluateCondition(cond('n', 'equals', '5'), { n: 5 })).toBe(true)
+    expect(evaluateCondition(cond('n', 'equals', '6'), { n: 5 })).toBe(false)
+  })
+
+  test('a missing source still fails closed rather than matching ""', () => {
+    expect(evaluateCondition(cond('ghost', 'equals', ''), {})).toBe(false)
+    expect(evaluateCondition(cond('ghost', 'notEquals', 'x'), {})).toBe(false)
+  })
+})
+
+import { describeSource } from '../src/fields/conditions/describeSource.js'
+
+describe('condition value description', () => {
+  test('names the stored values for a Yes/No source', () => {
+    const text = describeSource('yesNo', false)
+    expect(text).toContain('“yes”')
+    expect(text).toContain('“no”')
+  })
+
+  test('names the stored values for a checkbox source', () => {
+    expect(describeSource('checkbox', false)).toContain('“true”')
+  })
+
+  test('warns that choice fields match the stored value, not the label', () => {
+    expect(describeSource('select', true)).toMatch(/stored value, not the label/i)
+  })
+
+  test('tells the editor to add options when a choice field has none yet', () => {
+    expect(describeSource('optionCards', false)).toMatch(/add its options first/i)
+  })
+
+  test('mentions the case rule for every type that compares text', () => {
+    for (const blockType of ['yesNo', 'checkbox', 'select', 'text', undefined]) {
+      expect(describeSource(blockType, true)).toContain('ignores capitals')
+    }
+  })
+
+  test('does not claim case-insensitivity for numeric fields', () => {
+    expect(describeSource('numberStepper', false)).not.toContain('ignores capitals')
+  })
+})
