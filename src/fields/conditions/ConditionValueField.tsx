@@ -4,6 +4,7 @@ import { SelectInput, TextInput, useAllFormFields, useField } from '@payloadcms/
 import type { TextFieldClientComponent } from 'payload'
 import type { ChangeEvent } from 'react'
 import { collectSourceFields, type SourceOption } from './collectSourceFields.js'
+import { describeSource, MATCHING_NOTE } from './describeSource.js'
 
 /** Boolean-ish blocks get a fixed two-option select; the option values match
  *  what those fields emit at runtime (yesNo → 'yes'/'no', checkbox → 'true'/'false'). */
@@ -50,9 +51,14 @@ export const ConditionValueField: TextFieldClientComponent = ({ field, path }) =
   const selectOptions =
     meta && (BOOLEAN_OPTIONS[meta.blockType] ?? (CHOICE_BLOCKS.has(meta.blockType) ? meta.options : null))
 
+  const description = meta
+    ? describeSource(meta.blockType, meta.options.length > 0)
+    : `Choose a source field first — this input adapts to it. ${MATCHING_NOTE}`
+
   if (selectOptions && selectOptions.length > 0) {
     return (
       <SelectInput
+        description={description}
         hasMany={false}
         isClearable
         label={label}
@@ -71,6 +77,7 @@ export const ConditionValueField: TextFieldClientComponent = ({ field, path }) =
 
   return (
     <TextInput
+      description={description}
       label={label}
       onChange={(e: ChangeEvent<HTMLInputElement>) => setValue(e.target.value)}
       path={fieldPath}

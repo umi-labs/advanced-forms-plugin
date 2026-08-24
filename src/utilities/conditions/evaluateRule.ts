@@ -20,6 +20,22 @@ function isChecked(actual: unknown): boolean {
   return actual === true || actual === 'true'
 }
 
+/**
+ * Comparison key for the string operators.
+ *
+ * Rules are authored by content editors against values the form emits, and the
+ * two rarely match on case: a Yes/No field stores `yes`, but "Yes" is what
+ * anyone types. Comparing raw meant such a rule silently never matched, with
+ * nothing in the admin to show why. Trimming and lower-casing removes an entire
+ * class of dead rule; two options differing only by case would be an
+ * unreadable form anyway.
+ */
+function comparable(value: unknown): string {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+}
+
 function isEmpty(actual: unknown): boolean {
   if (actual === undefined || actual === null || actual === '') return true
   if (Array.isArray(actual)) return actual.length === 0
@@ -39,9 +55,9 @@ export function evaluateCondition(
 
   switch (cond.operator) {
     case 'equals':
-      return String(actual) === String(expected)
+      return comparable(actual) === comparable(expected)
     case 'notEquals':
-      return String(actual) !== String(expected)
+      return comparable(actual) !== comparable(expected)
     case 'gt':
     case 'gte':
     case 'lt':
@@ -59,8 +75,10 @@ export function evaluateCondition(
     case 'isNotChecked':
       return !isChecked(actual)
     case 'contains':
-      if (Array.isArray(actual)) return actual.map(String).includes(String(expected))
-      if (typeof actual === 'string') return actual.includes(String(expected))
+      // Case-insensitive too, so "Equals ignores case but Contains doesn't"
+      // can't become a second trap.
+      if (Array.isArray(actual)) return actual.map(comparable).includes(comparable(expected))
+      if (typeof actual === 'string') return comparable(actual).includes(comparable(expected))
       return false
     case 'isEmpty':
       return isEmpty(actual)

@@ -53,7 +53,8 @@ const conditionBlock: Block = {
       name: 'value',
       type: 'text',
       admin: {
-        description: 'The value to compare against.',
+        description:
+          'The value to compare against. Matching ignores capitals and surrounding spaces.',
         condition: (_, siblingData) => !UNARY_OPERATORS.includes(siblingData?.operator),
         components: {
           Field: { path: VALUE_PICKER_PATH },
