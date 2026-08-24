@@ -5,7 +5,7 @@ A multi-step form plugin for [Payload CMS 3](https://payloadcms.com). Adds a for
 ## Features
 
 - **Multi-step forms** — organise fields into named steps with optional icons and a progress indicator
-- **11 field types** — text, email, phone, textarea, checkbox, radio group, checkbox group, select, number, date, file upload
+- **12 field types** — text, email, phone, textarea, checkbox, radio group, checkbox group, select, number, date, file upload, address (with postcode lookup)
 - **Submission actions** — send email, show a confirmation message, or redirect after submission (multiple actions per form, executed in order)
 - **Two collections** — `forms` and `form-submissions` added to your Payload config automatically
 - **REST API** — fetch form data and submit forms via Payload custom endpoints
@@ -109,8 +109,34 @@ One document per submission. Stores:
 | `number` | Numeric input with optional `min`, `max`, `step` |
 | `date` | Date picker with optional `min`/`max` |
 | `file` | File upload to a Payload collection (configurable `accept`, `maxSizeMB`) |
+| `address` | Address with UK postcode lookup (configurable `defaultCountry`, `showLine2`, `lookupLabel`) |
 
 All field blocks share these base properties: `name`, `label`, `required`, `tooltip`.
+
+### Address field
+
+Stores a composite value — `{ line1, line2, city, county, postcode, country }` —
+serialised to JSON in the submission, the same way `phone` stores
+`{ country, number, e164 }`.
+
+The lookup is backed by [postcodes.io](https://postcodes.io): free, no API key,
+nobody billed per call, so the field can go on any public form without watching
+a quota. It resolves a postcode to its town, county and country only — it does
+not return a premises list, so the street line is always typed. Manual entry is
+never blocked, which keeps the field usable for non-UK addresses and when the
+lookup is unreachable.
+
+A **required** address needs a street line and a postcode: a postcode alone is
+not deliverable, and the lookup can never supply the street. Reuse the lookup
+outside a form with the exported helper:
+
+```ts
+import { lookupPostcode } from '@foundrykit/advanced-forms-plugin/client'
+
+const result = await lookupPostcode('SW1A 1AA')
+// { status: 'ok', address: { postcode, city, county, country } }
+// | { status: 'notFound' } | { status: 'error' }
+```
 
 ---
 
@@ -313,7 +339,7 @@ formPlugin({
 })
 ```
 
-Built-in slugs: `text`, `email`, `phone`, `textarea`, `checkbox`, `radioGroup`, `checkboxGroup`, `select`, `number`, `date`, `file`.
+Built-in slugs: `text`, `email`, `phone`, `textarea`, `checkbox`, `radioGroup`, `checkboxGroup`, `select`, `number`, `date`, `file`, `address`.
 
 ---
 

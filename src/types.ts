@@ -227,6 +227,26 @@ export type BudgetRangeBlock = BaseFieldBlock & {
   options?: SelectOption[] | null
 }
 
+/** Composite runtime value of an address field. */
+export type AddressValue = {
+  line1: string
+  line2: string
+  city: string
+  county: string
+  postcode: string
+  country: string
+}
+
+export type AddressBlock = BaseFieldBlock & {
+  blockType: 'address'
+  /** Pre-filled country, used until a postcode lookup overwrites it. */
+  defaultCountry?: string | null
+  /** Whether the second address line is shown. Defaults to true. */
+  showLine2?: boolean | null
+  /** Label on the lookup button. Defaults to "Find address". */
+  lookupLabel?: string | null
+}
+
 export type FormFieldBlock =
   | TextBlock
   | EmailBlock
@@ -244,6 +264,7 @@ export type FormFieldBlock =
   | NumberStepperBlock
   | MultiCounterBlock
   | BudgetRangeBlock
+  | AddressBlock
 
 // ---------------------------------------------------------------------------
 // Submission action block types
