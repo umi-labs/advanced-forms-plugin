@@ -1,4 +1,5 @@
 import type { Block, Config } from 'payload'
+import { AddressBlock } from './blocks/fields/Address.js'
 import { CheckboxBlock } from './blocks/fields/Checkbox.js'
 import { CheckboxGroupBlock } from './blocks/fields/CheckboxGroup.js'
 import { DateBlock } from './blocks/fields/Date.js'
@@ -43,6 +44,7 @@ const DEFAULT_FIELD_BLOCKS: Block[] = [
   NumberBlock,
   DateBlock,
   FileBlock,
+  AddressBlock,
 ]
 
 function buildFieldBlocks(fieldsConfig: FieldsConfig | undefined): Block[] {

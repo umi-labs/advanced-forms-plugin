@@ -5,6 +5,11 @@ export { LockableTextField } from '../fields/lockable/LockableTextField.js'
 export { ConditionValueField } from '../fields/conditions/ConditionValueField.js'
 export { buildFieldRules, type FieldRules } from '../utilities/buildFieldRules.js'
 export {
+  lookupPostcode,
+  type PostcodeAddress,
+  type PostcodeLookup,
+} from '../utilities/lookupPostcode.js'
+export {
   buildZodSchemaFromForm,
   type BuildZodSchemaOptions,
   type FieldSchemaBuilder,
