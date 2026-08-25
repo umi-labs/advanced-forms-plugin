@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.11.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.10.0...v1.11.0) (2026-08-25)
+
+### Features
+
+* **captcha:** optional reCAPTCHA v3 on form submissions ([c5901a1](https://github.com/umi-labs/advanced-forms-plugin/commit/c5901a140943f4d313315dc74061898ad8ce66f3))
+* **fields:** add an address field with UK postcode lookup ([60237e3](https://github.com/umi-labs/advanced-forms-plugin/commit/60237e3bc8125e64d2b6530b62a7523c1272c05f))
+
+### Bug Fixes
+
+* **conditions:** match values without regard to case or surrounding spaces ([4aeff0e](https://github.com/umi-labs/advanced-forms-plugin/commit/4aeff0e3a2d04168201ba5ea911ff530e80256f4)), closes [#5](https://github.com/umi-labs/advanced-forms-plugin/issues/5)
+* **fields:** don't treat a pre-filled country as an answered address ([0b8b839](https://github.com/umi-labs/advanced-forms-plugin/commit/0b8b839718d78cb16137563d936ad0a95bd189eb))
+
 ## [1.10.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.9.0...v1.10.0) (2026-08-06)
 
 ### Features
