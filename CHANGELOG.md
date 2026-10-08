@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.11.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.11.0...v1.11.1) (2026-10-08)
+
+### Bug Fixes
+
+* **enquiry-form:** clear form state on submit and re-anchor on stage change ([5b22459](https://github.com/umi-labs/advanced-forms-plugin/commit/5b224594dfcc4e1e8d09b38dda113be3c472d22a))
+
 ## [1.11.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.10.0...v1.11.0) (2026-08-25)
 
 ### Features
