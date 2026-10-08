@@ -536,6 +536,13 @@ export type UseEnquiryFormReturn = {
   isComplete: boolean
   result: SubmitResult | null
   error: SubmitError | null
+  /**
+   * The form values captured at the moment of a successful submit. `null` until
+   * then. The live form is reset on success, so this is the only remaining
+   * record of the path the visitor took — the confirmation screen's step
+   * indicator is built from it.
+   */
+  submittedValues: null | Record<string, unknown>
 }
 
 // ---------------------------------------------------------------------------

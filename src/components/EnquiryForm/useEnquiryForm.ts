@@ -60,6 +60,11 @@ export function useEnquiryForm({
   const [isComplete, setIsComplete] = useState(false)
   const [result, setResult] = useState<SubmitResult | null>(null)
   const [error, setError] = useState<SubmitError | null>(null)
+  // Values as they stood at the moment of a successful submit. The live form is
+  // reset on success (see `submit`), but the confirmation screen still has to
+  // reflect the step path the visitor actually took — and that path is derived
+  // from their answers, which by then are gone. Snapshot, don't re-read.
+  const [submittedValues, setSubmittedValues] = useState<null | Record<string, unknown>>(null)
 
   const allSteps = normalizeFormSteps(form)
 
@@ -70,7 +75,7 @@ export function useEnquiryForm({
   })
 
   const watchedValues = rhfForm.watch()
-  const steps = getVisibleSteps(allSteps, watchedValues)
+  const steps = getVisibleSteps(allSteps, submittedValues ?? watchedValues)
   const totalSteps = steps.length
   const safeStep = steps.length > 0 ? Math.min(currentStep, steps.length - 1) : 0
   const stepData: FormStep = steps[safeStep] ?? { title: '', fields: [] }
@@ -118,8 +123,17 @@ export function useEnquiryForm({
       const json = (await res.json().catch(() => null)) as SubmitResult | SubmitError | null
 
       if (res.ok && json && (json as SubmitResult).success) {
+        // Snapshot before the reset below, or the confirmation screen loses the
+        // step path it needs to render.
+        setSubmittedValues(rhfForm.getValues())
         setIsComplete(true)
         setResult(json as SubmitResult)
+        // Without this the submitted answers stay in form state for as long as
+        // the page lives — and are restored wholesale by the browser's back
+        // button when a redirect action takes the visitor away and they return.
+        // On a shared or in-office machine that shows the next person the
+        // previous enquirer's name, email, phone and travel plans.
+        rhfForm.reset()
         return json as SubmitResult
       }
 
@@ -143,5 +157,6 @@ export function useEnquiryForm({
     isComplete,
     result,
     error,
+    submittedValues,
   }
 }

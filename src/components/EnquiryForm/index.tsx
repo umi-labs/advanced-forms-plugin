@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
+
 import type { EnquiryFormProps } from '../../types.js'
 import { buildIndicatorSteps } from '../../utilities/buildIndicatorSteps.js'
 import { Step } from './Step.js'
@@ -30,7 +32,29 @@ export function EnquiryForm({
     isComplete,
     result,
     error,
+    submittedValues,
   } = useEnquiryForm({ form, apiBase, resolver, context })
+
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Moving between stages swaps the body content without moving the viewport.
+  // On a phone that leaves the visitor looking at the middle or the bottom of
+  // the stage they just opened, so it reads as though the button did nothing.
+  // Re-anchor to the top of the form on every stage change — forwards, back,
+  // and onto the confirmation screen, which has the same problem.
+  const isFirstRender = useRef(true)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    containerRef.current?.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth',
+      block: 'start',
+    })
+  }, [currentStep, isComplete])
 
   // Redirect action — fire when complete and redirectUrl is set
   if (
@@ -67,7 +91,7 @@ export function EnquiryForm({
   // appended after the field steps. It is indicator-only — navigation, the
   // Submit button and `totalSteps` are unaffected (they come from
   // `useEnquiryForm` / `normalizeFormSteps`).
-  const indicatorSteps = buildIndicatorSteps(form, rhfForm.watch())
+  const indicatorSteps = buildIndicatorSteps(form, submittedValues ?? rhfForm.watch())
   const hasConfirmationStage = indicatorSteps.length > form.steps.length
 
   const showAbove =
@@ -87,6 +111,7 @@ export function EnquiryForm({
           .filter(Boolean)
           .join(' ')}
         data-testid="enquiry-form-confirmation"
+        ref={containerRef}
       >
         {showAbove && additionalContent}
 
@@ -131,6 +156,7 @@ export function EnquiryForm({
     <div
       className={['enquiry-form', className].filter(Boolean).join(' ')}
       data-testid="enquiry-form"
+      ref={containerRef}
     >
       {showAbove && additionalContent}
 

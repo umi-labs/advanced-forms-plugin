@@ -273,3 +273,80 @@ test('address field accepts a manually entered address and submits it', async ({
   await page.getByTestId('btn-submit').click()
   await expect(page.getByTestId('enquiry-form-confirmation')).toBeVisible({ timeout: 5000 })
 })
+
+// ---------------------------------------------------------------------------
+// Stage-change anchoring
+// ---------------------------------------------------------------------------
+// Changing stage swaps the body without moving the viewport, so on a phone the
+// visitor was left mid-page on the stage they had just opened and it read as
+// though the button had done nothing.
+//
+// Asserted by recording scrollIntoView calls rather than by reading the scroll
+// offset: the dev page is shorter than the viewport, so there is no scroll
+// position to assert against here and a geometric check would pass whether or
+// not the form re-anchors. Playwright's own auto-scrolling goes through CDP,
+// not this API, so it does not show up in the recording.
+const recordScrolls = async (page: import('@playwright/test').Page) => {
+  await page.addInitScript(() => {
+    ;(window as any).__anchored = []
+    const original = Element.prototype.scrollIntoView
+    Element.prototype.scrollIntoView = function (this: Element, ...args: any[]) {
+      ;(window as any).__anchored.push(this.getAttribute('data-testid'))
+      return original.apply(this, args as any)
+    }
+  })
+}
+
+const anchored = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => (window as any).__anchored as (null | string)[])
+
+test('advancing a step re-anchors to the top of the form', async ({ page }) => {
+  await recordScrolls(page)
+  await page.setViewportSize({ height: 844, width: 390 })
+  await page.goto(FORM_URL)
+
+  // Nothing should move on first paint — only on a stage change.
+  expect(await anchored(page)).not.toContain('enquiry-form')
+
+  await page.selectOption(field('destination'), 'kenya')
+  await page.getByTestId('btn-next').click()
+  await expect(page.locator(field('budget'))).toBeVisible()
+
+  await expect.poll(() => anchored(page)).toContain('enquiry-form')
+})
+
+test('going back a step re-anchors to the top of the form', async ({ page }) => {
+  await recordScrolls(page)
+  await page.setViewportSize({ height: 844, width: 390 })
+  await page.goto(FORM_URL)
+
+  await page.selectOption(field('destination'), 'kenya')
+  await page.getByTestId('btn-next').click()
+  await expect(page.locator(field('budget'))).toBeVisible()
+  await page.evaluate(() => ((window as any).__anchored.length = 0))
+
+  await page.getByTestId('btn-back').click()
+  await expect(page.locator(field('destination'))).toBeVisible()
+
+  await expect.poll(() => anchored(page)).toContain('enquiry-form')
+})
+
+test('reaching the confirmation screen re-anchors to the top', async ({ page }) => {
+  await recordScrolls(page)
+  await page.setViewportSize({ height: 844, width: 390 })
+  await page.goto(FORM_URL)
+
+  await page.selectOption(field('destination'), 'kenya')
+  await page.selectOption(field('guide_language'), 'sw')
+  await page.getByTestId('btn-next').click()
+  await page.selectOption(field('budget'), 'mid')
+  await page.getByTestId('btn-next').click()
+  await page.fill(field('full_name'), 'Test User')
+  await page.fill(field('email'), 'test@example.com')
+  await page.evaluate(() => ((window as any).__anchored.length = 0))
+
+  await page.getByTestId('btn-submit').click()
+  await expect(page.getByTestId('enquiry-form-confirmation')).toBeVisible({ timeout: 5000 })
+
+  await expect.poll(() => anchored(page)).toContain('enquiry-form-confirmation')
+})
