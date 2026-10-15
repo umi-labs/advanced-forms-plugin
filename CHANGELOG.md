@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.12.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.11.1...v1.12.0) (2026-10-15)
+
+### Features
+
+* **forms:** render the Date Input field, which previously rendered nothing ([982a100](https://github.com/umi-labs/advanced-forms-plugin/commit/982a100d8eb95df0c666d30ba76eb5131bec3dc2))
+
 ## [1.11.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.11.0...v1.11.1) (2026-10-08)
 
 ### Bug Fixes
