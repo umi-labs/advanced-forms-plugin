@@ -7,6 +7,7 @@ import { getVisibleFields } from '../../utilities/conditions/index.js'
 import { AddressField } from './fields/AddressField.js'
 import { BudgetRangeField } from './fields/BudgetRangeField.js'
 import { CheckboxField } from './fields/CheckboxField.js'
+import { DateInputField } from './fields/DateInputField.js'
 import { EmailInputField } from './fields/EmailInputField.js'
 import { MultiCounterField } from './fields/MultiCounterField.js'
 import { NumberStepperField } from './fields/NumberStepperField.js'
@@ -58,6 +59,8 @@ function renderField(
       return <CheckboxField field={field} form={form} />
     case 'address':
       return <AddressField field={field} form={form} />
+    case 'date':
+      return <DateInputField field={field} form={form} />
     default:
       return null
   }
