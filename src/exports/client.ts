@@ -38,3 +38,8 @@ export type {
   VisibilityAction,
   VisibilityRule,
 } from '../types.js'
+
+// Where the bundled flag SVGs are served from. The 257 files ship in this
+// package under `dist/assets/flags`; copy them somewhere public and call this
+// once if that is not `/flags`.
+export { setFlagBasePath } from '../utilities/flagAssets.js'

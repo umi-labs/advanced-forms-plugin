@@ -6,6 +6,7 @@ import type { PhoneBlock, SelectOption } from '../../../types.js'
 import { buildFieldRules } from '../../../utilities/buildFieldRules.js'
 import { isFieldRequired } from '../../../utilities/conditions/index.js'
 import { FieldTooltip } from '../FieldTooltip.js'
+import { CountrySelect } from './CountrySelect.js'
 
 type Props = { field: PhoneBlock; form: UseFormReturn<Record<string, unknown>> }
 
@@ -124,21 +125,15 @@ export function PhoneInputField({ field, form }: Props) {
                 .filter(Boolean)
                 .join(' ')}
             >
-              <select
-                aria-label={`${field.label} country`}
-                className="enquiry-field__phone-country"
+              <CountrySelect
+                countries={countries}
                 value={current.country}
-                onChange={(e) =>
-                  ctrl.onChange(buildPhoneValue(e.target.value, current.number))
+                ariaLabel={`${field.label} country`}
+                onChange={(country) =>
+                  ctrl.onChange(buildPhoneValue(country, current.number))
                 }
                 onBlur={ctrl.onBlur}
-              >
-                {countries.map((c) => (
-                  <option key={`${c.value}-${c.label}`} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+              />
               <input
                 id={`field-${field.name}`}
                 type="tel"
