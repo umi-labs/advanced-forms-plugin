@@ -1718,3 +1718,25 @@ describe('condition value description', () => {
     expect(describeSource('numberStepper', false)).not.toContain('ignores capitals')
   })
 })
+
+import { buildPhoneValue } from '../src/components/EnquiryForm/fields/PhoneInputField.js'
+
+describe('buildPhoneValue', () => {
+  test('drops the national trunk 0 from the E.164 number', () => {
+    expect(buildPhoneValue('+44', '07700 900123').e164).toBe('+447700900123')
+  })
+
+  test('keeps the leading 0 for Italy, where it is part of the number', () => {
+    expect(buildPhoneValue('+39', '06 1234 5678').e164).toBe('+390612345678')
+  })
+
+  test('does not double a country code the visitor typed themselves', () => {
+    expect(buildPhoneValue('+44', '+44 7700 900123').e164).toBe('+447700900123')
+    expect(buildPhoneValue('+44', '0044 7700 900123').e164).toBe('+447700900123')
+  })
+
+  test('keeps the raw input and leaves an empty number empty', () => {
+    expect(buildPhoneValue('+44', '07700 900123').number).toBe('07700 900123')
+    expect(buildPhoneValue('+44', '').e164).toBe('')
+  })
+})

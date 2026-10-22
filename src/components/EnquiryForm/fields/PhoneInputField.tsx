@@ -39,10 +39,17 @@ function isPhoneValue(v: unknown): v is PhoneValue {
   )
 }
 
-function buildPhoneValue(country: string, number: string): PhoneValue {
+export function buildPhoneValue(country: string, number: string): PhoneValue {
   // Strip everything except digits when assembling E.164; keep raw input in `number`.
-  const digits = number.replace(/\D+/g, '')
+  let digits = number.replace(/\D+/g, '')
   const dial = country.replace(/[^\d+]/g, '')
+  const dialDigits = dial.replace(/\D+/g, '')
+  // Someone who types their number internationally ("+44 7700…", "0044 7700…") has already given
+  // the country code, so take it off rather than doubling it.
+  if (/^\s*\+/.test(number) && digits.startsWith(dialDigits)) digits = digits.slice(dialDigits.length)
+  else if (digits.startsWith(`00${dialDigits}`)) digits = digits.slice(dialDigits.length + 2)
+  // The national trunk 0 ("07700…") is dropped in E.164, except in Italy where it is part of the number.
+  else if (dial !== '+39') digits = digits.replace(/^0/, '')
   const e164 = digits ? `${dial}${digits}` : ''
   return { country, number, e164 }
 }
