@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.13.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.12.0...v1.13.1) (2026-10-23)
+
+### Features
+
+* **date:** make the min/max bounds date pickers, not text ([23f1e08](https://github.com/umi-labs/advanced-forms-plugin/commit/23f1e08e8774a045a713d417529deeef2506c541))
+* **phone:** real flag artwork, and a listbox that can show it ([1cde67b](https://github.com/umi-labs/advanced-forms-plugin/commit/1cde67b059c0a6c10a7d40f71bdb66cc730c9807))
+
+### Bug Fixes
+
+* **phone:** drop the national trunk 0 from the E.164 value ([b14f108](https://github.com/umi-labs/advanced-forms-plugin/commit/b14f108454b5fe89770a490a8edc2bce93c0f0de))
+
 ## [1.12.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.11.1...v1.12.0) (2026-10-15)
 
 ### Features
