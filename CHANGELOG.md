@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.13.3...v1.14.0) (2026-10-28)
+
+### Features
+
+* add frontend-only entry without admin field components ([4d04a77](https://github.com/umi-labs/advanced-forms-plugin/commit/4d04a773f1c8aff50a93ddeef0aa6ecd3a907f58))
+
 ## [1.13.3](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.13.2...v1.13.3) (2026-10-28)
 
 ## [1.13.2](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.13.1...v1.13.2) (2026-10-23)
