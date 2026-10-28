@@ -1740,3 +1740,47 @@ describe('buildPhoneValue', () => {
     expect(buildPhoneValue('+44', '').e164).toBe('')
   })
 })
+
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+
+describe('frontend entry', () => {
+  // Walks the relative (runtime) imports reachable from src/exports/frontend.ts.
+  // Type-only imports are skipped: they are erased and never reach a bundle.
+  function reachablePackages(): Set<string> {
+    const seen = new Set<string>()
+    const packages = new Set<string>()
+    const visit = (file: string) => {
+      if (seen.has(file)) return
+      seen.add(file)
+      const source = readFileSync(file, 'utf8')
+      for (const [, typeOnly, spec] of source.matchAll(
+        /^(?:import|export)\s+(type\s+)?[^'"]*?from\s+['"]([^'"]+)['"]/gm,
+      )) {
+        if (typeOnly) continue
+        if (!spec.startsWith('.')) {
+          packages.add(spec)
+          continue
+        }
+        const base = resolve(dirname(file), spec).replace(/\.js$/, '')
+        const next = ['.ts', '.tsx', '/index.ts', '/index.tsx'].map((ext) => base + ext).find(existsSync)
+        if (next) visit(next)
+      }
+    }
+    visit(resolve(__dirname, '../src/exports/frontend.ts'))
+    return packages
+  }
+
+  test('never reaches @payloadcms/ui', () => {
+    const packages = [...reachablePackages()]
+    // Guards the walker itself: the form component imports react.
+    expect(packages).toContain('react')
+    expect(packages.filter((p) => p.startsWith('@payloadcms/ui'))).toEqual([])
+  })
+
+  test('client entry still reaches it (admin import map)', () => {
+    const client = readFileSync(resolve(__dirname, '../src/exports/client.ts'), 'utf8')
+    expect(client).toContain("export * from './frontend.js'")
+    expect(client).toContain('LockableTextField')
+  })
+})

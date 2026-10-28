@@ -1,45 +1,8 @@
 export { BeforeDashboardClient } from '../components/BeforeDashboardClient.js'
-export { EnquiryForm } from '../components/EnquiryForm/index.js'
-export { useEnquiryForm } from '../components/EnquiryForm/useEnquiryForm.js'
-export { LockableTextField } from '../fields/lockable/LockableTextField.js'
-export { ConditionValueField } from '../fields/conditions/ConditionValueField.js'
-export { buildFieldRules, type FieldRules } from '../utilities/buildFieldRules.js'
-export {
-  lookupPostcode,
-  type PostcodeAddress,
-  type PostcodeLookup,
-} from '../utilities/lookupPostcode.js'
-export {
-  buildZodSchemaFromForm,
-  type BuildZodSchemaOptions,
-  type FieldSchemaBuilder,
-} from '../utilities/buildZodSchemaFromForm.js'
-export { normalizeFormSteps } from '../utilities/normalizeFormSteps.js'
-export { getCaptchaToken, resetRecaptchaLoader } from '../utilities/recaptchaClient.js'
-export type { EnquirySubmissionContext } from '../types.js'
 export { ConditionSourceField } from '../fields/conditions/ConditionSourceField.js'
-export {
-  ruleMatches,
-  evaluateCondition,
-  evaluateNodes,
-  resolveValue,
-  isFieldVisible,
-  isFieldRequired,
-  isStepVisible,
-  getVisibleFields,
-  getVisibleSteps,
-  stripHiddenValues,
-} from '../utilities/conditions/index.js'
-export type {
-  Condition,
-  ConditionGroup,
-  ConditionNode,
-  ConditionOperator,
-  VisibilityAction,
-  VisibilityRule,
-} from '../types.js'
-
-// Where the bundled flag SVGs are served from. The 257 files ship in this
-// package under `dist/assets/flags`; copy them somewhere public and call this
-// once if that is not `/flags`.
-export { setFlagBasePath } from '../utilities/flagAssets.js'
+export { ConditionValueField } from '../fields/conditions/ConditionValueField.js'
+export { LockableTextField } from '../fields/lockable/LockableTextField.js'
+// Admin field components plus everything in `./frontend`. Sites should import
+// from `@foundrykit/advanced-forms-plugin/frontend`; this entry pulls in
+// `@payloadcms/ui` and is meant for the admin import map.
+export * from './frontend.js'
