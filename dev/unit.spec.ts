@@ -1784,3 +1784,22 @@ describe('frontend entry', () => {
     expect(client).toContain('LockableTextField')
   })
 })
+
+import { buildDefaultValues } from '../src/components/EnquiryForm/useEnquiryForm.js'
+
+describe('buildDefaultValues', () => {
+  test('starts a select with a placeholder on the placeholder, not its first option', () => {
+    const steps = [
+      {
+        title: 'Trip',
+        fields: [
+          { blockType: 'select', name: 'length', placeholder: 'Please select', options: [{ label: '1 week', value: '1-week' }] },
+          { blockType: 'select', name: 'no-placeholder', options: [{ label: 'A', value: 'a' }] },
+        ],
+      },
+    ] as any
+    const defaults = buildDefaultValues(steps)
+    expect(defaults.length).toBe('')
+    expect(defaults).not.toHaveProperty('no-placeholder')
+  })
+})

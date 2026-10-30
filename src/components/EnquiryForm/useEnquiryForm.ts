@@ -31,7 +31,7 @@ type Options = {
   context?: EnquirySubmissionContext
 }
 
-function buildDefaultValues(steps: EnquiryForm['steps']): Record<string, unknown> {
+export function buildDefaultValues(steps: EnquiryForm['steps']): Record<string, unknown> {
   const defaults: Record<string, unknown> = {}
   for (const step of steps) {
     for (const field of step.fields) {
@@ -43,6 +43,10 @@ function buildDefaultValues(steps: EnquiryForm['steps']): Record<string, unknown
           counterDefaults[counter.name] = counter.defaultValue ?? 0
         }
         defaults[field.name] = counterDefaults
+      } else if (field.blockType === 'select' && field.placeholder) {
+        // The placeholder option is disabled, and browsers never start a select on a
+        // disabled option, so without '' the first real option shows and gets submitted.
+        defaults[field.name] = ''
       }
     }
   }
