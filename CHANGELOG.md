@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.14.0...v1.14.1) (2026-10-30)
+
+### Bug Fixes
+
+* start selects with a placeholder on the placeholder ([8a45557](https://github.com/umi-labs/advanced-forms-plugin/commit/8a45557b7c605e00faa6c1e639654afab7ec9b8d))
+
 ## [1.14.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.13.3...v1.14.0) (2026-10-28)
 
 ### Features
