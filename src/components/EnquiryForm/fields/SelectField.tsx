@@ -26,6 +26,8 @@ export function SelectField({ field, form }: Props) {
         className={['enquiry-field__select', error ? 'enquiry-field__select--error' : '']
           .filter(Boolean)
           .join(' ')}
+        // Server HTML too: start on the placeholder before hydration.
+        defaultValue={field.placeholder ? '' : undefined}
         {...register(field.name, buildFieldRules(field, isFieldRequired(field, form.getValues())))}
       >
         {field.placeholder && (
