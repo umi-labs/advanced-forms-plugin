@@ -43,14 +43,14 @@ export const createSubmissionsCollection = ({
     {
       name: 'form',
       type: 'relationship',
-      admin: { readOnly: true },
+      admin: { position: 'sidebar', readOnly: true },
       relationTo: formsSlug,
       required: true,
     },
     {
       name: 'submittedAt',
       type: 'date',
-      admin: { date: { pickerAppearance: 'dayAndTime' }, readOnly: true },
+      admin: { date: { pickerAppearance: 'dayAndTime' }, position: 'sidebar', readOnly: true },
       required: true,
     },
     {
