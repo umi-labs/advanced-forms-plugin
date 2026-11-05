@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.16.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.15.1...v1.16.0) (2026-11-05)
+
+### Features
+
+* travel date field and branded select dropdowns ([8fe805f](https://github.com/umi-labs/advanced-forms-plugin/commit/8fe805f0ed7755e53822ba95c0a76355b3be58e1))
+
 ## [1.15.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.15.0...v1.15.1) (2026-11-05)
 
 ### Bug Fixes
