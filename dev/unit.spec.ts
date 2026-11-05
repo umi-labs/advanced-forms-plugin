@@ -1955,3 +1955,49 @@ describe('describeDetails', () => {
     ])
   })
 })
+
+import { TravelDateBlock } from '../src/blocks/fields/TravelDate.js'
+import { parseTravelDate } from '../src/utilities/travelDate.js'
+
+describe('parseTravelDate', () => {
+  test('a month covers its first to last day', () => {
+    expect(parseTravelDate('2027-08')).toEqual({
+      kind: 'month',
+      from: '2027-08-01',
+      to: '2027-08-31',
+      label: 'August 2027',
+    })
+    expect(parseTravelDate('2028-02')?.to).toBe('2028-02-29')
+  })
+
+  test('an exact date is a one-day range', () => {
+    expect(parseTravelDate('2027-08-14')).toEqual({
+      kind: 'date',
+      from: '2027-08-14',
+      to: '2027-08-14',
+      label: '14 Aug 2027',
+    })
+  })
+
+  test('anything else is null', () => {
+    for (const value of ['', 'August', '2027-13', '2027-02-30', '14/08/2027', 42, null]) {
+      expect(parseTravelDate(value)).toBeNull()
+    }
+  })
+})
+
+describe('TravelDateBlock', () => {
+  test('is opt-in, with the shared base fields', () => {
+    expect(TravelDateBlock.slug).toBe('travelDate')
+    const names = flatFields(TravelDateBlock.fields).map((f) => ('name' in f ? f.name : null))
+    expect(names).toEqual(expect.arrayContaining(['name', 'label', 'required', 'yearsAhead']))
+  })
+
+  test('shows on a submission as the month or date it means', () => {
+    const [group] = describeSubmission(
+      { fields: [{ name: 'when', label: 'When?', blockType: 'travelDate' }] },
+      [{ fieldName: 'when', value: '2027-08' }],
+    )
+    expect(group.answers[0]).toMatchObject({ label: 'When?', value: 'August 2027' })
+  })
+})

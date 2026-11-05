@@ -180,6 +180,28 @@ map. Older submissions get their title on read until they are next saved.
 
 All field blocks share these base properties: `name`, `label`, `required`, `tooltip`.
 
+### Travel date field (opt-in)
+
+"When would you like to travel?": a calendar panel where the visitor picks **a month** (a year
+of month buttons) or **an exact date** (a day calendar, via `react-day-picker`). It's our own
+panel rather than native selects and date inputs, so sites can brand it: style the
+`enquiry-field__calendar*` classes. It isn't in the default set, so adding it to the plugin doesn't
+change any existing site's schema. Register it, then add a migration for its table on Postgres:
+
+```ts
+import { formPlugin, TravelDateBlock } from '@foundrykit/advanced-forms-plugin'
+
+formPlugin({ fields: { travelDate: { block: TravelDateBlock } } })
+```
+
+The answer is stored as `2027-08` or `2027-08-14` and shows on the submission page as
+"August 2027" or "14 Aug 2027". `parseTravelDate(value)` gives the first and last day it covers
+(`from`/`to`, the same day for an exact date) and that label, for mapping into a CRM.
+
+To ask "Are you flexible?" and only require a date when they aren't, add a Yes / No field and
+give the travel date a visibility rule: **Require this field when rules match**, flexible
+equals `no`.
+
 ### Address field
 
 Stores a composite value — `{ line1, line2, city, county, postcode, country }` —

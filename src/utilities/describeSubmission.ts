@@ -1,3 +1,5 @@
+import { parseTravelDate } from './travelDate.js'
+
 type Row = { fieldName?: null | string; value?: null | string }
 
 type FieldLike = {
@@ -83,6 +85,9 @@ function format(raw: string, field?: FieldLike): Pick<Answer, 'href' | 'value'> 
   const text = String(value)
   if (!text) {
     return { value: '' }
+  }
+  if (field?.blockType === 'travelDate') {
+    return { value: parseTravelDate(text)?.label ?? text }
   }
   if (field?.blockType === 'checkbox' || field?.blockType === 'yesNo') {
     if (text === 'true') {

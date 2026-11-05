@@ -16,6 +16,7 @@ import { PhoneInputField } from './fields/PhoneInputField.js'
 import { SelectField } from './fields/SelectField.js'
 import { TextInputField } from './fields/TextInputField.js'
 import { TextareaField } from './fields/TextareaField.js'
+import { TravelDateField } from './fields/TravelDateField.js'
 import { YesNoField } from './fields/YesNoField.js'
 
 type Props = {
@@ -37,6 +38,8 @@ function renderField(
   switch (field.blockType) {
     case 'yesNo':
       return <YesNoField field={field} form={form} />
+    case 'travelDate':
+      return <TravelDateField field={field} form={form} />
     case 'optionCards':
       return <OptionCardsField field={field} form={form} />
     case 'numberStepper':
