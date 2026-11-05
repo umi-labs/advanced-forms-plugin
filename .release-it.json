@@ -19,8 +19,7 @@
   },
   "hooks": {
     "before:init": ["pnpm test:unit"],
-    "after:bump": "pnpm install --lockfile-only && pnpm clean && pnpm build",
-    "after:release": "pnpm publish --no-git-checks --access public"
+    "after:bump": "pnpm install --lockfile-only && pnpm clean && pnpm build"
   },
   "plugins": {
     "@release-it/conventional-changelog": {

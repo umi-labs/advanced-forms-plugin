@@ -54,9 +54,6 @@
     "verify:pack": "node scripts/verify-pack.mjs",
     "release": "release-it",
     "release:dry": "release-it --dry-run",
-    "release:patch": "release-it patch",
-    "release:minor": "release-it minor",
-    "release:major": "release-it major",
     "test": "pnpm test:unit && pnpm test:int && pnpm test:e2e",
     "test:unit": "vitest run dev/unit.spec.ts",
     "test:e2e": "playwright test",
@@ -132,5 +129,9 @@
       "unrs-resolver"
     ]
   },
-  "registry": "https://registry.npmjs.org/"
+  "registry": "https://registry.npmjs.org/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/umi-labs/advanced-forms-plugin.git"
+  }
 }
