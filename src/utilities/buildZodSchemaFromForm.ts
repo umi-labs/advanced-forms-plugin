@@ -78,6 +78,7 @@ function buildFieldSchema(field: AnyFieldBlock): ZodTypeAny {
     case 'email':
       return stringSchema(field, { email: true })
     case 'date':
+    case 'travelDate':
       return stringSchema(field)
     case 'select':
     case 'radioGroup':

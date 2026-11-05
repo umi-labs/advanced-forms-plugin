@@ -20,6 +20,8 @@ import { FORM_SUBMIT_PATH } from './utilities/buildSubmitURL.js'
 
 export type { FormPluginConfig } from './types.js'
 export { baseFieldBlockFields, optionsArrayField } from './blocks/fields/shared.js'
+export { TravelDateBlock } from './blocks/fields/TravelDate.js'
+export { parseTravelDate, type TravelDate } from './utilities/travelDate.js'
 export { lockableTextField } from './fields/lockable/index.js'
 export { buildVisibilityField } from './blocks/fields/visibility.js'
 export { validateVisibleSubmission } from './utilities/validateVisibleSubmission.js'

@@ -194,6 +194,16 @@ export type FileBlock = BaseFieldBlock & {
 
 export type YesNoBlock = BaseFieldBlock & { blockType: 'yesNo' }
 
+/**
+ * A month or an exact date, the visitor's choice. Stored as `YYYY-MM` or `YYYY-MM-DD`, so
+ * an answer is still readable as plain text wherever it ends up (emails, CRMs, exports).
+ */
+export type TravelDateBlock = BaseFieldBlock & {
+  blockType: 'travelDate'
+  /** How many years after this one the month picker offers. */
+  yearsAhead?: number | null
+}
+
 export type OptionCardsBlock = BaseFieldBlock & {
   blockType: 'optionCards'
   options?: SelectOption[] | null
@@ -260,6 +270,7 @@ export type FormFieldBlock =
   | DateBlock
   | FileBlock
   | YesNoBlock
+  | TravelDateBlock
   | OptionCardsBlock
   | NumberStepperBlock
   | MultiCounterBlock

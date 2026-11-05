@@ -133,5 +133,8 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/umi-labs/advanced-forms-plugin.git"
+  },
+  "dependencies": {
+    "react-day-picker": "9.14.0"
   }
 }
