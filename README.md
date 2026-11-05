@@ -422,3 +422,9 @@ pnpm build      # Compile to dist/
 ```
 
 Copy `dev/.env.example` to `dev/.env` and set `DATABASE_URL` and `PAYLOAD_SECRET` before running `dev`.
+
+## Releasing
+
+Run `pnpm release` on `prod`. It bumps the version, updates the changelog and pushes a `v*` tag.
+The tag triggers `.github/workflows/publish.yml`, which publishes to npm through trusted
+publishing, so no npm token is stored locally or in GitHub.
