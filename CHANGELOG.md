@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.15.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.14.1...v1.15.0) (2026-11-05)
+
+### Features
+
+* readable, editable submission page ([2459eec](https://github.com/umi-labs/advanced-forms-plugin/commit/2459eec8025482e906f590526c886b36f1376f2d))
+
 ## [1.14.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.14.0...v1.14.1) (2026-10-30)
 
 ### Bug Fixes
