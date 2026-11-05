@@ -127,10 +127,37 @@ Each form document has:
 
 One document per submission. Stores:
 
+- **title** — who sent it: the answer named `name`, `full-name` or `first-name` + `last-name`, else the email, else the date. Used as the page title.
 - **form** — relationship to the parent form
 - **submittedAt** — ISO timestamp
 - **data** — key/value pairs of submitted field values
 - **metadata** — `userAgent`, `ip`, `referrer` captured from the request
+
+In the admin, a submission's answers are shown under the form's own questions, grouped by step,
+with option values shown as their labels and phone, counter and address answers spelled out.
+**Edit** on the Answers card turns text answers into inputs and choice answers into dropdowns, so
+staff can fix a mistyped email before resending; the change is kept when they save. Phone, counter
+and address answers can't be edited there. The form, the date, and a **Details** card (the page it
+came from, IP, browser and the submission context) are read-only.
+
+Sites can show their own submission fields in the same card style with `SubmissionPanel` from
+`@foundrykit/advanced-forms-plugin/rsc`, as a field's `admin.components.Field`:
+
+```tsx
+import { SubmissionPanel } from '@foundrykit/advanced-forms-plugin/rsc'
+
+export const NotesField = ({ data }) => (
+  <SubmissionPanel
+    heading="Notes"
+    id="notes"
+    groups={[{ items: [{ label: 'Follow-up', value: data?.followUp ?? '' }] }]}
+  />
+)
+```
+
+**Upgrading to the submission view on Postgres:** the `title` column is new, so add it with a
+migration (`ALTER TABLE "form_submissions" ADD COLUMN "title" varchar;`) and regenerate the import
+map. Older submissions get their title on read until they are next saved.
 
 ---
 

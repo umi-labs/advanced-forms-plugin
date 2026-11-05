@@ -3697,6 +3697,7 @@ export interface RedirectBlock {
  */
 export interface FormSubmission {
   id: string;
+  title?: string | null;
   form: string | Form;
   submittedAt: string;
   data?:
@@ -5783,6 +5784,7 @@ export interface RedirectBlockSelect<T extends boolean = true> {
  * via the `definition` "form-submissions_select".
  */
 export interface FormSubmissionsSelect<T extends boolean = true> {
+  title?: T;
   form?: T;
   submittedAt?: T;
   data?:
