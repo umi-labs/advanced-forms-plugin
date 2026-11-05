@@ -1803,3 +1803,155 @@ describe('buildDefaultValues', () => {
     expect(defaults).not.toHaveProperty('no-placeholder')
   })
 })
+
+import {
+  describeDetails,
+  describeSubmission,
+  submissionTitle,
+} from '../src/utilities/describeSubmission.js'
+
+describe('describeSubmission', () => {
+  const form = {
+    steps: [
+      {
+        title: 'Trip Details',
+        fields: [
+          {
+            name: 'how-long-for',
+            label: 'How long for?',
+            blockType: 'select',
+            options: [{ label: '2 weeks', value: '2-weeks' }],
+          },
+          {
+            name: 'travellers',
+            label: 'Number of travellers',
+            blockType: 'multiCounter',
+            counters: [
+              { name: 'adults', label: 'Adults' },
+              { name: 'children', label: 'Children (2-12)' },
+            ],
+          },
+        ],
+      },
+      {
+        title: 'Your Details',
+        fields: [
+          { name: 'phone', label: 'Phone Number', blockType: 'phone' },
+          { name: 'email', label: 'Email', blockType: 'email' },
+          { name: 'consent', label: 'Marketing Consent', blockType: 'checkbox' },
+          { name: 'notes', label: 'Notes', blockType: 'textarea' },
+        ],
+      },
+    ],
+  }
+  const rows = [
+    { fieldName: 'how-long-for', value: '2-weeks' },
+    { fieldName: 'travellers', value: '{"adults":2,"children":0}' },
+    { fieldName: 'phone', value: '{"country":"+44","number":"07908","e164":"+447908"}' },
+    { fieldName: 'email', value: 'a@b.com' },
+    { fieldName: 'consent', value: 'false' },
+    { fieldName: 'notes', value: '' },
+    { fieldName: 'utm_source', value: 'google' },
+  ]
+
+  test('labels answers with the question and groups them by step', () => {
+    const groups = describeSubmission(form, rows)
+    expect(groups.map((g) => g.title)).toEqual(['Trip Details', 'Your Details', 'Other answers'])
+    expect(groups[0].answers[0]).toMatchObject({ label: 'How long for?', value: '2 weeks' })
+  })
+
+  test('spells out JSON, checkbox and contact answers', () => {
+    const answers = describeSubmission(form, rows).flatMap((g) => g.answers)
+    const by = (name: string) => answers.find((a) => a.name === name)
+    expect(by('travellers')?.value).toBe('Adults: 2 · Children (2-12): 0')
+    expect(by('phone')).toMatchObject({ value: '+44 07908', href: 'tel:+447908' })
+    expect(by('email')).toMatchObject({ href: 'mailto:a@b.com' })
+    expect(by('consent')?.value).toBe('No')
+    expect(by('notes')?.value).toBe('')
+    expect(by('utm_source')).toMatchObject({ label: 'Utm source', value: 'google' })
+  })
+
+  test('says how each answer is edited, by its row in the stored data', () => {
+    const answers = describeSubmission(form, rows).flatMap((g) => g.answers)
+    const by = (name: string) => answers.find((a) => a.name === name)
+    expect(by('how-long-for')?.edit).toEqual({
+      options: [{ label: '2 weeks', value: '2-weeks' }],
+      path: 'data.0.value',
+    })
+    expect(by('email')?.edit).toEqual({ multiline: false, path: 'data.3.value' })
+    expect(by('consent')?.edit?.options?.map((o) => o.value)).toEqual(['true', 'false'])
+    expect(by('notes')?.edit).toMatchObject({ multiline: true, path: 'data.5.value' })
+    // JSON answers are left alone
+    expect(by('phone')?.edit).toBeUndefined()
+    expect(by('travellers')?.edit).toBeUndefined()
+  })
+
+  test('keeps a stored choice the form no longer offers', () => {
+    const [group] = describeSubmission(form, [{ fieldName: 'how-long-for', value: '6-weeks' }])
+    expect(group.answers[0].edit?.options).toContainEqual({ label: '6-weeks', value: '6-weeks' })
+  })
+
+  test('falls back to one untitled group when the form is gone', () => {
+    const groups = describeSubmission(null, [{ fieldName: 'email', value: 'a@b.com' }])
+    expect(groups).toEqual([
+      {
+        title: undefined,
+        answers: [
+          {
+            name: 'email',
+            label: 'Email',
+            value: 'a@b.com',
+            href: 'mailto:a@b.com',
+            edit: { multiline: false, path: 'data.0.value' },
+            wide: false,
+          },
+        ],
+      },
+    ])
+  })
+})
+
+describe('submissionTitle', () => {
+  test('uses the name, joining first and last names', () => {
+    expect(submissionTitle({ data: [{ fieldName: 'name', value: 'Ann Lee' }] })).toBe('Ann Lee')
+    expect(
+      submissionTitle({
+        data: [
+          { fieldName: 'first-name', value: 'Melanie' },
+          { fieldName: 'last-name', value: 'Allgood' },
+        ],
+      }),
+    ).toBe('Melanie Allgood')
+  })
+
+  test('falls back to the email, then the date', () => {
+    expect(submissionTitle({ data: [{ fieldName: 'your-email', value: 'a@b.com' }] })).toBe(
+      'a@b.com',
+    )
+    expect(submissionTitle({ data: [], submittedAt: '2026-10-28T15:51:00.000Z' })).toBe(
+      '28 Oct 2026, 15:51',
+    )
+  })
+})
+
+describe('describeDetails', () => {
+  test('lists the visit, then each context object as a group', () => {
+    const groups = describeDetails({
+      metadata: { ip: '10.0.0.1', referrer: 'https://www.google.com/', userAgent: 'Mozilla/5.0' },
+      context: { hidden: { gclid: 'abc', utm_source: 'google' }, hotel: 'h-1' },
+    })
+    expect(groups.map((g) => g.title)).toEqual([undefined, 'Context', 'Tracking'])
+    expect(groups[0].items[0]).toMatchObject({
+      label: 'Came from',
+      href: 'https://www.google.com/',
+    })
+    expect(groups[1].items).toEqual([expect.objectContaining({ label: 'Hotel', value: 'h-1' })])
+    expect(groups[2].items.map((i) => i.label)).toEqual(['Google click ID', 'UTM source'])
+  })
+
+  test('copes with no metadata or context', () => {
+    expect(describeDetails({})).toEqual([
+      { items: expect.arrayContaining([expect.objectContaining({ value: '' })]) },
+    ])
+  })
+})

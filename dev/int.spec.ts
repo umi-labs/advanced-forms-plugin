@@ -404,6 +404,22 @@ describe('submitFormHandler', () => {
     expect(submission.context ?? null).toBeNull()
   })
 
+  test('titles the submission with the name and keeps it through a partial update', async () => {
+    const response = await makeRequest(formSlug, {
+      data: { full_name: 'Grace Hopper', email: 'grace@example.com' },
+    })
+    const { submissionId } = await response.json()
+    const stored = await payload.findByID({ collection: 'form-submissions', id: submissionId })
+    expect(stored.title).toBe('Grace Hopper')
+
+    const updated = await payload.update({
+      collection: 'form-submissions',
+      id: submissionId,
+      data: { metadata: { referrer: 'https://example.com' } },
+    })
+    expect(updated.title).toBe('Grace Hopper')
+  })
+
   test('sendEmail action interpolates subject and fires callback', async () => {
     capturedEmails.length = 0
     await makeRequest(formSlug, {
