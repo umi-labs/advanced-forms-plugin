@@ -17,11 +17,15 @@ export const createFetchFormHandler = (pluginOptions: FormPluginConfig): Payload
       typeof payload.find
     >[0]['collection']
 
+    // Read as the caller, not with full access: this endpoint is public, so field
+    // rules such as staff-only `submissionActions` must strip those fields here.
     const result = await payload.find({
       collection: formsSlug,
       where: { slug: { equals: slug } },
       limit: 1,
       depth: 1,
+      overrideAccess: false,
+      req,
     })
 
     if (result.docs.length === 0) {

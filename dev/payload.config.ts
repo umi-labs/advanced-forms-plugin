@@ -2,6 +2,7 @@ import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
+import type { BlocksField } from 'payload'
 import { buildConfig } from 'payload'
 import { formPlugin, TravelDateBlock } from '@foundrykit/advanced-forms-plugin'
 import sharp from 'sharp'
@@ -49,7 +50,21 @@ const buildConfigWithMemoryDB = async () => {
     onInit: async (payload) => {
       await seed(payload)
     },
-    plugins: [formPlugin({ fields: { travelDate: { block: TravelDateBlock } } })],
+    plugins: [
+      formPlugin({ fields: { travelDate: { block: TravelDateBlock } } }),
+      // Consumers hide staff-only fields (CRM mappings, recipients) behind field
+      // access; the int tests check the public form-data endpoint honours it.
+      (incoming) => {
+        const forms = incoming.collections?.find((c) => c.slug === 'forms')
+        const actions = forms?.fields.find(
+          (f) => 'name' in f && f.name === 'submissionActions',
+        ) as BlocksField | undefined
+        if (actions) {
+          actions.access = { read: ({ req }) => Boolean(req.user) }
+        }
+        return incoming
+      },
+    ],
     secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
     sharp,
     typescript: {
