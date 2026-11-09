@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.16.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.16.0...v1.16.1) (2026-11-09)
+
+### Bug Fixes
+
+* record the page an enquiry was sent from, not document.referrer ([3660047](https://github.com/umi-labs/advanced-forms-plugin/commit/366004754e9ca5cce8d3b53e1f9ed47fcb5e1a8b))
+
 ## [1.16.0](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.15.1...v1.16.0) (2026-11-05)
 
 ### Features
