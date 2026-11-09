@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.16.2](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.16.1...v1.16.2) (2026-11-09)
+
+### Bug Fixes
+
+* form-data honours field read access; slug stops following the title once saved ([d88b3eb](https://github.com/umi-labs/advanced-forms-plugin/commit/d88b3eb8df8ebbc6376ac2a88c3c85101ecca06c))
+
 ## [1.16.1](https://github.com/umi-labs/advanced-forms-plugin/compare/v1.16.0...v1.16.1) (2026-11-09)
 
 ### Bug Fixes
