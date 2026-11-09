@@ -115,7 +115,9 @@ export function useEnquiryForm({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: stripHiddenValues(allSteps, rhfForm.getValues()),
-          metadata: { referrer: typeof window !== 'undefined' ? document.referrer : '' },
+          // The page the form was sent from. `document.referrer` was the page before the visit
+          // began, and client-side navigation never updates it, so it was usually a search engine.
+          metadata: { referrer: typeof window !== 'undefined' ? window.location.href : '' },
           ...(captchaToken ? { captchaToken } : {}),
           ...(context ? { context } : {}),
         }),

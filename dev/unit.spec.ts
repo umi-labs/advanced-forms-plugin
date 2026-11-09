@@ -1942,7 +1942,7 @@ describe('describeDetails', () => {
     })
     expect(groups.map((g) => g.title)).toEqual([undefined, 'Context', 'Tracking'])
     expect(groups[0].items[0]).toMatchObject({
-      label: 'Came from',
+      label: 'Sent from',
       href: 'https://www.google.com/',
     })
     expect(groups[1].items).toEqual([expect.objectContaining({ label: 'Hotel', value: 'h-1' })])

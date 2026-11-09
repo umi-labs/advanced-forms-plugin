@@ -260,7 +260,7 @@ export function describeDetails(doc: {
 }): PanelGroup[] {
   const meta = doc.metadata ?? {}
   const visit: PanelItem[] = [
-    { href: asLink(meta.referrer ?? ''), label: 'Came from', value: meta.referrer ?? '' },
+    { href: asLink(meta.referrer ?? ''), label: 'Sent from', value: meta.referrer ?? '' },
     { label: 'IP address', value: meta.ip ?? '' },
     { label: 'Browser', value: meta.userAgent ?? '', wide: true },
   ]
