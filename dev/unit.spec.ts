@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'vitest'
 import { baseFieldBlockFields } from '../src/blocks/fields/shared.js'
+import { shouldMirrorSource } from '../src/fields/lockable/formatSlug.js'
 
 /** Flatten row-type fields one level deep so tests can find named fields regardless of layout. */
 function flatFields(fields: any[]): any[] {
@@ -1999,5 +2000,21 @@ describe('TravelDateBlock', () => {
       [{ fieldName: 'when', value: '2027-08' }],
     )
     expect(group.answers[0]).toMatchObject({ label: 'When?', value: 'August 2027' })
+  })
+})
+
+describe('shouldMirrorSource (lockable slug / name)', () => {
+  test('mirrors the title while locked and not yet saved', () => {
+    expect(shouldMirrorSource(true, undefined)).toBe(true)
+    expect(shouldMirrorSource(true, '')).toBe(true)
+  })
+
+  test('stops once the slug is saved, so a rename cannot move it', () => {
+    expect(shouldMirrorSource(true, 'contact-form')).toBe(false)
+  })
+
+  test('never mirrors when unlocked (manual edits)', () => {
+    expect(shouldMirrorSource(false, undefined)).toBe(false)
+    expect(shouldMirrorSource(undefined, '')).toBe(false)
   })
 })

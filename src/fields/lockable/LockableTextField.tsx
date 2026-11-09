@@ -6,7 +6,7 @@ import type React from 'react'
 import { Button, FieldLabel, TextInput, useField, useForm, useFormFields } from '@payloadcms/ui'
 import { useCallback, useEffect } from 'react'
 
-import { formatSlug } from './formatSlug.js'
+import { formatSlug, shouldMirrorSource } from './formatSlug.js'
 import './index.scss'
 
 type LockableTextFieldProps = {
@@ -39,7 +39,7 @@ export const LockableTextField: React.FC<LockableTextFieldProps> = ({
   const checkboxFieldPath = parentPath ? `${parentPath}.${checkboxFieldName}` : checkboxFieldName
   const watchFieldPath = parentPath ? `${parentPath}.${watch}` : watch
 
-  const { setValue, value } = useField<string>({ path: fieldPath })
+  const { initialValue, setValue, value } = useField<string>({ path: fieldPath })
 
   const { dispatchFields } = useForm()
 
@@ -53,8 +53,11 @@ export const LockableTextField: React.FC<LockableTextFieldProps> = ({
     return fields[watchFieldPath]?.value as string | undefined
   })
 
+  // Stops once the value is saved, so renaming the title cannot move a live slug.
+  const mirroring = shouldMirrorSource(checkboxValue, initialValue)
+
   useEffect(() => {
-    if (!checkboxValue) {return}
+    if (!mirroring) {return}
 
     if (watchValue) {
       const formatted = formatSlug(watchValue)
@@ -62,7 +65,7 @@ export const LockableTextField: React.FC<LockableTextFieldProps> = ({
     } else if (value !== '') {
       setValue('')
     }
-  }, [watchValue, checkboxValue, setValue, value])
+  }, [watchValue, mirroring, setValue, value])
 
   const handleLock = useCallback(
     (e: React.MouseEvent<Element>) => {

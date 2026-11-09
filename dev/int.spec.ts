@@ -196,6 +196,31 @@ describe('fetchFormHandler', () => {
     expect(body.steps).toHaveLength(1)
   })
 
+  test('an anonymous caller gets public fields but not staff-only ones', async () => {
+    const handler = createFetchFormHandler({ collections: { forms: 'forms' } })
+    const request = new Request(`http://localhost:3000/api/form-data/${seededSlug}`)
+    const payloadRequest = await createPayloadRequest({
+      config: await config,
+      request,
+      params: { slug: seededSlug },
+    })
+    expect(payloadRequest.user).toBeNull()
+    const response = await handler(payloadRequest)
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.title).toBe('Fetch Test Form')
+    expect(body.steps[0].fields[0].name).toBe('q')
+    // `submissionActions` read access requires a user (dev/payload.config.ts).
+    expect(body.submissionActions ?? []).toEqual([])
+
+    // The stored document still has it; only the public read drops it.
+    const stored = await payload.find({
+      collection: 'forms',
+      where: { slug: { equals: seededSlug } },
+    })
+    expect(stored.docs[0].submissionActions).toHaveLength(1)
+  })
+
   test('returns 404 for an unknown slug', async () => {
     const handler = createFetchFormHandler({ collections: { forms: 'forms' } })
     const request = new Request('http://localhost:3000/api/forms/does-not-exist')

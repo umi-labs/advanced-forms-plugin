@@ -22,7 +22,8 @@ export type LockableTextFieldOptions = {
  * Returns a `[textField, lockCheckboxField]` tuple that implements an
  * auto-generated, lockable text input. The text input is rendered with a
  * custom React component that mirrors the value of `watch` (slugified) while
- * the checkbox is `true`. Toggling the lock allows manual edits.
+ * the checkbox is `true` and the value has not been saved yet; once saved it
+ * stays put when `watch` changes. Toggling the lock allows manual edits.
  *
  * The lock checkbox is hidden in the admin UI and defaults to `true` so new
  * documents start in auto-mode.
